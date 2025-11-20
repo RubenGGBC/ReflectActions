@@ -1,0 +1,181 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be committed to version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub specific
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# iOS/macOS
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/*.xcconfig
+**/ios/**/*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+**/ios/**/*.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+**/ios/**/Flutter/Flutter.framework
+**/ios/**/Flutter/Flutter.podspec
+**/ios/**/Flutter/Generated.xcconfig
+**/ios/**/Flutter/ephemeral/
+**/ios/**/Flutter/app.flutterignore
+**/ios/**/Flutter/flutter_assets/
+**/ios/**/Flutter/flutter_export_environment.sh
+**/ios/**/Flutter/local.properties
+**/ios/**/Flutter/release.xcconfig
+**/ios/**/.symlinks/
+**/ios/**/.vagrant/
+**/ios/**/Flutter/Flutter.framework
+**/ios/**/Flutter/Flutter.podspec
+**/ios/Pods
+**/ios/Podfile.lock
+**/ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+**/ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+**/macos/Flutter/Flutter.framework
+**/macos/Flutter/Flutter.podspec
+**/macos/Flutter/Generated.xcconfig
+**/macos/Flutter/ephemeral/
+**/macos/Flutter/app.flutterignore
+**/macos/Flutter/flutter_assets/
+**/macos/Flutter/flutter_export_environment.sh
+**/macos/Flutter/local.properties
+**/macos/Flutter/release.xcconfig
+**/macos/Flutter/GeneratedPluginRegistrant.dart
+**/macos/Flutter/Flutter-Debug.xcconfig
+**/macos/Flutter/Flutter-Release.xcconfig
+**/macos/Pods
+**/macos/Podfile.lock
+**/macos/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+**/macos/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+
+# Windows
+windows/flutter/generated_plugins.cmake
+windows/flutter/generated_pluginlist.cmake
+windows/flutter/generated_plugins.cmake
+windows/flutter/generated_plugins.cmake
+
+# Linux
+linux/flutter/generated_plugins.cmake
+linux/flutter/generated_plugins.cmake
+
+# Web
+lib/generated_plugin_registrant.dart
+
+# Windows
+windows/flutter/generated_plugin_registrant.cc
+windows/flutter/generated_plugin_registrant.h
+windows/flutter/generated_plugins.cmake
+
+# Coverage
+coverage/
+
+# Exceptions to above rules.
+!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+
+# Misc
+pubspec.lock
+.flutter-plugins-dependencies
+
+# Build directories
+build/
+.dart_tool/
+.packages
+
+# Generated
+.dart_tool/
+.packages
+pubspec.lock
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+*.iml
+.vscode
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*~.nib
+
+# Android
+android/.gradle
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/local.properties
+
+# Gradle files
+.gradle
+.gradle/
+
+# Build outputs
+*.apk
+*.ap_
+*.aab
+
+# Local properties
+local.properties
+
+# Generated files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock
+
+# Custom
+analysis_options.yaml
+devtools_options.yaml
+CLAUDE.md
