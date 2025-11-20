@@ -94,15 +94,11 @@ jobs:
             const isNewContributor = context.payload.issue.author_association === 'NONE';
 
             if (isNewContributor) {
+              const welcomeMsg = `👋 ¡Gracias por reportar este problema!\n\nEste issue está siendo analizado automáticamente. Pronto recibirás un análisis detallado con sugerencias para resolver el problema.\n\n**Tipo detectado**: ${{ steps.identify.outputs.emoji }} ${{ steps.identify.outputs.type }}\n**Componente**: ${{ steps.identify.outputs.component }}`;
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `👋 ¡Gracias por reportar este problema!
-
-Este issue está siendo analizado automáticamente. Pronto recibirás un análisis detallado con sugerencias para resolver el problema.
-
-**Tipo detectado**: ${{ steps.identify.outputs.emoji }} ${{ steps.identify.outputs.type }}
-**Componente**: ${{ steps.identify.outputs.component }}`
+                body: welcomeMsg
               });
             }
