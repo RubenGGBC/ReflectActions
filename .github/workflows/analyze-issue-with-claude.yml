@@ -8,7 +8,7 @@ jobs:
   analyze-issue:
     runs-on: ubuntu-latest
 
-    if: contains(github.event.issue.labels.*.name, 'bug') || contains(github.event.issue.labels.*.name, 'UI') || contains(github.event.issue.title, 'bug') || contains(github.event.issue.title, 'UI')
+    if: contains(github.event.issue.title, 'bug') || contains(github.event.issue.title, 'Bug') || contains(github.event.issue.title, 'UI') || contains(github.event.issue.body, 'bug') || contains(github.event.issue.body, 'Bug') || contains(github.event.issue.body, 'UI')
 
     steps:
       - name: Checkout repository
