@@ -1,4 +1,4 @@
-name: Analyze Issue with Claude API
+name: Analyze Issue with Gemini API
 
 on:
   issues:
@@ -14,24 +14,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Analyze with Claude API
+      - name: Analyze with Google Gemini API
         env:
-          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          curl -X POST https://api.anthropic.com/v1/messages \
-            -H "x-api-key: $CLAUDE_API_KEY" \
-            -H "anthropic-version: 2023-06-01" \
-            -H "content-type: application/json" \
+          curl -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=$GEMINI_API_KEY" \
+            -H "Content-Type: application/json" \
             -d '{
-              "model": "claude-3-5-sonnet-20241022",
-              "max_tokens": 1024,
-              "messages": [{
-                "role": "user",
-                "content": "Analiza el siguiente issue de una aplicación Flutter (ReflectFlutter):\n\nTÍTULO: '"$ISSUE_TITLE"'\n\nDESCRIPCIÓN:\n'"$ISSUE_BODY"'\n\nPor favor proporciona:\n1. Resumen del problema\n2. Causa probable\n3. Pasos para reproducir\n4. Soluciones sugeridas\n5. Archivos probablemente afectados\n6. Prioridad (Alta/Media/Baja)\n\nResponde en formato markdown."
+              "contents": [{
+                "parts": [{
+                  "text": "Analiza el siguiente issue de una aplicación Flutter (ReflectFlutter):\n\nTÍTULO: '"$ISSUE_TITLE"'\n\nDESCRIPCIÓN:\n'"$ISSUE_BODY"'\n\nPor favor proporciona:\n1. Resumen del problema\n2. Causa probable\n3. Pasos para reproducir\n4. Soluciones sugeridas\n5. Archivos probablemente afectados\n6. Prioridad (Alta/Media/Baja)\n\nResponde en formato markdown."
+                }]
               }]
-            }' | jq -r '.content[0].text' > analysis.txt
+            }' | jq -r '.candidates[0].content.parts[0].text' > analysis.txt
           cat analysis.txt
 
       - name: Post Analysis Comment
