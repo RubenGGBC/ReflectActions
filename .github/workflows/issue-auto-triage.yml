@@ -1,0 +1,108 @@
+name: Auto-Triage Issues
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Identify issue type
+        id: identify
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.issue.title.toLowerCase();
+            const body = context.payload.issue.body.toLowerCase();
+            const fullText = `${title} ${body}`;
+
+            let type = 'unknown';
+            let component = 'general';
+
+            // Identificar tipo de problema
+            if (fullText.includes('ui') || fullText.includes('interfaz') || fullText.includes('layout') || fullText.includes('widget')) {
+              type = 'ui-bug';
+              core.setOutput('type', 'ui-bug');
+              core.setOutput('emoji', '🎨');
+            } else if (fullText.includes('crash') || fullText.includes('error') || fullText.includes('exception')) {
+              type = 'crash';
+              core.setOutput('type', 'crash');
+              core.setOutput('emoji', '💥');
+            } else if (fullText.includes('rendimiento') || fullText.includes('performance') || fullText.includes('lento')) {
+              type = 'performance';
+              core.setOutput('type', 'performance');
+              core.setOutput('emoji', '⚡');
+            } else if (fullText.includes('database') || fullText.includes('datos') || fullText.includes('sqflite')) {
+              type = 'database';
+              core.setOutput('type', 'database');
+              core.setOutput('emoji', '💾');
+            } else if (fullText.includes('notificación') || fullText.includes('notification')) {
+              type = 'notification';
+              core.setOutput('type', 'notification');
+              core.setOutput('emoji', '🔔');
+            } else if (fullText.includes('provider') || fullText.includes('state')) {
+              type = 'state-management';
+              core.setOutput('type', 'state-management');
+              core.setOutput('emoji', '📦');
+            }
+
+            // Identificar componente
+            if (fullText.includes('moment') || fullText.includes('momento')) {
+              component = 'moments';
+            } else if (fullText.includes('goal') || fullText.includes('meta') || fullText.includes('objetivo')) {
+              component = 'goals';
+            } else if (fullText.includes('analytics') || fullText.includes('análisis')) {
+              component = 'analytics';
+            } else if (fullText.includes('profile') || fullText.includes('perfil')) {
+              component = 'profile';
+            } else if (fullText.includes('home') || fullText.includes('inicio')) {
+              component = 'home';
+            }
+
+            core.setOutput('component', component);
+
+      - name: Add automatic labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = ['${{ steps.identify.outputs.type }}', 'component/${{ steps.identify.outputs.component }}'];
+
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: labels.filter(l => l && l !== 'unknowncomponent/general')
+            });
+
+      - name: Create project card
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Opcional: crear tarjeta en proyecto si lo tienes configurado
+            console.log('Issue #' + context.issue.number + ' triaged as: ${{ steps.identify.outputs.type }}');
+
+      - name: Post welcome comment for new contributors
+        if: github.event.action == 'opened'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const isNewContributor = context.payload.issue.author_association === 'NONE';
+
+            if (isNewContributor) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `👋 ¡Gracias por reportar este problema!
+
+Este issue está siendo analizado automáticamente. Pronto recibirás un análisis detallado con sugerencias para resolver el problema.
+
+**Tipo detectado**: ${{ steps.identify.outputs.emoji }} ${{ steps.identify.outputs.type }}
+**Componente**: ${{ steps.identify.outputs.component }}`
+              });
+            }

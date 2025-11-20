@@ -1,0 +1,170 @@
+name: Analyze Issue with Claude API
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  analyze-issue:
+    runs-on: ubuntu-latest
+
+    # Solo procesar issues que sean bugs o problemas de UI
+    if: contains(github.event.issue.labels.*.name, 'bug') || contains(github.event.issue.labels.*.name, 'UI') || contains(github.event.issue.title, 'bug') || contains(github.event.issue.title, 'UI')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract issue information
+        id: issue_data
+        run: |
+          # Extraer información del issue
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          ISSUE_BODY="${{ github.event.issue.body }}"
+          ISSUE_NUMBER=${{ github.event.issue.number }}
+          ISSUE_AUTHOR="${{ github.event.issue.user.login }}"
+
+          # Guardar en variables de entorno para el siguiente paso
+          echo "issue_title=${ISSUE_TITLE}" >> $GITHUB_OUTPUT
+          echo "issue_body=${ISSUE_BODY}" >> $GITHUB_OUTPUT
+          echo "issue_number=${ISSUE_NUMBER}" >> $GITHUB_OUTPUT
+          echo "issue_author=${ISSUE_AUTHOR}" >> $GITHUB_OUTPUT
+
+      - name: Analyze with Claude API
+        id: claude_analysis
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+        run: |
+          python3 << 'EOF'
+          import os
+          import json
+          import requests
+          from urllib.parse import quote
+
+          api_key = os.getenv('CLAUDE_API_KEY')
+          issue_title = """${{ steps.issue_data.outputs.issue_title }}"""
+          issue_body = """${{ steps.issue_data.outputs.issue_body }}"""
+
+          # Preparar el prompt para Claude
+          prompt = f"""Analiza el siguiente issue de una aplicación Flutter (ReflectFlutter - app de reflexión zen):
+
+TÍTULO: {issue_title}
+
+DESCRIPCIÓN:
+{issue_body}
+
+Por favor proporciona:
+1. **Resumen del problema**: ¿Cuál es el problema exacto?
+2. **Causa probable**: ¿Qué podría estar causándolo?
+3. **Pasos para reproducir**: ¿Cómo se puede reproducir el problema?
+4. **Soluciones sugeridas**: ¿Qué cambios de código podrían resolver esto?
+5. **Archivos probablemente afectados**: ¿Qué archivos del proyecto están relacionados?
+6. **Prioridad**: Asigna una prioridad (Alta/Media/Baja)
+
+Responde en formato markdown y sé conciso."""
+
+          # Llamar a Claude API
+          headers = {
+              "x-api-key": api_key,
+              "anthropic-version": "2023-06-01",
+              "content-type": "application/json"
+          }
+
+          data = {
+              "model": "claude-3-5-sonnet-20241022",
+              "max_tokens": 1024,
+              "messages": [
+                  {
+                      "role": "user",
+                      "content": prompt
+                  }
+              ]
+          }
+
+          try:
+              response = requests.post(
+                  "https://api.anthropic.com/v1/messages",
+                  headers=headers,
+                  json=data
+              )
+              response.raise_for_status()
+
+              result = response.json()
+              analysis = result['content'][0]['text']
+
+              # Guardar el análisis
+              with open('claude_analysis.txt', 'w') as f:
+                  f.write(analysis)
+
+              print("✅ Análisis completado exitosamente")
+              print(analysis)
+
+          except requests.exceptions.RequestException as e:
+              print(f"❌ Error al llamar a Claude API: {e}")
+              exit(1)
+          EOF
+
+      - name: Post comment on issue
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const analysis = fs.readFileSync('claude_analysis.txt', 'utf8');
+
+            const comment = `## 🤖 Análisis Automático con Claude AI
+
+            ${analysis}
+
+            ---
+            *Este análisis fue generado automáticamente por Claude AI. Por favor verifica la información antes de actuar.*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+            console.log('✅ Comentario publicado en el issue');
+
+      - name: Add labels based on analysis
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const analysis = fs.readFileSync('claude_analysis.txt', 'utf8').toLowerCase();
+
+            const labels = [];
+
+            // Detectar prioridad
+            if (analysis.includes('alta') || analysis.includes('crítico')) {
+              labels.push('priority-high');
+            } else if (analysis.includes('media')) {
+              labels.push('priority-medium');
+            } else if (analysis.includes('baja')) {
+              labels.push('priority-low');
+            }
+
+            // Detectar tipo de problema
+            if (analysis.includes('ui') || analysis.includes('interfaz')) {
+              labels.push('ui-problem');
+            }
+            if (analysis.includes('rendimiento') || analysis.includes('performance')) {
+              labels.push('performance');
+            }
+            if (analysis.includes('crash') || analysis.includes('error')) {
+              labels.push('crash');
+            }
+
+            if (labels.length > 0) {
+              github.rest.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: labels
+              });
+
+              console.log('✅ Labels añadidos:', labels);
+            }
