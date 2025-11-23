@@ -710,7 +710,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                 gradient: hasData
                     ? LinearGradient(
                   colors: isToday
-                      ? [const Color(0xFF10B981), const Color(0xFF34D399)] // Verde para hoy
+                      ? MinimalColors.positiveGradientStatic // Verde para hoy
                       : MinimalColors.accentGradient(context),
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
@@ -728,7 +728,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                     ? [
                   BoxShadow(
                     color: isToday
-                        ? const Color(0xFF10B981).withValues(alpha: 0.4)
+                        ? MinimalColors.success.withValues(alpha: 0.4)
                         : MinimalColors.accentGradient(context)[1].withValues(alpha: 0.4),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
@@ -889,12 +889,12 @@ class _HomeScreenV2State extends State<HomeScreenV2>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isCompleted
-            ? const Color(0xFF10B981).withValues(alpha: 0.1) // Verde suave para completados
+            ? MinimalColors.success.withValues(alpha: 0.1) // Verde suave para completados
             : MinimalColors.backgroundSecondary(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isCompleted
-              ? const Color(0xFF10B981).withValues(alpha: 0.3) // Borde verde para completados
+              ? MinimalColors.success.withValues(alpha: 0.3) // Borde verde para completados
               : MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.2),
           width: 1,
         ),
@@ -909,7 +909,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   gradient: isCompleted
-                      ? LinearGradient(colors: [Color(0xFF10B981), Color(0xFF34D399)]) // Verde
+                      ? const LinearGradient(colors: MinimalColors.positiveGradientStatic) // Verde
                       : LinearGradient(colors: MinimalColors.accentGradient(context)), // Azul-morado
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -948,7 +948,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: isCompleted
-                      ? const Color(0xFF10B981) // Verde sólido para completados
+                      ? MinimalColors.success // Verde sólido para completados
                       : MinimalColors.accentGradient(context)[0].withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -1325,7 +1325,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                         icon: Icons.sentiment_very_satisfied,
                         count: positiveCount,
                         label: 'Positivos',
-                        gradient: [const Color(0xFF10B981), const Color(0xFF34D399)],
+                        gradient: MinimalColors.positiveGradientStatic,
                       ),
                       Container(
                         width: 1,
@@ -1336,7 +1336,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                         icon: Icons.sentiment_dissatisfied,
                         count: negativeCount,
                         label: 'Negativos',
-                        gradient: [const Color(0xFFb91c1c), const Color(0xFFef4444)],
+                        gradient: MinimalColors.negativeGradientStatic,
                       ),
                     ],
                   ),
@@ -1416,7 +1416,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                     child: _buildMomentsColumn(
                       title: 'Momentos Buenos',
                       moments: positiveMoments,
-                      gradient: [const Color(0xFF10B981), const Color(0xFF34D399)],
+                      gradient: MinimalColors.positiveGradientStatic,
                       icon: Icons.sentiment_very_satisfied,
                     ),
                   ),
@@ -1426,7 +1426,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                     child: _buildMomentsColumn(
                       title: 'Momentos Malos',
                       moments: negativeMoments,
-                      gradient: [const Color(0xFFb91c1c), const Color(0xFFef4444)],
+                      gradient: MinimalColors.negativeGradientStatic,
                       icon: Icons.sentiment_dissatisfied,
                     ),
                   ),
@@ -1791,8 +1791,8 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: themeProvider.isDarkMode
-                          ? [const Color(0xFFfbbf24), const Color(0xFFf59e0b)]
-                          : [const Color(0xFF1e3a8a), const Color(0xFF581c87)],
+                          ? MinimalColors.neutralGradientStatic
+                          : MinimalColors.primaryGradientStatic,
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
