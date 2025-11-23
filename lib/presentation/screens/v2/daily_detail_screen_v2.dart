@@ -515,9 +515,9 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3b82f6).withValues(alpha: 0.1),
+                  color: MinimalColors.info.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF3b82f6).withValues(alpha: 0.3)),
+                  border: Border.all(color: MinimalColors.info.withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -525,7 +525,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                     const Text(
                       '🙏 Gratitud',
                       style: TextStyle(
-                        color: Color(0xFF3b82f6),
+                        color: MinimalColors.info,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -579,10 +579,10 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (entry.positiveTags.isNotEmpty) ...[
-          Text(
+          const Text(
             '✅ Aspectos Positivos',
             style: TextStyle(
-              color: const Color(0xFF3b82f6),
+              color: MinimalColors.info,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -591,16 +591,16 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: entry.positiveTags.map<Widget>((tag) => _buildTag(tag, const Color(0xFF3b82f6))).toList(),
+            children: entry.positiveTags.map<Widget>((tag) => _buildTag(tag, MinimalColors.info)).toList(),
           ),
           const SizedBox(height: 12),
         ],
 
         if (entry.negativeTags.isNotEmpty) ...[
-          Text(
+          const Text(
             '❌ Aspectos a Mejorar',
             style: TextStyle(
-              color: const Color(0xFFef4444),
+              color: MinimalColors.error,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -609,7 +609,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: entry.negativeTags.map<Widget>((tag) => _buildTag(tag, const Color(0xFFef4444))).toList(),
+            children: entry.negativeTags.map<Widget>((tag) => _buildTag(tag, MinimalColors.error)).toList(),
           ),
         ],
       ],
@@ -743,7 +743,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
     final numericValue = value is double ? value.toInt() : value as int;
     final effectiveValue = isReversed ? (11 - numericValue) : numericValue;
     final color = title.contains('Horas') || title.contains('Vasos') || title.contains('min')
-        ? const Color(0xFF3b82f6)
+        ? MinimalColors.info
         : _getMetricColor(effectiveValue);
 
     return Container(
@@ -1104,14 +1104,14 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
         'emoji': '🌟',
         'title': 'Excelente estado de ánimo',
         'description': 'Tu ánimo estuvo muy alto este día. ¿Qué contribuyó a ello?',
-        'color': const Color(0xFF10b981),
+        'color': MinimalColors.success,
       });
     } else if (moodScore <= 3) {
       insights.add({
         'emoji': '💙',
         'title': 'Día desafiante',
         'description': 'Fue un día difícil, pero has sido fuerte al superarlo.',
-        'color': const Color(0xFFef4444),
+        'color': MinimalColors.error,
       });
     }
 
@@ -1122,14 +1122,14 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
         'emoji': '⚡',
         'title': 'Gran balance energético',
         'description': 'Tuviste mucha energía y poco estrés. ¡Día productivo!',
-        'color': const Color(0xFF10b981),
+        'color': MinimalColors.success,
       });
     } else if (energyStressBalance <= -3) {
       insights.add({
         'emoji': '😴',
         'title': 'Necesitas descanso',
         'description': 'Alto estrés y poca energía. Considera tomarte un respiro.',
-        'color': const Color(0xFFef4444),
+        'color': MinimalColors.error,
       });
     }
 
@@ -1139,7 +1139,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
         'emoji': '😴',
         'title': 'Sueño reparador',
         'description': 'Dormiste muy bien. El buen descanso mejora todo.',
-        'color': const Color(0xFF10b981),
+        'color': MinimalColors.success,
       });
     }
 
@@ -1149,7 +1149,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
         'emoji': '✨',
         'title': 'Día que valió la pena',
         'description': 'Consideraste que fue un día valioso. ¡Sigue así!',
-        'color': const Color(0xFF3b82f6),
+        'color': MinimalColors.info,
       });
     }
 
@@ -1158,7 +1158,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
         'emoji': '📊',
         'title': 'Reflexión registrada',
         'description': 'Has documentado tu día. Esto te ayuda a crecer.',
-        'color': const Color(0xFF3b82f6),
+        'color': MinimalColors.info,
       }
     ] : insights;
   }
@@ -1333,15 +1333,15 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                   width: 4,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981),
+                    color: MinimalColors.success,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'Momentos Buenos (${positiveMoments.length})',
-                  style: TextStyle(
-                    color: const Color(0xFF10B981),
+                  style: const TextStyle(
+                    color: MinimalColors.success,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1371,15 +1371,15 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                   width: 4,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444),
+                    color: MinimalColors.error,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'Momentos Malos (${negativeMoments.length})',
-                  style: TextStyle(
-                    color: const Color(0xFFEF4444),
+                  style: const TextStyle(
+                    color: MinimalColors.error,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1405,9 +1405,9 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
   }
 
   Widget _buildMomentCard(dynamic moment, ImageMomentsProvider imageProvider) {
-    final color = moment.type == 'positive' 
-        ? const Color(0xFF10B981) 
-        : const Color(0xFFEF4444);
+    final color = moment.type == 'positive'
+        ? MinimalColors.success
+        : MinimalColors.error;
         
     return Container(
       width: 140, // Increased width to accommodate images
@@ -1629,15 +1629,15 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
           Row(
             children: [
               Expanded(
-                child: _buildProgressStat('Metas Activas', '$activeGoals', const Color(0xFF3B82F6)),
+                child: _buildProgressStat('Metas Activas', '$activeGoals', MinimalColors.info),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildProgressStat('Completadas', '$completedGoals', const Color(0xFF10B981)),
+                child: _buildProgressStat('Completadas', '$completedGoals', MinimalColors.success),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildProgressStat('Progreso Gral.', '${(overallProgress * 100).round()}%', const Color(0xFFF59E0B)),
+                child: _buildProgressStat('Progreso Gral.', '${(overallProgress * 100).round()}%', MinimalColors.warning),
               ),
             ],
           ),
@@ -1824,9 +1824,9 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                color: MinimalColors.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                border: Border.all(color: MinimalColors.success.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -1834,7 +1834,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981),
+                      color: MinimalColors.success,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Center(
@@ -1862,14 +1862,14 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Row(
+                        const Row(
                           children: [
-                            const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 16),
-                            const SizedBox(width: 4),
-                            const Text(
+                            Icon(Icons.check_circle, color: MinimalColors.success, size: 16),
+                            SizedBox(width: 4),
+                            Text(
                               'Completada',
                               style: TextStyle(
-                                color: Color(0xFF10B981),
+                                color: MinimalColors.success,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1882,10 +1882,10 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      color: MinimalColors.success.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Icon(Icons.done, color: Color(0xFF10B981), size: 16),
+                    child: const Icon(Icons.done, color: MinimalColors.success, size: 16),
                   ),
                 ],
               ),
@@ -1899,12 +1899,12 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF3B82F6).withValues(alpha: 0.1),
-                  const Color(0xFF10B981).withValues(alpha: 0.1),
+                  MinimalColors.info.withValues(alpha: 0.1),
+                  MinimalColors.success.withValues(alpha: 0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3)),
+              border: Border.all(color: MinimalColors.info.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -2060,13 +2060,13 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                color: MinimalColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+                border: Border.all(color: MinimalColors.warning.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.note_alt, color: Color(0xFFF59E0B), size: 18),
+                  const Icon(Icons.note_alt, color: MinimalColors.warning, size: 18),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -2326,13 +2326,13 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                color: MinimalColors.info.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3)),
+                border: Border.all(color: MinimalColors.info.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.flag, color: Color(0xFF3B82F6), size: 20),
+                  const Icon(Icons.flag, color: MinimalColors.info, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -2341,7 +2341,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                         const Text(
                           'Meta del Día',
                           style: TextStyle(
-                            color: Color(0xFF3B82F6),
+                            color: MinimalColors.info,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -2367,13 +2367,13 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                color: MinimalColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+                border: Border.all(color: MinimalColors.warning.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.wb_sunny, color: Color(0xFFF59E0B), size: 20),
+                  const Icon(Icons.wb_sunny, color: MinimalColors.warning, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -2382,7 +2382,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                         const Text(
                           'Notas Matutinas',
                           style: TextStyle(
-                            color: Color(0xFFF59E0B),
+                            color: MinimalColors.warning,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -2431,13 +2431,13 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                color: MinimalColors.accent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.3)),
+                border: Border.all(color: MinimalColors.accent.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.nights_stay, color: Color(0xFF8B5CF6), size: 20),
+                  const Icon(Icons.nights_stay, color: MinimalColors.accent, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -2446,7 +2446,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                         const Text(
                           'Reflexión Vespertina',
                           style: TextStyle(
-                            color: Color(0xFF8B5CF6),
+                            color: MinimalColors.accent,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -2483,13 +2483,13 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: activity.isCompleted 
-                      ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                  color: activity.isCompleted
+                      ? MinimalColors.success.withValues(alpha: 0.1)
                       : MinimalColors.backgroundCard(context).withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: activity.isCompleted 
-                        ? const Color(0xFF10B981)
+                    color: activity.isCompleted
+                        ? MinimalColors.success
                         : priorityColor.withValues(alpha: 0.5),
                     width: 2,
                   ),
@@ -2518,8 +2518,8 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                         ),
                         Icon(
                           activity.isCompleted ? Icons.check_circle : Icons.schedule,
-                          color: activity.isCompleted 
-                              ? const Color(0xFF10B981)
+                          color: activity.isCompleted
+                              ? MinimalColors.success
                               : Colors.white54,
                           size: 20,
                         ),
@@ -2659,15 +2659,15 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
   Color _getPriorityColor(dynamic priority) {
     switch (priority.toString()) {
       case 'ActivityPriority.urgent':
-        return const Color(0xFFEF4444);
+        return MinimalColors.error;
       case 'ActivityPriority.high':
-        return const Color(0xFFF59E0B);
+        return MinimalColors.warning;
       case 'ActivityPriority.medium':
-        return const Color(0xFF3B82F6);
+        return MinimalColors.info;
       case 'ActivityPriority.low':
-        return const Color(0xFF10B981);
+        return MinimalColors.success;
       default:
-        return const Color(0xFF3B82F6);
+        return MinimalColors.info;
     }
   }
 
