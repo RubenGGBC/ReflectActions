@@ -1230,17 +1230,17 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
   }
 
   Color _getScoreColor(int score) {
-    if (score <= 3) return const Color(0xFFef4444);
-    if (score <= 5) return const Color(0xFFf59e0b);
-    if (score <= 7) return const Color(0xFF3b82f6);
-    return const Color(0xFF10b981);
+    if (score <= 3) return MinimalColors.error;
+    if (score <= 5) return MinimalColors.warning;
+    if (score <= 7) return MinimalColors.info;
+    return MinimalColors.success;
   }
 
   List<Color> _getScoreGradient(int score) {
-    if (score <= 3) return [const Color(0xFFef4444), const Color(0xFFef4444).withValues(alpha: 0.8)];
-    if (score <= 5) return [const Color(0xFFf59e0b), const Color(0xFFf59e0b).withValues(alpha: 0.8)];
-    if (score <= 7) return [const Color(0xFF3b82f6), const Color(0xFF3b82f6).withValues(alpha: 0.8)];
-    return [const Color(0xFF10b981), const Color(0xFF10b981).withValues(alpha: 0.8)];
+    if (score <= 3) return [MinimalColors.error, MinimalColors.error.withValues(alpha: 0.8)];
+    if (score <= 5) return [MinimalColors.warning, MinimalColors.warning.withValues(alpha: 0.8)];
+    if (score <= 7) return [MinimalColors.info, MinimalColors.info.withValues(alpha: 0.8)];
+    return [MinimalColors.success, MinimalColors.success.withValues(alpha: 0.8)];
   }
 
   String _getScoreMessage(double score) {
@@ -1251,10 +1251,10 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
   }
 
   Color _getMetricColor(int value) {
-    if (value <= 3) return const Color(0xFFef4444);
-    if (value <= 5) return const Color(0xFFf59e0b);
-    if (value <= 7) return const Color(0xFF3b82f6);
-    return const Color(0xFF10b981);
+    if (value <= 3) return MinimalColors.error;
+    if (value <= 5) return MinimalColors.warning;
+    if (value <= 7) return MinimalColors.info;
+    return MinimalColors.success;
   }
 
 
@@ -1683,17 +1683,17 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
   // ============================================================================
 
   Color _getProgressColor(double progress) {
-    if (progress >= 0.8) return const Color(0xFF10B981);
-    if (progress >= 0.5) return const Color(0xFF3B82F6);
-    if (progress >= 0.2) return const Color(0xFFF59E0B);
-    return const Color(0xFFEF4444);
+    if (progress >= 0.8) return MinimalColors.success;
+    if (progress >= 0.5) return MinimalColors.info;
+    if (progress >= 0.2) return MinimalColors.warning;
+    return MinimalColors.error;
   }
 
   Color _getCompletionColor(int percentage) {
-    if (percentage >= 80) return const Color(0xFF10B981);
-    if (percentage >= 50) return const Color(0xFF3B82F6);
-    if (percentage >= 20) return const Color(0xFFF59E0B);
-    return const Color(0xFFEF4444);
+    if (percentage >= 80) return MinimalColors.success;
+    if (percentage >= 50) return MinimalColors.info;
+    if (percentage >= 20) return MinimalColors.warning;
+    return MinimalColors.error;
   }
 
   // ============================================================================
