@@ -57,6 +57,10 @@ class _HomeScreenV2State extends State<HomeScreenV2>
   // State for expandable moments widget
   bool _isMomentsExpanded = false;
 
+  // State for loading and error feedback
+  bool _isLoading = true;
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
@@ -129,6 +133,11 @@ class _HomeScreenV2State extends State<HomeScreenV2>
   Future<void> _loadInitialData() async {
     if (!mounted) return;
 
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     try {
       final authProvider = Provider.of<OptimizedAuthProvider>(context, listen: false);
       final user = authProvider.currentUser;
@@ -136,27 +145,32 @@ class _HomeScreenV2State extends State<HomeScreenV2>
       if (user != null) {
         // ✅ FIX: Load data with proper error handling and retry logic
         final futures = <Future>[];
-        
+
         // Load critical data first
         futures.add(Provider.of<OptimizedDailyEntriesProvider>(context, listen: false).loadEntries(user.id, limitDays: 30));
         futures.add(Provider.of<OptimizedMomentsProvider>(context, listen: false).loadTodayMoments(user.id));
-        
+
         // Wait for critical data
         await Future.wait(futures);
         if (!mounted) return;
-        
+
         // Load remaining data
         final secondaryFutures = <Future>[];
         secondaryFutures.add(Provider.of<OptimizedAnalyticsProvider>(context, listen: false).loadCompleteAnalytics(user.id, days: 30));
         secondaryFutures.add(Provider.of<GoalsProvider>(context, listen: false).loadUserGoals(user.id));
         secondaryFutures.add(Provider.of<StreakProvider>(context, listen: false).loadStreakData(user.id));
         secondaryFutures.add(Provider.of<HopecoreQuotesProvider>(context, listen: false).initialize());
-        
+
         // Load secondary data with timeout
         await Future.wait(secondaryFutures).timeout(
           const Duration(seconds: 10),
           onTimeout: () {
             // Continue with partial data if timeout
+            if (mounted) {
+              setState(() {
+                _errorMessage = 'Algunos datos tardaron en cargar';
+              });
+            }
             return [];
           },
         );
@@ -164,6 +178,11 @@ class _HomeScreenV2State extends State<HomeScreenV2>
     } catch (e) {
       // Log error but don't break the UI
       print('⚠️ Error loading initial data: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error al cargar datos. Toca para reintentar.';
+        });
+      }
       // Try to reload critical data only
       if (mounted) {
         final authProvider = Provider.of<OptimizedAuthProvider>(context, listen: false);
@@ -175,6 +194,12 @@ class _HomeScreenV2State extends State<HomeScreenV2>
             // Fail silently
           }
         }
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -264,6 +289,84 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center, // ✅ CENTRAR TODO
                       children: [
+                    // Loading indicator
+                    if (_isLoading)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: MinimalColors.info.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: MinimalColors.info.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(MinimalColors.info),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Cargando datos...',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: MinimalColors.info,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    // Error message with retry option
+                    if (_errorMessage != null)
+                      GestureDetector(
+                        onTap: _loadInitialData,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: MinimalColors.warning.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: MinimalColors.warning.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                color: MinimalColors.warning,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: MinimalColors.warning,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.refresh,
+                                color: MinimalColors.warning,
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     // 1. ✅ HEADER CON FOTO GRANDE Y BIENVENIDA - CENTRADO
                     _buildCenteredHeader(user),
                     const SizedBox(height: 16),
@@ -985,18 +1088,18 @@ class _HomeScreenV2State extends State<HomeScreenV2>
             // ✅ MENSAJE DE CELEBRACIÓN PARA COMPLETADOS
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.celebration,
-                  color: Color(0xFF10B981),
+                  color: MinimalColors.success,
                   size: 16,
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   '¡Felicitaciones! Objetivo alcanzado',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF10B981),
+                    color: MinimalColors.success,
                   ),
                 ),
               ],
