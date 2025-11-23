@@ -1103,10 +1103,10 @@ class _CalendarScreenV2State extends State<CalendarScreenV2>
   }
 
   Color _getMoodColor(int score) {
-    if (score <= 3) return const Color(0xFFef4444);
-    if (score <= 5) return const Color(0xFFf59e0b);
-    if (score <= 7) return const Color(0xFF3b82f6);
-    return const Color(0xFF10b981);
+    if (score <= 3) return MinimalColors.error;
+    if (score <= 5) return MinimalColors.warning;
+    if (score <= 7) return MinimalColors.info;
+    return MinimalColors.success;
   }
 
   String _getMoodLabel(int score) {
