@@ -247,30 +247,40 @@ class MilestoneTimelineWidget extends StatelessWidget {
   Widget _buildMilestoneMarker(BuildContext context, Milestone milestone, int index) {
     final isCompleted = milestone.isCompleted;
     final position = (milestone.targetValue / targetValue).clamp(0.0, 1.0);
-    
+
+    // Use 48x48 touch target for accessibility (Material Design minimum)
+    // Visual element is 32x32, padding provides the rest
     return Positioned(
-      left: position * (MediaQuery.of(context).size.width - 32) - 12,
-      top: height / 2 - 12,
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: isCompleted
-              ? LinearGradient(colors: MinimalColors.positiveGradient(context))
-              : LinearGradient(colors: [
-                  MinimalColors.textMuted(context).withValues(alpha: 0.3),
-                  MinimalColors.textMuted(context).withValues(alpha: 0.5),
-                ]),
-          border: Border.all(
-            color: MinimalColors.backgroundPrimary(context),
-            width: 2,
+      left: position * (MediaQuery.of(context).size.width - 32) - 24,
+      top: height / 2 - 24,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: 48,
+          height: 48,
+          alignment: Alignment.center,
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: isCompleted
+                  ? LinearGradient(colors: MinimalColors.positiveGradient(context))
+                  : LinearGradient(colors: [
+                      MinimalColors.textMuted(context).withValues(alpha: 0.3),
+                      MinimalColors.textMuted(context).withValues(alpha: 0.5),
+                    ]),
+              border: Border.all(
+                color: MinimalColors.backgroundPrimary(context),
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              isCompleted ? Icons.check : Icons.flag_outlined,
+              size: 16,
+              color: isCompleted ? Colors.white : MinimalColors.textSecondary(context),
+            ),
           ),
-        ),
-        child: Icon(
-          isCompleted ? Icons.check : Icons.flag_outlined,
-          size: 12,
-          color: isCompleted ? Colors.white : MinimalColors.textSecondary(context),
         ),
       ),
     );
