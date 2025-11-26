@@ -129,12 +129,18 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
   // ============================================================================
   
   Future<List<SimpleWellbeingTrend>> getSimpleWellbeingTrends(
-    int userId, 
+    int userId,
     SimpleAnalyticsTimeframe timeframe
   ) async {
     final db = await database;
-    
+
     try {
+      // Validate input parameters
+      if (userId <= 0) {
+        print('Warning: Invalid userId provided to getSimpleWellbeingTrends');
+        return [];
+      }
+
       // Get daily entries within timeframe
       final results = await db.query(
         'daily_entries',
@@ -146,9 +152,20 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
         ],
         orderBy: 'entry_date ASC',
       );
-      
-      final entries = results.map((map) => DailyEntryModel.fromDatabase(map)).toList();
-      
+
+      if (results.isEmpty) {
+        return [];
+      }
+
+      final entries = results.map((map) {
+        try {
+          return DailyEntryModel.fromDatabase(map);
+        } catch (e) {
+          print('Error parsing daily entry: $e');
+          return null;
+        }
+      }).whereType<DailyEntryModel>().toList();
+
       if (entries.isEmpty) {
         return [];
       }
@@ -193,7 +210,7 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
     
     for (final entry in entries) {
       final value = valueExtractor(entry);
-      if (value != null && value > 0) {
+      if (value != null && value >= 0) {
         dataPoints.add(SimpleDataPoint(date: entry.entryDate, value: value));
         values.add(value);
       }
@@ -242,18 +259,22 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
   
   double _calculateSimpleImprovement(List<double> values) {
     if (values.length < 2) return 0.0;
-    
+
     final firstQuarter = values.take(values.length ~/ 4).toList();
     final lastQuarter = values.skip((values.length * 3) ~/ 4).toList();
-    
+
     if (firstQuarter.isEmpty || lastQuarter.isEmpty) return 0.0;
-    
+
     final firstAvg = firstQuarter.reduce((a, b) => a + b) / firstQuarter.length;
     final lastAvg = lastQuarter.reduce((a, b) => a + b) / lastQuarter.length;
-    
-    if (firstAvg == 0) return 0.0;
-    
-    return ((lastAvg - firstAvg) / firstAvg) * 100;
+
+    // Avoid division by zero or very small numbers
+    if (firstAvg.abs() < 0.01) return 0.0;
+
+    final improvement = ((lastAvg - firstAvg) / firstAvg) * 100;
+
+    // Clamp to reasonable values to avoid extreme percentages
+    return improvement.clamp(-200.0, 200.0);
   }
   
   // ============================================================================
@@ -262,16 +283,49 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
   
   Future<SimpleGoalAnalytics> getSimpleGoalAnalytics(int userId, SimpleAnalyticsTimeframe timeframe) async {
     final db = await database;
-    
+
     try {
-      // Get all goals for user
+      // Validate input parameters
+      if (userId <= 0) {
+        print('Warning: Invalid userId provided to getSimpleGoalAnalytics');
+        return SimpleGoalAnalytics(
+          totalGoals: 0,
+          completedGoals: 0,
+          activeGoals: 0,
+          completionRate: 0.0,
+          goalsByCategory: {},
+        );
+      }
+
+      // Get goals for user within timeframe
       final results = await db.query(
         'user_goals',
-        where: 'user_id = ?',
-        whereArgs: [userId],
+        where: 'user_id = ? AND created_at >= ? AND created_at <= ?',
+        whereArgs: [
+          userId,
+          timeframe.startDate.millisecondsSinceEpoch ~/ 1000,
+          timeframe.endDate.millisecondsSinceEpoch ~/ 1000,
+        ],
       );
-      
-      final goals = results.map((map) => GoalModel.fromDatabase(map)).toList();
+
+      if (results.isEmpty) {
+        return SimpleGoalAnalytics(
+          totalGoals: 0,
+          completedGoals: 0,
+          activeGoals: 0,
+          completionRate: 0.0,
+          goalsByCategory: {},
+        );
+      }
+
+      final goals = results.map((map) {
+        try {
+          return GoalModel.fromDatabase(map);
+        } catch (e) {
+          print('Error parsing goal: $e');
+          return null;
+        }
+      }).whereType<GoalModel>().toList();
       
       final totalGoals = goals.length;
       final completedGoals = goals.where((g) => g.status == GoalStatus.completed).length;
@@ -310,8 +364,19 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
   
   Future<SimpleQuickMomentsAnalytics> getSimpleQuickMomentsAnalytics(int userId, SimpleAnalyticsTimeframe timeframe) async {
     final db = await database;
-    
+
     try {
+      // Validate input parameters
+      if (userId <= 0) {
+        print('Warning: Invalid userId provided to getSimpleQuickMomentsAnalytics');
+        return SimpleQuickMomentsAnalytics(
+          totalMoments: 0,
+          momentsByType: {},
+          positivityRatio: 0.0,
+          momentsByTimeOfDay: {},
+        );
+      }
+
       // Get interactive moments within timeframe
       final results = await db.query(
         'interactive_moments',
@@ -323,8 +388,24 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
         ],
         orderBy: 'created_at ASC',
       );
-      
-      final moments = results.map((map) => InteractiveMomentModel.fromDatabase(map)).toList();
+
+      if (results.isEmpty) {
+        return SimpleQuickMomentsAnalytics(
+          totalMoments: 0,
+          momentsByType: {},
+          positivityRatio: 0.0,
+          momentsByTimeOfDay: {},
+        );
+      }
+
+      final moments = results.map((map) {
+        try {
+          return InteractiveMomentModel.fromDatabase(map);
+        } catch (e) {
+          print('Error parsing moment: $e');
+          return null;
+        }
+      }).whereType<InteractiveMomentModel>().toList();
       
       final totalMoments = moments.length;
       
