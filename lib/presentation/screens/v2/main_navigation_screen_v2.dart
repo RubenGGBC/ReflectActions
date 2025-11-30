@@ -18,7 +18,7 @@ import 'daily_review_screen_v2.dart';
 import 'profile_screen_v2.dart';
 import 'goals_screen_enhanced.dart';
 import '../v3/daily_roadmap_screen_v3.dart';
-import 'analytics_v3_screen.dart';// ✅ NUEVA PANTALLA DE ROADMAP DIARIO
+import '../v5/analytics_screen_v5.dart'; // ✅ NUEVA PANTALLA DE ANALYTICS V5
 
 // Componentes modernos
 
@@ -176,7 +176,7 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
 
   void _initializeScreens() {
     _screens = [
-      const _SafeScreenWrapper(child: AnalyticsV3Screen()),
+      const _SafeScreenWrapper(child: AnalyticsScreenV5()),
       const _SafeScreenWrapper(child: DailyRoadmapScreenV3()),
       const _SafeScreenWrapper(child: QuickMomentsScreen()),
       const _SafeScreenWrapper(child: HomeScreenV2()),
@@ -527,7 +527,9 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
 
   Widget _buildNavigationItem(NavigationItem item, int index, bool isSelected, ThemeProvider themeProvider) {
     final isTablet = MediaQuery.of(context).size.width > 600;
-    
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 380;
+
     return Semantics(
       label: item.semanticLabel,
       selected: isSelected,
@@ -543,10 +545,10 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOutCubic,
             padding: EdgeInsets.symmetric(
-              vertical: isTablet ? 8 : 6,
-              horizontal: 2,
+              vertical: isTablet ? 8 : (isSmallScreen ? 4 : 6),
+              horizontal: isSmallScreen ? 1 : 2,
             ),
-            margin: const EdgeInsets.symmetric(horizontal: 1),
+            margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 0.5 : 1),
             decoration: BoxDecoration(
               gradient: isSelected
                   ? LinearGradient(
@@ -580,14 +582,14 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
                       scale: 0.9 + (value * 0.2),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
-                        padding: EdgeInsets.all(isTablet ? 8 : 6),
+                        padding: EdgeInsets.all(isTablet ? 8 : (isSmallScreen ? 4 : 6)),
                         decoration: BoxDecoration(
                           color: Color.lerp(
                             Colors.transparent,
                             item.color.withOpacity(0.25),
                             value,
                           ),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
@@ -606,7 +608,7 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
                         ),
                         child: Icon(
                           isSelected ? item.activeIcon : item.icon,
-                          size: isTablet ? 20 : 18,
+                          size: isTablet ? 20 : (isSmallScreen ? 16 : 18),
                           color: Color.lerp(
                             themeProvider.textSecondary.withOpacity(0.8),
                             item.color,
@@ -617,14 +619,15 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
                     );
                   },
                 ),
-                SizedBox(height: isTablet ? 4 : 2),
+                SizedBox(height: isTablet ? 4 : (isSmallScreen ? 1 : 2)),
                 AnimatedDefaultTextStyle(
                   duration: const Duration(milliseconds: 200),
                   style: TextStyle(
-                    fontSize: isTablet ? 10 : 9,
+                    fontSize: isTablet ? 10 : (isSmallScreen ? 8 : 9),
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected ? item.color : themeProvider.textSecondary,
-                    letterSpacing: isSelected ? 0.2 : 0.1,
+                    letterSpacing: isSelected ? 0.1 : 0.05,
+                    height: 1.0,
                   ),
                   child: AnimatedScale(
                     duration: const Duration(milliseconds: 200),
@@ -632,7 +635,7 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
                     child: Text(
                       item.label,
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      overflow: TextOverflow.clip,
                       textAlign: TextAlign.center,
                     ),
                   ),

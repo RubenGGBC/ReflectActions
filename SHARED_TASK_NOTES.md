@@ -4,32 +4,19 @@
 
 ### Medium priority - UI/UX issues
 
-1. **Missing loading/error states** in `home_screen_v2.dart:129-179`
-   - Data loading has timeout but no user feedback on failure
-   - Add loading spinner and error message display
+1. **Low contrast** in some backgrounds using very low alpha values
+   - Review containers with `alpha: 0.1` or lower in v2/v3 screens
+   - Check text readability in both light and dark modes
 
-2. **Text overflow potential** in `home_screen_v2.dart:1538`
-   - Moment cards with maxLines:2 may overflow on small screens
-   - Consider adding `softWrap: true` or adjusting container width
+2. **Search remaining v2/v3 screens for hardcoded colors**
+   - Run: `grep -r "Color(0xFF" lib/presentation/screens/v2/` and v3
+   - Files cleaned: `daily_detail_screen_v2.dart`, `home_screen_v2.dart`, `calendar_screen_v2.dart`
 
-3. **Unused animation controllers** in `daily_roadmap_screen_v3.dart:30-52`
-   - 10 controllers created but not all are used
-   - Clean up unused controllers to avoid memory leaks
+### Low priority - Code quality
 
-4. **Low contrast** in some backgrounds using very low alpha values
-   - Review containers with `alpha: 0.1` or lower
-
-### Low priority - Search for remaining hardcoded colors
-
-Run this search across all v2 screens:
-```bash
-grep -r "const Color(0xFF" lib/presentation/screens/v2/
-```
-
-Files already cleaned:
-- `daily_detail_screen_v2.dart`
-- `home_screen_v2.dart`
-- `calendar_screen_v2.dart`
+1. **Review other screens for similar issues**:
+   - Check v3 screens for missing loading/error states
+   - Audit other animation controllers for unused allocations
 
 ## Pattern for color fixes
 

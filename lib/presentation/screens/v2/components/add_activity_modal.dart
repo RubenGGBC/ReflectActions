@@ -234,6 +234,10 @@ class _AddActivityModalState extends State<AddActivityModal>
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
+          // Quick action buttons
+          _buildQuickActionButtons(context),
+          const SizedBox(height: 24),
+
           // Essential fields
           _buildTitleField(context),
           const SizedBox(height: 20),
@@ -261,6 +265,94 @@ class _AddActivityModalState extends State<AddActivityModal>
     );
   }
 
+  Widget _buildQuickActionButtons(BuildContext context) {
+    final quickActions = [
+      {'icon': Icons.fitness_center, 'title': 'Ejercicio', 'category': 'Ejercicio', 'duration': 60},
+      {'icon': Icons.work_outline, 'title': 'Trabajo', 'category': 'Trabajo', 'duration': 120},
+      {'icon': Icons.book_outlined, 'title': 'Estudio', 'category': 'Estudio', 'duration': 90},
+      {'icon': Icons.restaurant, 'title': 'Comida', 'category': 'Personal', 'duration': 45},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.flash_on_rounded,
+              color: MinimalColors.primaryGradient(context)[0],
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Acciones rápidas',
+              style: TextStyle(
+                color: MinimalColors.textPrimary(context),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: quickActions.map((action) {
+            return Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  setState(() {
+                    _titleController.text = action['title'] as String;
+                    _selectedCategory = action['category'] as String;
+                    _estimatedDuration = action['duration'] as int;
+                  });
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.1),
+                        MinimalColors.primaryGradient(context)[1].withValues(alpha: 0.05),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        action['icon'] as IconData,
+                        color: MinimalColors.primaryGradient(context)[0],
+                        size: 20,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        action['title'] as String,
+                        style: TextStyle(
+                          color: MinimalColors.textPrimary(context),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
   Widget _buildTitleField(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,32 +373,63 @@ class _AddActivityModalState extends State<AddActivityModal>
                 fontWeight: FontWeight.w600,
               ),
             ),
+            const SizedBox(width: 4),
+            Text(
+              '*',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
         TextFormField(
           controller: _titleController,
+          autofocus: false,
+          textInputAction: TextInputAction.next,
           style: TextStyle(
             color: MinimalColors.textPrimary(context),
             fontSize: 16,
+            fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
             hintText: 'Ej: Reunión de equipo, Ejercicio...',
             hintStyle: TextStyle(
-              color: MinimalColors.textSecondary(context).withValues(alpha: 0.7),
+              color: MinimalColors.textSecondary(context).withValues(alpha: 0.6),
               fontSize: 16,
             ),
             filled: true,
             fillColor: MinimalColors.backgroundSecondary(context),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            prefixIcon: Icon(
+              Icons.edit_note_rounded,
+              color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.7),
+              size: 24,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.2),
+                width: 1,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
                 color: MinimalColors.primaryGradient(context)[0],
+                width: 2,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(
+                color: Colors.red,
                 width: 2,
               ),
             ),
@@ -376,6 +499,9 @@ class _AddActivityModalState extends State<AddActivityModal>
   }
 
   Widget _buildTimeSection(BuildContext context) {
+    final now = DateTime.now();
+    final isCurrentTime = _selectedHour == now.hour && _selectedMinute == now.minute;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -395,6 +521,52 @@ class _AddActivityModalState extends State<AddActivityModal>
                 fontWeight: FontWeight.w600,
               ),
             ),
+            const Spacer(),
+            // Quick "Now" button
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                setState(() {
+                  _selectedHour = now.hour;
+                  _selectedMinute = (now.minute ~/ 15) * 15; // Round to nearest 15 min
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isCurrentTime
+                      ? MinimalColors.primaryGradient(context)[0]
+                      : MinimalColors.backgroundSecondary(context),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      size: 14,
+                      color: isCurrentTime
+                          ? Colors.white
+                          : MinimalColors.textSecondary(context),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Ahora',
+                      style: TextStyle(
+                        color: isCurrentTime
+                            ? Colors.white
+                            : MinimalColors.textSecondary(context),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -405,35 +577,42 @@ class _AddActivityModalState extends State<AddActivityModal>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.1),
-                  MinimalColors.primaryGradient(context)[1].withValues(alpha: 0.05),
+                  MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.15),
+                  MinimalColors.primaryGradient(context)[1].withValues(alpha: 0.08),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-                width: 1,
+                color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.4),
+                width: 2,
               ),
             ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: MinimalColors.primaryGradient(context),
                     ),
                     borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: const Icon(
                     Icons.access_time_rounded,
                     color: Colors.white,
-                    size: 20,
+                    size: 24,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 20),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -442,26 +621,34 @@ class _AddActivityModalState extends State<AddActivityModal>
                         'Hora seleccionada',
                         style: TextStyle(
                           color: MinimalColors.textSecondary(context),
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         '${_selectedHour.toString().padLeft(2, '0')}:${_selectedMinute.toString().padLeft(2, '0')}',
                         style: TextStyle(
                           color: MinimalColors.textPrimary(context),
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.edit_rounded,
-                  color: MinimalColors.primaryGradient(context)[0],
-                  size: 20,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.edit_calendar_rounded,
+                    color: MinimalColors.primaryGradient(context)[0],
+                    size: 20,
+                  ),
                 ),
               ],
             ),
@@ -507,12 +694,16 @@ class _AddActivityModalState extends State<AddActivityModal>
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Container(
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             color: MinimalColors.backgroundSecondary(context),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.2),
+              width: 1,
+            ),
           ),
           child: Row(
             children: ActivityPriority.values.map((priority) {
@@ -520,33 +711,43 @@ class _AddActivityModalState extends State<AddActivityModal>
               return Expanded(
                 child: GestureDetector(
                   onTap: () {
-                    HapticFeedback.lightImpact();
+                    HapticFeedback.mediumImpact();
                     setState(() => _selectedPriority = priority);
                   },
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
                       gradient: isSelected
                           ? LinearGradient(colors: MinimalColors.primaryGradient(context))
                           : null,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: isSelected ? [
+                        BoxShadow(
+                          color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ] : null,
                     ),
                     child: Column(
                       children: [
                         Text(
                           priority.emoji,
-                          style: const TextStyle(fontSize: 16),
+                          style: TextStyle(
+                            fontSize: isSelected ? 20 : 18,
+                          ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Text(
                           priority.displayName,
                           style: TextStyle(
                             color: isSelected
                                 ? Colors.white
                                 : MinimalColors.textSecondary(context),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 11,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                           ),
                         ),
                       ],
@@ -583,14 +784,22 @@ class _AddActivityModalState extends State<AddActivityModal>
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         GestureDetector(
-          onTap: () => _showDurationPicker(context),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            _showDurationPicker(context);
+          },
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
             decoration: BoxDecoration(
-              color: MinimalColors.backgroundSecondary(context),
-              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [
+                  MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.15),
+                  MinimalColors.primaryGradient(context)[1].withValues(alpha: 0.08),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
                 width: 1,
@@ -599,19 +808,26 @@ class _AddActivityModalState extends State<AddActivityModal>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Icon(
+                  Icons.timer_outlined,
+                  color: MinimalColors.primaryGradient(context)[0],
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
                 Text(
                   '${_estimatedDuration}m',
                   style: TextStyle(
                     color: MinimalColors.textPrimary(context),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(width: 4),
                 Icon(
                   Icons.keyboard_arrow_down_rounded,
-                  color: MinimalColors.textSecondary(context),
-                  size: 18,
+                  color: MinimalColors.primaryGradient(context)[0],
+                  size: 20,
                 ),
               ],
             ),
@@ -672,6 +888,15 @@ class _AddActivityModalState extends State<AddActivityModal>
 
 
   Widget _buildCategorySection(BuildContext context) {
+    final categoryIcons = {
+      'Trabajo': Icons.work_outline,
+      'Personal': Icons.person_outline,
+      'Ejercicio': Icons.fitness_center,
+      'Salud': Icons.favorite_outline,
+      'Estudio': Icons.school_outlined,
+      'Social': Icons.people_outline,
+    };
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -694,56 +919,68 @@ class _AddActivityModalState extends State<AddActivityModal>
           ],
         ),
         const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 2.8,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-          ),
-          itemCount: _categories.length,
-          itemBuilder: (context, index) {
-            final category = _categories[index];
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _categories.map((category) {
             final isSelected = category == _selectedCategory;
             return GestureDetector(
               onTap: () {
-                HapticFeedback.lightImpact();
+                HapticFeedback.mediumImpact();
                 setState(() {
                   _selectedCategory = isSelected ? null : category;
                 });
               },
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: isSelected
                       ? LinearGradient(colors: MinimalColors.primaryGradient(context))
                       : null,
                   color: !isSelected ? MinimalColors.backgroundSecondary(context) : null,
-                  borderRadius: BorderRadius.circular(12),
-                  border: isSelected
-                      ? null
-                      : Border.all(
-                    color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isSelected
+                        ? Colors.transparent
+                        : MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.2),
                     width: 1,
                   ),
+                  boxShadow: isSelected ? [
+                    BoxShadow(
+                      color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ] : null,
                 ),
-                child: Center(
-                  child: Text(
-                    category,
-                    style: TextStyle(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      categoryIcons[category],
+                      size: 18,
                       color: isSelected
                           ? Colors.white
-                          : MinimalColors.textPrimary(context),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                          : MinimalColors.primaryGradient(context)[0],
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Text(
+                      category,
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : MinimalColors.textPrimary(context),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );
-          },
+          }).toList(),
         ),
       ],
     );
@@ -773,58 +1010,74 @@ class _AddActivityModalState extends State<AddActivityModal>
           ],
         ),
         const SizedBox(height: 12),
-        Row(
-          children: ActivityMood.values.map((mood) {
-            final isSelected = mood == _plannedMood;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  setState(() {
-                    _plannedMood = isSelected ? null : mood;
-                  });
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: isSelected
-                        ? LinearGradient(colors: MinimalColors.primaryGradient(context))
-                        : null,
-                    color: !isSelected ? MinimalColors.backgroundSecondary(context) : null,
-                    borderRadius: BorderRadius.circular(12),
-                    border: isSelected
-                        ? null
-                        : Border.all(
-                      color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.2),
-                      width: 1,
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: MinimalColors.backgroundSecondary(context),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: ActivityMood.values.map((mood) {
+              final isSelected = mood == _plannedMood;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    setState(() {
+                      _plannedMood = isSelected ? null : mood;
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutCubic,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: isSelected
+                          ? LinearGradient(colors: MinimalColors.primaryGradient(context))
+                          : null,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: isSelected ? [
+                        BoxShadow(
+                          color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ] : null,
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          mood.emoji,
+                          style: TextStyle(
+                            fontSize: isSelected ? 24 : 20,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          mood.displayName,
+                          style: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : MinimalColors.textSecondary(context),
+                            fontSize: 11,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
-                  child: Column(
-                    children: [
-                      Text(
-                        mood.emoji,
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        mood.displayName,
-                        style: TextStyle(
-                          color: isSelected
-                              ? Colors.white
-                              : MinimalColors.textSecondary(context),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
                 ),
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+          ),
         ),
       ],
     );
@@ -832,67 +1085,58 @@ class _AddActivityModalState extends State<AddActivityModal>
 
   Widget _buildActionButtons(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       decoration: BoxDecoration(
         color: MinimalColors.backgroundCard(context),
+        border: Border(
+          top: BorderSide(
+            color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
             color: MinimalColors.shadow(context),
-            blurRadius: 16,
+            blurRadius: 20,
             offset: const Offset(0, -4),
+            spreadRadius: 0,
           ),
         ],
       ),
       child: SafeArea(
         top: false,
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _isLoading ? null : _closeModal,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: MinimalColors.textSecondary(context),
-                  side: BorderSide(
-                    color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: Text(
-                  'Cancelar',
-                  style: TextStyle(
-                    color: MinimalColors.textSecondary(context),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 2,
+            // Main action button
+            SizedBox(
+              width: double.infinity,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
                   gradient: _isLoading
                       ? LinearGradient(
-                    colors: MinimalColors.primaryGradient(context)
-                        .map((c) => c.withValues(alpha: 0.7))
-                        .toList(),
-                  )
+                          colors: MinimalColors.primaryGradient(context)
+                              .map((c) => c.withValues(alpha: 0.7))
+                              .toList(),
+                        )
                       : LinearGradient(colors: MinimalColors.primaryGradient(context)),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: !_isLoading
                       ? [
-                    BoxShadow(
-                      color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ]
+                          BoxShadow(
+                            color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                            spreadRadius: 0,
+                          ),
+                          BoxShadow(
+                            color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.2),
+                            blurRadius: 24,
+                            offset: const Offset(0, 10),
+                            spreadRadius: 2,
+                          ),
+                        ]
                       : null,
                 ),
                 child: ElevatedButton(
@@ -900,7 +1144,7 @@ class _AddActivityModalState extends State<AddActivityModal>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 18),
                     elevation: 0,
                     shadowColor: Colors.transparent,
                     shape: RoundedRectangleBorder(
@@ -911,32 +1155,56 @@ class _AddActivityModalState extends State<AddActivityModal>
                     duration: const Duration(milliseconds: 200),
                     child: _isLoading
                         ? const SizedBox(
-                      key: ValueKey('loading'),
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        strokeWidth: 2,
-                      ),
-                    )
+                            key: ValueKey('loading'),
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              strokeWidth: 3,
+                            ),
+                          )
                         : Row(
-                      key: ValueKey('text'),
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.add_rounded,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Crear Actividad',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            key: ValueKey('text'),
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.check_circle_rounded,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Crear Actividad',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Cancel button
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: _isLoading ? null : _closeModal,
+                style: TextButton.styleFrom(
+                  foregroundColor: MinimalColors.textSecondary(context),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Cancelar',
+                  style: TextStyle(
+                    color: MinimalColors.textSecondary(context),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 // Imports corregidos
 import 'optimized_reflect_app.dart';
@@ -33,7 +34,10 @@ void main() async {
   try {
     // Initialize timezone data
     tz.initializeTimeZones();
-    
+
+    // Initialize locale data for date formatting
+    await initializeDateFormatting('es', null);
+
     // Inicializar dependencias
     await clean_di.initCleanDependencies();
     

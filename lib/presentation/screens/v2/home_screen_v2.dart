@@ -26,6 +26,7 @@ import '../../widgets/home_enhancement_widgets.dart';
 import '../../widgets/hopecore_quotes_carousel.dart';
 import '../../widgets/photo_zoom_widget.dart';
 import '../../widgets/expandable_moment_detail_widget.dart';
+import '../../widgets/dev_seeder_fab.dart'; // DEV: Seeder de Analytics V4
 
 // Componentes
 import 'components/minimal_colors.dart';
@@ -56,6 +57,11 @@ class _HomeScreenV2State extends State<HomeScreenV2>
 
   // State for expandable moments widget
   bool _isMomentsExpanded = false;
+
+  // State for loading and error handling
+  bool _isLoadingData = true;
+  bool _hasLoadError = false;
+  String? _loadErrorMessage;
 
   @override
   void initState() {
@@ -129,6 +135,12 @@ class _HomeScreenV2State extends State<HomeScreenV2>
   Future<void> _loadInitialData() async {
     if (!mounted) return;
 
+    setState(() {
+      _isLoadingData = true;
+      _hasLoadError = false;
+      _loadErrorMessage = null;
+    });
+
     try {
       final authProvider = Provider.of<OptimizedAuthProvider>(context, listen: false);
       final user = authProvider.currentUser;
@@ -136,22 +148,22 @@ class _HomeScreenV2State extends State<HomeScreenV2>
       if (user != null) {
         // ✅ FIX: Load data with proper error handling and retry logic
         final futures = <Future>[];
-        
+
         // Load critical data first
         futures.add(Provider.of<OptimizedDailyEntriesProvider>(context, listen: false).loadEntries(user.id, limitDays: 30));
         futures.add(Provider.of<OptimizedMomentsProvider>(context, listen: false).loadTodayMoments(user.id));
-        
+
         // Wait for critical data
         await Future.wait(futures);
         if (!mounted) return;
-        
+
         // Load remaining data
         final secondaryFutures = <Future>[];
         secondaryFutures.add(Provider.of<OptimizedAnalyticsProvider>(context, listen: false).loadCompleteAnalytics(user.id, days: 30));
         secondaryFutures.add(Provider.of<GoalsProvider>(context, listen: false).loadUserGoals(user.id));
         secondaryFutures.add(Provider.of<StreakProvider>(context, listen: false).loadStreakData(user.id));
         secondaryFutures.add(Provider.of<HopecoreQuotesProvider>(context, listen: false).initialize());
-        
+
         // Load secondary data with timeout
         await Future.wait(secondaryFutures).timeout(
           const Duration(seconds: 10),
@@ -161,9 +173,23 @@ class _HomeScreenV2State extends State<HomeScreenV2>
           },
         );
       }
+
+      if (mounted) {
+        setState(() {
+          _isLoadingData = false;
+        });
+      }
     } catch (e) {
       // Log error but don't break the UI
       print('⚠️ Error loading initial data: $e');
+
+      if (mounted) {
+        setState(() {
+          _hasLoadError = true;
+          _loadErrorMessage = 'Failed to load some data. Tap to retry.';
+        });
+      }
+
       // Try to reload critical data only
       if (mounted) {
         final authProvider = Provider.of<OptimizedAuthProvider>(context, listen: false);
@@ -175,6 +201,12 @@ class _HomeScreenV2State extends State<HomeScreenV2>
             // Fail silently
           }
         }
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoadingData = false;
+        });
       }
     }
   }
@@ -198,6 +230,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
           data: themeProvider.currentThemeData,
           child: Scaffold(
             backgroundColor: MinimalColors.backgroundPrimary(context),
+            floatingActionButton: const DevSeederFAB(), // DEV: Botón para seed analytics (userId:1)
             body: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -223,9 +256,9 @@ class _HomeScreenV2State extends State<HomeScreenV2>
 
             final user = authProvider.currentUser;
             if (user == null) {
-              return const Center(
+              return Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3b82f6)),
+                  valueColor: AlwaysStoppedAnimation<Color>(MinimalColors.info),
                 ),
               );
             }
@@ -264,6 +297,48 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center, // ✅ CENTRAR TODO
                       children: [
+                    // Error banner for load failures
+                    if (_hasLoadError)
+                      GestureDetector(
+                        onTap: _loadInitialData,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: MinimalColors.error.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: MinimalColors.error.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                color: MinimalColors.error,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _loadErrorMessage ?? 'Failed to load data. Tap to retry.',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: MinimalColors.error,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.refresh,
+                                color: MinimalColors.error,
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     // 1. ✅ HEADER CON FOTO GRANDE Y BIENVENIDA - CENTRADO
                     _buildCenteredHeader(user),
                     const SizedBox(height: 16),

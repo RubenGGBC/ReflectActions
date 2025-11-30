@@ -9,6 +9,7 @@ import 'package:logger/logger.dart';
 // Services optimizados
 import 'data/services/optimized_database_service.dart';
 import 'data/services/image_picker_service.dart';
+import 'data/services/enhanced_goals_service.dart';
 // AI services removed
 import 'services/notification_service.dart';
 import 'services/voice_recording_service.dart';
@@ -62,17 +63,26 @@ Future<void> initCleanDependencies() async {
     sl.registerLazySingleton<OptimizedDatabaseService>(
           () => OptimizedDatabaseService(),
     );
-    
+
     sl.registerLazySingleton<ImagePickerService>(
           () => ImagePickerService(),
     );
-    
+
+    // ✅ NUEVO: EnhancedGoalsService
+    sl.registerLazySingleton<EnhancedGoalsService>(
+          () {
+            final service = EnhancedGoalsService();
+            service.initialize(sl<OptimizedDatabaseService>());
+            return service;
+          },
+    );
+
     // Predictive analysis service removed
-    
+
     sl.registerLazySingleton<NotificationService>(
           () => NotificationService(),
     );
-    
+
     sl.registerLazySingleton<VoiceRecordingService>(
           () => VoiceRecordingService(),
     );
@@ -133,7 +143,10 @@ Future<void> initCleanDependencies() async {
 
     // ✅ NUEVO: EnhancedGoalsProvider
     sl.registerFactory<EnhancedGoalsProvider>(
-          () => EnhancedGoalsProvider(sl<OptimizedDatabaseService>()),
+          () => EnhancedGoalsProvider(
+            sl<OptimizedDatabaseService>(),
+            sl<EnhancedGoalsService>(),
+          ),
     );
 
     // ✅ NUEVO: NotificationsProvider
@@ -227,6 +240,7 @@ bool areCleanServicesRegistered() {
     sl<Logger>();
     sl<OptimizedDatabaseService>();
     sl<ImagePickerService>();
+    sl<EnhancedGoalsService>(); // ✅ NUEVO
     // AI service removed
     sl<NotificationService>();
     sl<VoiceRecordingService>();
@@ -259,12 +273,13 @@ bool areCleanServicesRegistered() {
 /// Información del contenedor limpio
 Map<String, dynamic> getCleanContainerInfo() {
   return {
-    'total_services': 19, // ✅ ACTUALIZADO after cleanup
+    'total_services': 20, // ✅ ACTUALIZADO after cleanup
     'services_ready': areCleanServicesRegistered(),
     'core_services': [
       'Logger',
       'OptimizedDatabaseService',
       'ImagePickerService', // ✅ NUEVO
+      'EnhancedGoalsService', // ✅ NUEVO
       // AI services removed
       'NotificationService', // ✅ NUEVO
     ],
@@ -349,6 +364,7 @@ extension CleanGetItExtension on GetIt {
 class CleanDIConstants {
   static const String logger = 'Logger';
   static const String databaseService = 'OptimizedDatabaseService';
+  static const String enhancedGoalsService = 'EnhancedGoalsService'; // ✅ NUEVO
   // AI services removed
   static const String notificationService = 'NotificationService'; // ✅ NUEVO
   static const String authProvider = 'OptimizedAuthProvider';

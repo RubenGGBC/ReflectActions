@@ -145,6 +145,8 @@ class DailyEntryModel {
     if (moodScore >= 7) sentiment = "positive";
     else if (moodScore <= 4) sentiment = "negative";
 
+    final effectiveDate = entryDate ?? now;
+
     return DailyEntryModel(
       userId: userId,
       freeReflection: freeReflection,
@@ -160,7 +162,7 @@ class DailyEntryModel {
       wordCount: wordCount,
       createdAt: now,
       updatedAt: now,
-      entryDate: DateTime(now.year, now.month, now.day),
+      entryDate: DateTime(effectiveDate.year, effectiveDate.month, effectiveDate.day),
       // ✅ ASIGNAR VALORES DE ANALYTICS
       energyLevel: energyLevel,
       stressLevel: stressLevel,
@@ -201,6 +203,49 @@ class DailyEntryModel {
       }
     }
 
+    // Safe JSON parsing for arrays
+    List<String> parseJsonArray(String? jsonStr) {
+      if (jsonStr == null || jsonStr.isEmpty) return [];
+      try {
+        final decoded = json.decode(jsonStr);
+        if (decoded is List) {
+          return decoded.map((e) => e.toString()).toList();
+        }
+        return [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    // Parse timestamp - can be either INTEGER (unix timestamp) or TEXT (ISO string)
+    DateTime parseTimestamp(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is int) {
+        return DateTime.fromMillisecondsSinceEpoch(value * 1000);
+      }
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (e) {
+          return DateTime.now();
+        }
+      }
+      return DateTime.now();
+    }
+
+    // Parse date - always TEXT in format YYYY-MM-DD
+    DateTime parseDate(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (e) {
+          return DateTime.now();
+        }
+      }
+      return DateTime.now();
+    }
+
     return DailyEntryModel(
       id: map['id'] as int?,
       userId: (map['user_id'] as int?) ?? 0,
@@ -209,16 +254,16 @@ class DailyEntryModel {
       gratitudeItems: (map['gratitude_items'] as String?),
       positiveTags: parseTagsJson(map['positive_tags'] as String?),
       negativeTags: parseTagsJson(map['negative_tags'] as String?),
-      completedActivitiesToday: (json.decode(map['completed_activities_today'] as String) as List<dynamic>).map((e) => e as String).toList(),
-      goalsSummary: (json.decode(map['goals_summary'] as String) as List<dynamic>).map((e) => e as String).toList(),
+      completedActivitiesToday: parseJsonArray(map['completed_activities_today']),
+      goalsSummary: parseJsonArray(map['goals_summary']),
       worthIt: map['worth_it'] != null ? (map['worth_it'] as int) == 1 : null,
       overallSentiment: map['overall_sentiment'] as String?,
       moodScore: map['mood_score'] as int?,
       aiSummary: map['ai_summary'] as String?,
       wordCount: (map['word_count'] as int?) ?? 0,
-      createdAt: DateTime.parse(map['created_at'] as String),
-      updatedAt: DateTime.parse(map['updated_at'] as String),
-      entryDate: DateTime.parse(map['entry_date'] as String),
+      createdAt: parseTimestamp(map['created_at']),
+      updatedAt: parseTimestamp(map['updated_at'] ?? map['created_at']),
+      entryDate: parseDate(map['entry_date']),
       // ✅ LEER CAMPOS DE ANALYTICS
       energyLevel: map['energy_level'] as int?,
       stressLevel: map['stress_level'] as int?,

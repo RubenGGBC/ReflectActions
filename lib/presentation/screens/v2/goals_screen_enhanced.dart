@@ -685,16 +685,18 @@ class _GoalsScreenEnhancedState extends State<GoalsScreenEnhanced>
         goal: goal,
         onEntryCreated: (entry) async {
           try {
-            // DEBUG: Log los valores antes de actualizar
-            print('🎯 DEBUG updateGoalProgress llamado:');
+            // DEBUG: Log los valores ANTES de actualizar
+            print('🎯 ========== ANTES DE ACTUALIZAR ==========');
             print('  Goal ID: ${goal.id}');
             print('  Goal Title: ${goal.title}');
             print('  Current Value: ${goal.currentValue}');
             print('  Target Value: ${goal.targetValue}');
             print('  Entry Primary Value: ${entry.primaryValue}');
             print('  Current Progress: ${goal.progress} (${goal.progressPercentage}%)');
-            print('  ¿Debería completarse?: ${entry.primaryValue >= goal.targetValue}');
-            
+            print('  Days Since Created: ${goal.daysSinceCreated}');
+            print('  Estimated Days Remaining: ${goal.estimatedDaysRemaining}');
+            print('  Duration Days: ${goal.durationDays}');
+
             await goalsProvider.addProgressEntry(entry);
             await goalsProvider.updateGoalProgress(
               goal.id!,
@@ -702,14 +704,19 @@ class _GoalsScreenEnhancedState extends State<GoalsScreenEnhanced>
               notes: entry.notes,
               metrics: entry.metrics,
             );
-            
-            // Refrescar específicamente este objetivo para asegurar datos actualizados
-            final authProvider = context.read<OptimizedAuthProvider>();
-            final user = authProvider.currentUser;
-            if (user != null) {
-              await goalsProvider.refreshGoal(goal.id!, user.id);
-            }
-            
+
+            // DEBUG: Log los valores DESPUÉS de actualizar
+            final updatedGoal = goalsProvider.goals.firstWhere((g) => g.id == goal.id);
+            print('🎯 ========== DESPUÉS DE ACTUALIZAR ==========');
+            print('  Current Value: ${updatedGoal.currentValue}');
+            print('  Current Progress: ${updatedGoal.progress} (${updatedGoal.progressPercentage}%)');
+            print('  Status: ${updatedGoal.status}');
+            print('  Is Completed: ${updatedGoal.isCompleted}');
+            print('  Days Since Created: ${updatedGoal.daysSinceCreated}');
+            print('  Estimated Days Remaining: ${updatedGoal.estimatedDaysRemaining}');
+            print('  Last Updated: ${updatedGoal.lastUpdated}');
+            print('🎯 ============================================');
+
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Progreso actualizado exitosamente')),
             );

@@ -13,11 +13,12 @@ import '../../data/services/optimized_database_service.dart';
 
 /// Provider simplificado para gestión de objetivos
 class EnhancedGoalsProvider extends ChangeNotifier {
-  final EnhancedGoalsService _goalsService = EnhancedGoalsService();
+  final EnhancedGoalsService _goalsService;
   final OptimizedDatabaseService _databaseService;
   final Logger _logger = Logger();
 
-  EnhancedGoalsProvider(this._databaseService) {
+  EnhancedGoalsProvider(this._databaseService, [EnhancedGoalsService? goalsService])
+      : _goalsService = goalsService ?? EnhancedGoalsService() {
     _goalsService.initialize(_databaseService);
   }
 
@@ -137,16 +138,24 @@ class EnhancedGoalsProvider extends ChangeNotifier {
   /// Refresca un objetivo específico desde la base de datos
   Future<void> refreshGoal(int goalId, int userId) async {
     try {
+      _logger.i('🔄 Refrescando objetivo $goalId desde la base de datos...');
       final refreshedGoals = await _databaseService.getUserGoals(userId);
       final refreshedGoal = refreshedGoals.where((g) => g.id == goalId).firstOrNull;
-      
+
       if (refreshedGoal != null) {
         final index = _goals.indexWhere((goal) => goal.id == goalId);
         if (index != -1) {
+          final oldGoal = _goals[index];
           _goals[index] = refreshedGoal;
-          _logger.i('🔄 Objetivo refrescado: ${refreshedGoal.title} - Status: ${refreshedGoal.status}, Progress: ${refreshedGoal.progress}');
+          _logger.i('🔄 Objetivo refrescado: ${refreshedGoal.title}');
+          _logger.i('  📊 Progreso: ${oldGoal.progress} → ${refreshedGoal.progress}');
+          _logger.i('  📈 Valores: ${oldGoal.currentValue}/${oldGoal.targetValue} → ${refreshedGoal.currentValue}/${refreshedGoal.targetValue}');
+          _logger.i('  ⏱️ Días estimados: ${oldGoal.estimatedDaysRemaining} → ${refreshedGoal.estimatedDaysRemaining}');
+          _logger.i('  🏷️ Status: ${refreshedGoal.status}');
           notifyListeners();
         }
+      } else {
+        _logger.w('⚠️ No se encontró el objetivo $goalId en la BD');
       }
     } catch (e) {
       _logger.e('❌ Error refrescando objetivo: $e');
@@ -333,7 +342,7 @@ class EnhancedGoalsProvider extends ChangeNotifier {
       );
       
       _logger.i('✅ Progreso actualizado correctamente: $goalId');
-      
+
       // DEBUG: Verificar estado final
       final finalGoal = _goals.firstWhere((g) => g.id == goalId);
       _logger.i('🔍 DEBUG Estado final - ID: $goalId');
@@ -341,7 +350,9 @@ class EnhancedGoalsProvider extends ChangeNotifier {
       _logger.i('  📈 Values: ${finalGoal.currentValue}/${finalGoal.targetValue}');
       _logger.i('  🏷️ Status: ${finalGoal.status} (isCompleted: ${finalGoal.isCompleted})');
       _logger.i('  📅 CompletedAt: ${finalGoal.completedAt}');
-      
+      _logger.i('  ⏱️ Días estimados restantes: ${finalGoal.estimatedDaysRemaining}');
+      _logger.i('  📆 Días desde creación: ${finalGoal.daysSinceCreated}');
+
       notifyListeners();
     } catch (e) {
       _logger.e('❌ Error actualizando progreso: $e');

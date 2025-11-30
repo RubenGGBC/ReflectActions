@@ -69,7 +69,7 @@ class EnhancedGoalsService {
         await txn.execute('''
           CREATE TABLE IF NOT EXISTS progress_entries (
             id TEXT PRIMARY KEY,
-            goal_id TEXT NOT NULL,
+            goal_id INTEGER NOT NULL,
             timestamp TEXT NOT NULL,
             primary_value INTEGER NOT NULL,
             metrics TEXT DEFAULT '{}',
@@ -77,7 +77,7 @@ class EnhancedGoalsService {
             photo_urls TEXT DEFAULT '[]',
             tags TEXT DEFAULT '[]',
             created_at INTEGER NOT NULL,
-            FOREIGN KEY (goal_id) REFERENCES user_goals (id)
+            FOREIGN KEY (goal_id) REFERENCES user_goals (id) ON DELETE CASCADE
           )
         ''');
         
@@ -283,29 +283,29 @@ class EnhancedGoalsService {
   /// Elimina un objetivo y todas sus entradas de progreso asociadas
   Future<void> deleteGoal(int goalId) async {
     final db = await databaseService.database;
-    
+
     try {
       await db.transaction((txn) async {
-        // Eliminar entradas de progreso primero
+        // Eliminar entradas de progreso primero (goal_id es INTEGER)
         await txn.delete(
           'progress_entries',
           where: 'goal_id = ?',
-          whereArgs: [goalId.toString()],
+          whereArgs: [goalId],
         );
-        
-        
+
+
         // Eliminar el objetivo
         final rowsAffected = await txn.delete(
           'user_goals',
           where: 'id = ?',
           whereArgs: [goalId],
         );
-        
+
         if (rowsAffected == 0) {
           throw Exception('No goal found with ID $goalId');
         }
       });
-      
+
       _logger.i('✅ Enhanced goal deleted with ID: $goalId');
     } catch (e) {
       _logger.e('❌ Error deleting enhanced goal: $e');
@@ -388,10 +388,10 @@ class EnhancedGoalsService {
   /// Agrega una entrada de progreso rica
   Future<ProgressEntry> addProgressEntry(ProgressEntry entry) async {
     final db = await databaseService.database;
-    
+
     final entryData = {
       'id': entry.id,
-      'goal_id': entry.goalId,
+      'goal_id': int.parse(entry.goalId), // Convert String to int for database
       'timestamp': entry.timestamp.toIso8601String(),
       'primary_value': entry.primaryValue,
       'metrics': jsonEncode(entry.metrics),
@@ -400,9 +400,9 @@ class EnhancedGoalsService {
       'tags': jsonEncode(entry.tags),
       'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
     };
-    
+
     await db.insert('progress_entries', entryData);
-    
+
     _logger.i('✅ Progress entry added for goal ${entry.goalId}');
     return entry;
   }
@@ -410,19 +410,19 @@ class EnhancedGoalsService {
   /// Obtiene entradas de progreso para un objetivo
   Future<List<ProgressEntry>> getProgressEntries(String goalId, {int? limit}) async {
     final db = await databaseService.database;
-    
+
     final results = await db.query(
       'progress_entries',
       where: 'goal_id = ?',
-      whereArgs: [goalId],
+      whereArgs: [int.parse(goalId)], // Convert String to int for query
       orderBy: 'timestamp DESC',
       limit: limit,
     );
-    
+
     return results.map((row) {
       return ProgressEntry(
         id: row['id'] as String,
-        goalId: row['goal_id'] as String,
+        goalId: (row['goal_id'] as int).toString(), // Convert int back to String
         timestamp: DateTime.parse(row['timestamp'] as String),
         primaryValue: row['primary_value'] as int,
         metrics: jsonDecode(row['metrics'] as String? ?? '{}') as Map<String, dynamic>,

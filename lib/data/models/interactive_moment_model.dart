@@ -78,17 +78,56 @@ class InteractiveMomentModel {
   }
 
   factory InteractiveMomentModel.fromDatabase(Map<String, dynamic> map) {
+    // Handle both old and new schema
+    final id = (map['moment_id'] as String?) ?? (map['id']?.toString() ?? '');
+
+    // Parse timestamp - can be either INTEGER (unix timestamp) or TEXT (ISO string)
+    DateTime parseTimestamp(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is int) {
+        return DateTime.fromMillisecondsSinceEpoch(value * 1000);
+      }
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (e) {
+          return DateTime.now();
+        }
+      }
+      return DateTime.now();
+    }
+
+    final timestamp = parseTimestamp(map['timestamp'] ?? map['created_at']);
+
+    // Generate time_str from timestamp if not present
+    final timeStr = (map['time_str'] as String?) ??
+      '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+
+    // Parse entry_date - can be TEXT or derived from timestamp
+    DateTime parseEntryDate(dynamic value, DateTime fallback) {
+      if (value == null) return DateTime(fallback.year, fallback.month, fallback.day);
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (e) {
+          return DateTime(fallback.year, fallback.month, fallback.day);
+        }
+      }
+      return DateTime(fallback.year, fallback.month, fallback.day);
+    }
+
+    final entryDate = parseEntryDate(map['entry_date'], timestamp);
+
     return InteractiveMomentModel(
-      id: map['moment_id'] as String,
-      emoji: map['emoji'] as String,
-      text: map['text'] as String,
-      type: map['type'] as String, // Changed from moment_type
-      // FIX: Safely cast 'intensity', providing a default value of 5 if it's null.
+      id: id,
+      emoji: (map['emoji'] as String?) ?? '📝',
+      text: (map['text'] as String?) ?? '',
+      type: (map['type'] as String?) ?? 'neutral',
       intensity: (map['intensity'] as int?) ?? 5,
-      category: map['category'] as String,
-      timeStr: map['time_str'] as String,
-      timestamp: DateTime.parse(map['created_at'] as String),
-      entryDate: DateTime.parse(map['entry_date'] as String),
+      category: (map['category'] as String?) ?? 'general',
+      timeStr: timeStr,
+      timestamp: timestamp,
+      entryDate: entryDate,
     );
   }
 // ...

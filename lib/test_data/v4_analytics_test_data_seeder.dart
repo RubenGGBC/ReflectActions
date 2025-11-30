@@ -332,10 +332,23 @@ class V4AnalyticsTestDataSeeder {
     
     for (final goal in goals) {
       try {
-        // Try to use the database service to create goals
-        debugPrint('🎯 Creating goal: ${goal.title}');
+        final db = await _databaseService.database;
+        await db.insert('user_goals', {
+          'user_id': goal.userId,
+          'title': goal.title,
+          'description': goal.description,
+          'type': goal.category.name, // Convert enum to string
+          'status': goal.status.name, // Convert enum to string
+          'target_value': goal.targetValue,
+          'current_value': goal.currentValue,
+          'created_at': goal.createdAt.millisecondsSinceEpoch ~/ 1000, // Unix timestamp in seconds
+          'completed_at': goal.completedAt != null
+              ? goal.completedAt!.millisecondsSinceEpoch ~/ 1000
+              : null,
+        });
+        debugPrint('✅ Created goal: ${goal.title}');
       } catch (e) {
-        debugPrint('⚠️ Goal creation method not available, goal created in memory: ${goal.title}');
+        debugPrint('⚠️ Error creating goal "${goal.title}": $e');
       }
     }
     
@@ -373,9 +386,7 @@ class V4AnalyticsTestDataSeeder {
           'type': momentData['type'],
           'intensity': momentData['intensity'],
           'category': momentData['category'],
-          'time_str': '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
-          'created_at': timestamp.toIso8601String(),
-          'moment_id': '${timestamp.millisecondsSinceEpoch}_$i',
+          'timestamp': timestamp.millisecondsSinceEpoch ~/ 1000, // Unix timestamp in seconds
         });
       }
     }

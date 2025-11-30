@@ -38,7 +38,6 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
   late AnimationController _staggerController;
   late AnimationController _bounceController;
   late AnimationController _rippleController;
-  late AnimationController _celebrationController;
   late AnimationController _microInteractionController;
 
   late Animation<double> _fadeAnimation;
@@ -49,7 +48,6 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
   late Animation<double> _staggerAnimation;
   late Animation<double> _bounceAnimation;
   late Animation<double> _rippleAnimation;
-  late Animation<double> _celebrationAnimation;
   late Animation<double> _microInteractionAnimation;
 
   final ScrollController _scrollController = ScrollController();
@@ -78,7 +76,6 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
     _staggerController.dispose();
     _bounceController.dispose();
     _rippleController.dispose();
-    _celebrationController.dispose();
     _microInteractionController.dispose();
     _scrollController.dispose();
     _dailyGoalController.dispose();
@@ -124,11 +121,6 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
 
     _rippleController = AnimationController(
       duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
-    _celebrationController = AnimationController(
-      duration: const Duration(milliseconds: 3000),
       vsync: this,
     );
 
@@ -193,14 +185,6 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
     ).animate(CurvedAnimation(
       parent: _rippleController,
       curve: Curves.easeOutCirc,
-    ));
-
-    _celebrationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _celebrationController,
-      curve: Curves.elasticOut,
     ));
 
     _microInteractionAnimation = Tween<double>(

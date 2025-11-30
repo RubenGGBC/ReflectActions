@@ -21,7 +21,7 @@ import '../models/roadmap_activity_model.dart';
 
 class OptimizedDatabaseService {
   static const String _databaseName = 'reflect_optimized_v2.db';
-  static const int _databaseVersion = 15;
+  static const int _databaseVersion = 17;
 
   static Database? _database;
   static final OptimizedDatabaseService _instance = OptimizedDatabaseService
@@ -239,6 +239,22 @@ class OptimizedDatabaseService {
       )
     ''');
 
+    // ✅ NUEVO: Tabla progress_entries agregada al esquema mínimo
+    await db.execute('''
+      CREATE TABLE progress_entries (
+        id TEXT PRIMARY KEY,
+        goal_id INTEGER NOT NULL,
+        timestamp TEXT NOT NULL,
+        primary_value INTEGER NOT NULL,
+        metrics TEXT DEFAULT '{}',
+        notes TEXT,
+        photo_urls TEXT DEFAULT '[]',
+        tags TEXT DEFAULT '[]',
+        created_at INTEGER NOT NULL,
+        FOREIGN KEY (goal_id) REFERENCES user_goals (id) ON DELETE CASCADE
+      )
+    ''');
+
     _logger.i('✅ Esquema mínimo creado para fallback');
   }
 
@@ -434,13 +450,29 @@ class OptimizedDatabaseService {
             current_progress REAL NOT NULL DEFAULT 0.0 CHECK (current_progress >= 0),
             reward_points INTEGER DEFAULT 0,
             is_active INTEGER DEFAULT 1 CHECK (is_active IN (0, 1)),
-            
+
             -- Timestamps
             created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
             completed_at INTEGER,
             expires_at INTEGER,
 
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+          )
+        ''');
+
+        // ✅ NUEVA TABLA: PROGRESS_ENTRIES - Para el historial de progreso de objetivos
+        await txn.execute('''
+          CREATE TABLE progress_entries (
+            id TEXT PRIMARY KEY,
+            goal_id INTEGER NOT NULL,
+            timestamp TEXT NOT NULL,
+            primary_value INTEGER NOT NULL,
+            metrics TEXT DEFAULT '{}',
+            notes TEXT,
+            photo_urls TEXT DEFAULT '[]',
+            tags TEXT DEFAULT '[]',
+            created_at INTEGER NOT NULL,
+            FOREIGN KEY (goal_id) REFERENCES user_goals (id) ON DELETE CASCADE
           )
         ''');
 
@@ -498,6 +530,14 @@ class OptimizedDatabaseService {
         'CREATE INDEX idx_challenges_type ON personalized_challenges (user_id, challenge_type)');
     await txn.execute(
         'CREATE INDEX idx_challenges_difficulty ON personalized_challenges (difficulty, reward_points DESC)');
+
+    // Índices para progress_entries
+    await txn.execute(
+        'CREATE INDEX idx_progress_entries_goal_id ON progress_entries (goal_id)');
+    await txn.execute(
+        'CREATE INDEX idx_progress_entries_timestamp ON progress_entries (timestamp DESC)');
+    await txn.execute(
+        'CREATE INDEX idx_progress_entries_goal_timestamp ON progress_entries (goal_id, timestamp DESC)');
   }
 
   Future<void> _upgradeSchema(Database db, int oldVersion,
@@ -546,6 +586,12 @@ class OptimizedDatabaseService {
       }
       if (oldVersion < 15) {
         await _migrateToV15(db);
+      }
+      if (oldVersion < 16) {
+        await _migrateToV16(db);
+      }
+      if (oldVersion < 17) {
+        await _migrateToV17(db);
       }
     } catch (e) {
       _logger.e('❌ Error en migración: $e');
@@ -1032,11 +1078,11 @@ class OptimizedDatabaseService {
   Future<void> _migrateToV15(Database db) async {
     try {
       _logger.i('📦 Agregando columna color_hex a la tabla tags en migración v15');
-      
+
       // Check if color_hex column already exists
       final columnInfo = await db.rawQuery("PRAGMA table_info(tags)");
       final hasColorHex = columnInfo.any((column) => column['name'] == 'color_hex');
-      
+
       if (!hasColorHex) {
         // Add color_hex column to tags table
         await db.execute('ALTER TABLE tags ADD COLUMN color_hex TEXT DEFAULT "#6B73FF"');
@@ -1044,10 +1090,85 @@ class OptimizedDatabaseService {
       } else {
         _logger.i('✅ Columna color_hex ya existe en la tabla tags');
       }
-      
+
       _logger.i('✅ Migración v15 completada');
     } catch (e) {
       _logger.e('❌ Error en migración v15: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _migrateToV16(Database db) async {
+    try {
+      _logger.i('📦 Creando tabla progress_entries en migración v16');
+
+      // Check if progress_entries table already exists
+      final tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='progress_entries'"
+      );
+
+      if (tables.isEmpty) {
+        // Create progress_entries table
+        await db.execute('''
+          CREATE TABLE progress_entries (
+            id TEXT PRIMARY KEY,
+            goal_id INTEGER NOT NULL,
+            timestamp TEXT NOT NULL,
+            primary_value INTEGER NOT NULL,
+            metrics TEXT DEFAULT '{}',
+            notes TEXT,
+            photo_urls TEXT DEFAULT '[]',
+            tags TEXT DEFAULT '[]',
+            created_at INTEGER NOT NULL,
+            FOREIGN KEY (goal_id) REFERENCES user_goals (id) ON DELETE CASCADE
+          )
+        ''');
+
+        // Create indexes for progress_entries
+        await db.execute(
+          'CREATE INDEX idx_progress_entries_goal_id ON progress_entries (goal_id)'
+        );
+        await db.execute(
+          'CREATE INDEX idx_progress_entries_timestamp ON progress_entries (timestamp DESC)'
+        );
+        await db.execute(
+          'CREATE INDEX idx_progress_entries_goal_timestamp ON progress_entries (goal_id, timestamp DESC)'
+        );
+
+        _logger.i('✅ Tabla progress_entries creada con sus índices');
+      } else {
+        _logger.i('✅ Tabla progress_entries ya existe');
+      }
+
+      _logger.i('✅ Migración v16 completada');
+    } catch (e) {
+      _logger.e('❌ Error en migración v16: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _migrateToV17(Database db) async {
+    try {
+      _logger.i('📦 Agregando columna last_updated a user_goals en migración v17');
+
+      // Verificar si la columna ya existe
+      final tableInfo = await db.rawQuery('PRAGMA table_info(user_goals)');
+      final hasLastUpdated = tableInfo.any((column) => column['name'] == 'last_updated');
+
+      if (!hasLastUpdated) {
+        _logger.i('➕ Agregando columna last_updated a user_goals');
+        await db.execute('''
+          ALTER TABLE user_goals
+          ADD COLUMN last_updated INTEGER
+        ''');
+        _logger.i('✅ Columna last_updated agregada exitosamente');
+      } else {
+        _logger.i('✅ Columna last_updated ya existe en user_goals');
+      }
+
+      _logger.i('✅ Migración v17 completada');
+    } catch (e) {
+      _logger.e('❌ Error en migración v17: $e');
       rethrow;
     }
   }
@@ -2645,15 +2766,42 @@ class OptimizedDatabaseService {
   Future<bool> updateGoalProgress(int goalId, double newProgress) async {
     try {
       final db = await database;
+
+      // DEBUG: Verificar valor ANTES de actualizar
+      final before = await db.query(
+        'user_goals',
+        where: 'id = ?',
+        whereArgs: [goalId],
+      );
+      _logger.i('🔍 BD ANTES: goalId: $goalId');
+      if (before.isNotEmpty) {
+        _logger.i('  current_value: ${before.first['current_value']}');
+        _logger.i('  last_updated: ${before.first['last_updated']}');
+      }
+
+      final nowTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000; // Timestamp en segundos
+
       final rowsAffected = await db.update(
         'user_goals',
         {
           'current_value': newProgress,
-          'last_updated': DateTime.now().toIso8601String(),
+          'last_updated': nowTimestamp,
         },
         where: 'id = ?',
         whereArgs: [goalId],
       );
+
+      // DEBUG: Verificar valor DESPUÉS de actualizar
+      final after = await db.query(
+        'user_goals',
+        where: 'id = ?',
+        whereArgs: [goalId],
+      );
+      _logger.i('🔍 BD DESPUÉS: goalId: $goalId, rowsAffected: $rowsAffected');
+      if (after.isNotEmpty) {
+        _logger.i('  current_value: ${after.first['current_value']}');
+        _logger.i('  last_updated: ${after.first['last_updated']}');
+      }
 
       _logger.i('✅ BD: Progreso actualizado - goalId: $goalId, newValue: $newProgress, rowsAffected: $rowsAffected');
       return rowsAffected > 0;
@@ -2688,16 +2836,19 @@ class OptimizedDatabaseService {
   Future<bool> setGoalCompletedAt(int goalId, DateTime completedAt) async {
     try {
       final db = await database;
+      final completedTimestamp = completedAt.millisecondsSinceEpoch ~/ 1000; // Timestamp en segundos
+      final nowTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000; // Timestamp en segundos
+
       final rowsAffected = await db.update(
         'user_goals',
         {
-          'completed_at': completedAt.toIso8601String(),
-          'last_updated': DateTime.now().toIso8601String(),
+          'completed_at': completedTimestamp,
+          'last_updated': nowTimestamp,
         },
         where: 'id = ?',
         whereArgs: [goalId],
       );
-      _logger.i('✅ BD: Fecha completación actualizada - goalId: $goalId, completedAt: ${completedAt.toIso8601String()}, rowsAffected: $rowsAffected');
+      _logger.i('✅ BD: Fecha completación actualizada - goalId: $goalId, completedAt: $completedTimestamp, rowsAffected: $rowsAffected');
       return rowsAffected > 0;
     } catch (e) {
       _logger.e('❌ Error actualizando fecha de completación del goal: $e');

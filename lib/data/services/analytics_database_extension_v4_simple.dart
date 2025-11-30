@@ -129,16 +129,16 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
   // ============================================================================
   
   Future<List<SimpleWellbeingTrend>> getSimpleWellbeingTrends(
-    int userId, 
+    int userId,
     SimpleAnalyticsTimeframe timeframe
   ) async {
     final db = await database;
-    
+
     try {
       // Get daily entries within timeframe
       final results = await db.query(
         'daily_entries',
-        where: 'user_id = ? AND entry_date BETWEEN ? AND ?',
+        where: 'user_id = ? AND entry_date >= ? AND entry_date <= ?',
         whereArgs: [
           userId,
           timeframe.startDate.toIso8601String().split('T')[0],
@@ -146,8 +146,21 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
         ],
         orderBy: 'entry_date ASC',
       );
-      
-      final entries = results.map((map) => DailyEntryModel.fromDatabase(map)).toList();
+
+      if (results.isEmpty) {
+        return [];
+      }
+
+      // Safe parsing of database entries
+      final entries = <DailyEntryModel>[];
+      for (final map in results) {
+        try {
+          entries.add(DailyEntryModel.fromDatabase(map));
+        } catch (e) {
+          print('Error parsing daily entry: $e');
+          continue;
+        }
+      }
       
       if (entries.isEmpty) {
         return [];
@@ -310,12 +323,12 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
   
   Future<SimpleQuickMomentsAnalytics> getSimpleQuickMomentsAnalytics(int userId, SimpleAnalyticsTimeframe timeframe) async {
     final db = await database;
-    
+
     try {
       // Get interactive moments within timeframe
       final results = await db.query(
         'interactive_moments',
-        where: 'user_id = ? AND entry_date BETWEEN ? AND ?',
+        where: 'user_id = ? AND entry_date >= ? AND entry_date <= ?',
         whereArgs: [
           userId,
           timeframe.startDate.toIso8601String().split('T')[0],
@@ -323,8 +336,26 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
         ],
         orderBy: 'created_at ASC',
       );
-      
-      final moments = results.map((map) => InteractiveMomentModel.fromDatabase(map)).toList();
+
+      if (results.isEmpty) {
+        return SimpleQuickMomentsAnalytics(
+          totalMoments: 0,
+          momentsByType: {},
+          positivityRatio: 0.0,
+          momentsByTimeOfDay: {},
+        );
+      }
+
+      // Safe parsing of database moments
+      final moments = <InteractiveMomentModel>[];
+      for (final map in results) {
+        try {
+          moments.add(InteractiveMomentModel.fromDatabase(map));
+        } catch (e) {
+          print('Error parsing moment: $e');
+          continue;
+        }
+      }
       
       final totalMoments = moments.length;
       
