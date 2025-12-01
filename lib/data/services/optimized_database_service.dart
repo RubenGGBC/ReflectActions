@@ -2815,11 +2815,12 @@ class OptimizedDatabaseService {
   Future<bool> updateGoalStatus(int goalId, GoalStatus status) async {
     try {
       final db = await database;
+      final nowTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000; // Timestamp en segundos
       final rowsAffected = await db.update(
         'user_goals',
         {
-          'status': status.index,
-          'last_updated': DateTime.now().toIso8601String(),
+          'status': status.name, // Usar el nombre del enum, no el index
+          'last_updated': nowTimestamp,
         },
         where: 'id = ?',
         whereArgs: [goalId],
@@ -2852,6 +2853,53 @@ class OptimizedDatabaseService {
       return rowsAffected > 0;
     } catch (e) {
       _logger.e('❌ Error actualizando fecha de completación del goal: $e');
+      return false;
+    }
+  }
+
+  /// Actualiza un objetivo completo en la base de datos
+  Future<bool> updateGoal(GoalModel goal) async {
+    try {
+      if (goal.id == null) {
+        _logger.e('❌ No se puede actualizar un goal sin ID');
+        return false;
+      }
+
+      final db = await database;
+      final nowTimestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+      final updateData = {
+        'title': goal.title,
+        'description': goal.description,
+        'type': goal.category.name,
+        'target_value': goal.targetValue,
+        'current_value': goal.currentValue,
+        'status': goal.status.name,
+        'last_updated': nowTimestamp,
+      };
+
+      // Agregar completed_at solo si está presente
+      if (goal.completedAt != null) {
+        updateData['completed_at'] = goal.completedAt!.millisecondsSinceEpoch ~/ 1000;
+      }
+
+      // Agregar progress_notes solo si está presente y no es null
+      final progressNotes = goal.progressNotes;
+      if (progressNotes != null && progressNotes.isNotEmpty) {
+        updateData['progress_notes'] = progressNotes;
+      }
+
+      final rowsAffected = await db.update(
+        'user_goals',
+        updateData,
+        where: 'id = ?',
+        whereArgs: [goal.id],
+      );
+
+      _logger.i('✅ BD: Goal actualizado - goalId: ${goal.id}, rowsAffected: $rowsAffected');
+      return rowsAffected > 0;
+    } catch (e) {
+      _logger.e('❌ Error actualizando goal: $e');
       return false;
     }
   }

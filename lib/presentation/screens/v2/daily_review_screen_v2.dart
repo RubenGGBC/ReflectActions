@@ -349,7 +349,11 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             controller: _scrollController,
             physics: const BouncingScrollPhysics(),
             slivers: [
-              _buildAppBar(),
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  child: _buildHeader(),
+                ),
+              ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
                 sliver: SliverList(
@@ -452,16 +456,6 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                       subtitle: 'Captura momentos especiales',
                       child: _buildDailyPhotosSection(),
                     ),
-                    const SizedBox(height: 16),
-
-                    _buildExpandableSection(
-                      isExpanded: _showVoiceRecording,
-                      onToggle: () => setState(() => _showVoiceRecording = !_showVoiceRecording),
-                      icon: Icons.mic_rounded,
-                      title: 'Nota de Voz',
-                      subtitle: 'Graba tus pensamientos',
-                      child: _buildVoiceRecordingSection(),
-                    ),
                     const SizedBox(height: 24),
 
                     // Smart suggestions (collapsible)
@@ -483,43 +477,78 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
     );
   }
 
-  Widget _buildAppBar() {
-    return SliverAppBar(
-      floating: true,
-      snap: true,
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      expandedHeight: 80,
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-        title: ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: MinimalColors.primaryGradient(context),
-          ).createShader(bounds),
-          child: const Text(
-            'Mi Día',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -1,
-            ),
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: MinimalColors.accentGradient(context)[0].withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.edit_note_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: MinimalColors.accentGradient(context),
+                      ).createShader(bounds),
+                      child: Text(
+                        'Mi Día',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Reflexiona sobre tu día y progreso',
+                      style: TextStyle(
+                        color: MinimalColors.textSecondary(context),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.calendar_today_rounded,
+                  color: MinimalColors.textSecondary(context),
+                ),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CalendarScreenV2()),
+                ),
+              ),
+            ],
           ),
-        ),
+        ],
       ),
-      actions: [
-        IconButton(
-          icon: Icon(
-            Icons.calendar_today_rounded,
-            color: MinimalColors.textSecondary(context),
-          ),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CalendarScreenV2()),
-          ),
-        ),
-        const SizedBox(width: 8),
-      ],
     );
   }
 
@@ -643,6 +672,16 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             const SizedBox(height: 12),
             _buildSentimentIndicator(sentiment),
           ],
+          // Widget de grabación de voz integrado directamente
+          VoiceRecordingWidget(
+            existingRecordingPath: _voiceRecordingPath,
+            onRecordingComplete: (path) => setState(() => _voiceRecordingPath = path),
+            isExpanded: _showVoiceRecording,
+            onExpand: () {
+              HapticFeedback.selectionClick();
+              setState(() => _showVoiceRecording = !_showVoiceRecording);
+            },
+          ),
         ],
       ),
     );
@@ -1376,13 +1415,10 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
         onEntryCreated: (entry) async {
           final goalsProvider = context.read<GoalsProvider>();
 
-          // Actualizar progreso con todas las métricas y notas
-          await goalsProvider.addProgressEntry(entry);
+          // Actualizar progreso (GoalsProvider solo acepta goalId y newValue)
           await goalsProvider.updateGoalProgress(
             goal.id!,
-            entry.primaryValue,
-            notes: entry.notes,
-            metrics: entry.metrics,
+            entry.primaryValue.toDouble(),
           );
 
           HapticFeedback.mediumImpact();

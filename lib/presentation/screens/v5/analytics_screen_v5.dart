@@ -285,24 +285,46 @@ class _AnalyticsScreenV5State extends State<AnalyticsScreenV5>
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            _buildAppBar(provider),
+            SliverToBoxAdapter(
+              child: SafeArea(
+                child: _buildHeader(provider),
+              ),
+            ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 100),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   _buildTimeframeSelector(provider),
                   const SizedBox(height: 24),
-                  _buildHeroScoreCard(provider),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _buildHeroScoreCard(provider),
+                  ),
                   const SizedBox(height: 24),
-                  _buildQuickStatsGrid(provider),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _buildQuickStatsGrid(provider),
+                  ),
                   const SizedBox(height: 24),
-                  _buildWellbeingSection(provider),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _buildWellbeingSection(provider),
+                  ),
                   const SizedBox(height: 24),
-                  _buildGoalsSection(provider),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _buildGoalsSection(provider),
+                  ),
                   const SizedBox(height: 24),
-                  _buildMomentsSection(provider),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _buildMomentsSection(provider),
+                  ),
                   const SizedBox(height: 24),
-                  _buildInsightsSection(provider),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _buildInsightsSection(provider),
+                  ),
                 ]),
               ),
             ),
@@ -312,122 +334,161 @@ class _AnalyticsScreenV5State extends State<AnalyticsScreenV5>
     );
   }
 
-  Widget _buildAppBar(AnalyticsProviderV4 provider) {
-    return SliverAppBar(
-      floating: true,
-      snap: true,
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      expandedHeight: 80,
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-        title: ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: MinimalColors.primaryGradient(context),
-          ).createShader(bounds),
-          child: const Text(
-            'Analytics',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -1,
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        Container(
-          margin: const EdgeInsets.only(right: 12, top: 8),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: MinimalColors.primaryGradient(context),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: MinimalColors.gradientShadow(context, alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+  Widget _buildHeader(AnalyticsProviderV4 provider) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: MinimalColors.accentGradient(context)[0].withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.analytics_outlined,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: MinimalColors.accentGradient(context),
+                      ).createShader(bounds),
+                      child: Text(
+                        'Analytics',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Analiza tu progreso y tendencias',
+                      style: TextStyle(
+                        color: MinimalColors.textSecondary(context),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: MinimalColors.primaryGradient(context),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: MinimalColors.gradientShadow(context, alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                  onPressed: _loadAnalytics,
+                ),
               ),
             ],
           ),
-          child: IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            onPressed: _loadAnalytics,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildTimeframeSelector(AnalyticsProviderV4 provider) {
     final timeframes = provider.availableTimeframes;
 
-    return SizedBox(
-      height: 50,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: timeframes.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final timeframe = timeframes[index];
-          final isSelected = provider.selectedTimeframe.label == timeframe.label;
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: SizedBox(
+        height: 50,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          itemCount: timeframes.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          itemBuilder: (context, index) {
+            final timeframe = timeframes[index];
+            final isSelected = provider.selectedTimeframe.label == timeframe.label;
 
-          return GestureDetector(
-            onTap: () async {
-              final authProvider = context.read<OptimizedAuthProvider>();
-              if (authProvider.currentUser != null) {
-                await provider.changeTimeframe(
-                  timeframe,
-                  authProvider.currentUser!.id,
-                );
-              }
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                gradient: isSelected
-                    ? LinearGradient(
-                        colors: MinimalColors.primaryGradient(context),
-                      )
-                    : null,
-                color: isSelected ? null : MinimalColors.backgroundCard(context),
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(
-                  color: isSelected
-                      ? Colors.transparent
-                      : MinimalColors.shadow(context),
-                  width: 1.5,
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: MinimalColors.gradientShadow(context, alpha: 0.4),
-                          blurRadius: 15,
-                          offset: const Offset(0, 6),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Center(
-                child: Text(
-                  timeframe.label,
-                  style: TextStyle(
+              return GestureDetector(
+              onTap: () async {
+                final authProvider = context.read<OptimizedAuthProvider>();
+                if (authProvider.currentUser != null) {
+                  await provider.changeTimeframe(
+                    timeframe,
+                    authProvider.currentUser!.id,
+                  );
+                }
+              },
+                child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? LinearGradient(
+                          colors: MinimalColors.primaryGradient(context),
+                        )
+                      : null,
+                  color: isSelected ? null : MinimalColors.backgroundCard(context),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
                     color: isSelected
-                        ? Colors.white
-                        : MinimalColors.textPrimary(context),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.3,
+                        ? Colors.transparent
+                        : MinimalColors.shadow(context),
+                    width: 1.5,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: MinimalColors.gradientShadow(context, alpha: 0.4),
+                            blurRadius: 15,
+                            offset: const Offset(0, 6),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    timeframe.label,
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : MinimalColors.textPrimary(context),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -658,10 +719,244 @@ class _AnalyticsScreenV5State extends State<AnalyticsScreenV5>
         const SizedBox(height: 16),
         ...trends.take(5).map((trend) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: _buildTrendCard(trend),
+          child: GestureDetector(
+            onTap: () => _showTrendDetailDialog(trend),
+            child: _buildTrendCard(trend),
+          ),
         )),
       ],
     );
+  }
+
+  void _showTrendDetailDialog(SimpleWellbeingTrend trend) {
+    final isImproving = trend.trendDirection == 'improving';
+    final isStable = trend.trendDirection == 'stable';
+
+    final color = isImproving
+        ? const Color(0xFF4ECDC4)
+        : isStable
+            ? const Color(0xFFFFA726)
+            : const Color(0xFFFF6B6B);
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                MinimalColors.backgroundCard(context),
+                MinimalColors.backgroundPrimary(context),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: color.withValues(alpha: 0.3),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.3),
+                blurRadius: 40,
+                offset: const Offset(0, 20),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [color, color.withValues(alpha: 0.8)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      isImproving
+                          ? Icons.trending_up_rounded
+                          : isStable
+                              ? Icons.trending_flat_rounded
+                              : Icons.trending_down_rounded,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          trend.metric,
+                          style: TextStyle(
+                            color: MinimalColors.textPrimary(context),
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _getTrendStatusText(trend.trendDirection),
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: MinimalColors.textSecondary(context),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // Metrics row
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDetailMetric(
+                      'Promedio',
+                      trend.averageValue.toStringAsFixed(1),
+                      Icons.analytics_outlined,
+                      color,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildDetailMetric(
+                      'Cambio',
+                      '${trend.improvementPercentage > 0 ? '+' : ''}${trend.improvementPercentage.toStringAsFixed(0)}%',
+                      isImproving ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                      color,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 32),
+
+              // Large chart
+              Container(
+                height: 200,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: MinimalColors.backgroundSecondary(context),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: color.withValues(alpha: 0.2),
+                    width: 1.5,
+                  ),
+                ),
+                child: trend.dataPoints.isNotEmpty
+                    ? CustomPaint(
+                        painter: _SparklinePainter(
+                          dataPoints: trend.dataPoints,
+                          color: color,
+                        ),
+                        size: Size.infinite,
+                      )
+                    : Center(
+                        child: Text(
+                          'No hay datos suficientes',
+                          style: TextStyle(
+                            color: MinimalColors.textTertiary(context),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Data points count
+              Center(
+                child: Text(
+                  '${trend.dataPoints.length} puntos de datos',
+                  style: TextStyle(
+                    color: MinimalColors.textTertiary(context),
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailMetric(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: TextStyle(
+              color: MinimalColors.textPrimary(context),
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: MinimalColors.textTertiary(context),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getTrendStatusText(String direction) {
+    switch (direction) {
+      case 'improving':
+        return 'Mejorando';
+      case 'declining':
+        return 'Declinando';
+      case 'stable':
+        return 'Estable';
+      default:
+        return direction;
+    }
   }
 
   Widget _buildSectionHeader(String title, IconData icon) {

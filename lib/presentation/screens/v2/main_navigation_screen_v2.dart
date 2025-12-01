@@ -446,11 +446,18 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
     final bottomPadding = mediaQuery.padding.bottom;
     final isTablet = mediaQuery.size.width > 600;
     final screenWidth = mediaQuery.size.width;
-    
-    // Fixed dimensions for 7 navigation items
-    final navigationHeight = isTablet ? 70.0 : 60.0;
-    final horizontalMargin = screenWidth > 400 ? 12.0 : 8.0;
-    final bottomMargin = bottomPadding > 0 ? bottomPadding + 4.0 : 8.0;
+    final isSmallScreen = screenWidth < 380;
+    final isVerySmallScreen = screenWidth < 360;
+
+    // Detectar si hay botones de navegación de Android
+    final hasSystemNavButtons = bottomPadding > 0;
+
+    // Adaptive dimensions for 7 navigation items
+    final navigationHeight = isTablet ? 70.0 : (isSmallScreen ? 56.0 : 60.0);
+    final horizontalMargin = isVerySmallScreen ? 2.0 : (isSmallScreen ? 4.0 : (screenWidth > 400 ? 8.0 : 6.0));
+
+    // Si hay botones del sistema, dejar espacio; si no, pegar abajo
+    final bottomMargin = hasSystemNavButtons ? bottomPadding + 2.0 : 2.0;
     
     return Container(
       height: navigationHeight,
@@ -458,10 +465,10 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
       decoration: BoxDecoration(
         // Enhanced glassmorphism effect
         color: themeProvider.surface.withOpacity(0.92),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(hasSystemNavButtons ? 24 : 20),
         border: Border.all(
           color: themeProvider.borderColor.withOpacity(0.2),
-          width: 1.5,
+          width: 1.0,
         ),
         boxShadow: [
           // Primary shadow for depth
@@ -486,15 +493,13 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(hasSystemNavButtons ? 24 : 20),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: EdgeInsets.only(
-              bottom: bottomPadding > 0 ? 4 : 2,
-              top: 2,
-              left: 2,
-              right: 2,
+            padding: EdgeInsets.symmetric(
+              vertical: isVerySmallScreen ? 1 : 2,
+              horizontal: isVerySmallScreen ? 1 : 2,
             ),
             decoration: BoxDecoration(
               // Subtle gradient overlay
@@ -514,7 +519,7 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
                 final item = entry.value;
                 final isSelected = _currentIndex == index;
 
-                return Expanded(
+                return Flexible(
                   child: _buildNavigationItem(item, index, isSelected, themeProvider),
                 );
               }).toList(),
@@ -529,6 +534,7 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
     final isTablet = MediaQuery.of(context).size.width > 600;
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 380;
+    final isVerySmallScreen = screenWidth < 360;
 
     return Semantics(
       label: item.semanticLabel,
@@ -545,10 +551,10 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOutCubic,
             padding: EdgeInsets.symmetric(
-              vertical: isTablet ? 8 : (isSmallScreen ? 4 : 6),
-              horizontal: isSmallScreen ? 1 : 2,
+              vertical: isTablet ? 8 : (isVerySmallScreen ? 2 : (isSmallScreen ? 3 : 6)),
+              horizontal: 0,
             ),
-            margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 0.5 : 1),
+            margin: EdgeInsets.zero,
             decoration: BoxDecoration(
               gradient: isSelected
                   ? LinearGradient(
@@ -582,7 +588,7 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
                       scale: 0.9 + (value * 0.2),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
-                        padding: EdgeInsets.all(isTablet ? 8 : (isSmallScreen ? 4 : 6)),
+                        padding: EdgeInsets.all(isTablet ? 8 : (isVerySmallScreen ? 2 : (isSmallScreen ? 3 : 5))),
                         decoration: BoxDecoration(
                           color: Color.lerp(
                             Colors.transparent,
@@ -608,7 +614,7 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
                         ),
                         child: Icon(
                           isSelected ? item.activeIcon : item.icon,
-                          size: isTablet ? 20 : (isSmallScreen ? 16 : 18),
+                          size: isTablet ? 20 : (isVerySmallScreen ? 14 : (isSmallScreen ? 15 : 18)),
                           color: Color.lerp(
                             themeProvider.textSecondary.withOpacity(0.8),
                             item.color,
@@ -619,23 +625,23 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
                     );
                   },
                 ),
-                SizedBox(height: isTablet ? 4 : (isSmallScreen ? 1 : 2)),
+                SizedBox(height: isTablet ? 4 : (isVerySmallScreen ? 0.5 : (isSmallScreen ? 1 : 2))),
                 AnimatedDefaultTextStyle(
                   duration: const Duration(milliseconds: 200),
                   style: TextStyle(
-                    fontSize: isTablet ? 10 : (isSmallScreen ? 8 : 9),
+                    fontSize: isTablet ? 10 : (isVerySmallScreen ? 7 : (isSmallScreen ? 8 : 9)),
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected ? item.color : themeProvider.textSecondary,
-                    letterSpacing: isSelected ? 0.1 : 0.05,
+                    letterSpacing: isSelected ? 0.05 : 0,
                     height: 1.0,
                   ),
                   child: AnimatedScale(
                     duration: const Duration(milliseconds: 200),
-                    scale: isSelected ? 1.05 : 1.0,
+                    scale: isSelected ? 1.0 : 1.0,
                     child: Text(
                       item.label,
                       maxLines: 1,
-                      overflow: TextOverflow.clip,
+                      overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                     ),
                   ),

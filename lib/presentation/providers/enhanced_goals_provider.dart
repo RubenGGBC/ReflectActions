@@ -126,12 +126,58 @@ class EnhancedGoalsProvider extends ChangeNotifier {
       }
       
       _logger.i('✅ ${_goals.length} objetivos cargados - Activos: ${activeGoals.length}, Completados: ${completedGoals.length}');
+
+      // Corregir goals que están al 100% pero no marcados como completados
+      await _fixIncompleteGoals();
+
       notifyListeners();
     } catch (e) {
       _logger.e('❌ Error cargando objetivos: $e');
       _setError('Error cargando objetivos');
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// Corrige goals que tienen 100% de progreso pero no están marcados como completados
+  Future<void> _fixIncompleteGoals() async {
+    try {
+      final goalsToFix = _goals.where((goal) =>
+        goal.currentValue >= goal.targetValue &&
+        goal.status != GoalStatus.completed
+      ).toList();
+
+      if (goalsToFix.isEmpty) {
+        _logger.i('✅ No hay goals por corregir');
+        return;
+      }
+
+      _logger.i('🔧 Corrigiendo ${goalsToFix.length} goals que están al 100% pero no completados');
+
+      for (final goal in goalsToFix) {
+        final index = _goals.indexWhere((g) => g.id == goal.id);
+        if (index == -1) continue;
+
+        _logger.i('🔧 Corrigiendo goal: ${goal.title} (${goal.currentValue}/${goal.targetValue})');
+
+        // Marcar como completado
+        final completedGoal = goal.markAsCompleted(
+          completionNote: 'Objetivo completado automáticamente (corrección)'
+        );
+
+        _goals[index] = completedGoal;
+
+        // Actualizar en la base de datos
+        await _databaseService.updateGoalStatus(goal.id!, GoalStatus.completed);
+        await _databaseService.setGoalCompletedAt(goal.id!, DateTime.now());
+        await _databaseService.updateGoalProgress(goal.id!, goal.targetValue.toDouble());
+
+        _logger.i('✅ Goal corregido: ${goal.title}');
+      }
+
+      _logger.i('✅ Corrección completada. Ahora hay ${_goals.where((g) => g.status == GoalStatus.completed).length} goals completados');
+    } catch (e) {
+      _logger.e('❌ Error corrigiendo goals: $e');
     }
   }
 
@@ -284,7 +330,7 @@ class EnhancedGoalsProvider extends ChangeNotifier {
   }) async {
     try {
       _logger.i('📊 Actualizando progreso del objetivo $goalId: $newValue');
-      
+
       // Encontrar el objetivo en memoria primero
       final index = _goals.indexWhere((goal) => goal.id == goalId);
       if (index == -1) {
@@ -294,42 +340,50 @@ class EnhancedGoalsProvider extends ChangeNotifier {
 
       final originalGoal = _goals[index];
       _logger.i('📋 Objetivo original - Current: ${originalGoal.currentValue}, Target: ${originalGoal.targetValue}, Status: ${originalGoal.status}');
-      
+
+      // Asegurar que el valor no exceda el target
+      final clampedValue = newValue.clamp(0, originalGoal.targetValue);
+
       // Verificar si se va a completar ANTES de actualizar la BD
-      final willComplete = newValue >= originalGoal.targetValue && originalGoal.status != GoalStatus.completed;
-      _logger.i('🔍 ¿Se completará? $willComplete (newValue: $newValue >= target: ${originalGoal.targetValue})');
-      
-      
-      // Actualizar progreso en la base de datos
-      await _databaseService.updateGoalProgress(goalId, newValue.toDouble());
-      
-      // Actualizar en memoria
-      _goals[index] = originalGoal.copyWith(
-        currentValue: newValue,
-        lastUpdated: DateTime.now(),
-        progressNotes: notes != null 
-            ? (originalGoal.progressNotes != null 
-                ? '${originalGoal.progressNotes}\n$notes' 
-                : notes)
-            : originalGoal.progressNotes,
-      );
-      
-      // Si se completó, marcar como completado
+      final willComplete = clampedValue >= originalGoal.targetValue && originalGoal.status != GoalStatus.completed;
+      _logger.i('🔍 ¿Se completará? $willComplete (clampedValue: $clampedValue >= target: ${originalGoal.targetValue}, status: ${originalGoal.status})');
+
+      // Si se va a completar, actualizar directamente a completed
       if (willComplete) {
-        _logger.i('🎉 ¡Objetivo completado automáticamente! ID: $goalId');
-        
-        final completedGoal = _goals[index].markAsCompleted(
-          completionNote: notes ?? 'Objetivo completado automáticamente al alcanzar el 100%'
+        _logger.i('🎉 ¡Marcando objetivo como completado! ID: $goalId');
+
+        // Actualizar progreso al máximo en la base de datos
+        await _databaseService.updateGoalProgress(goalId, originalGoal.targetValue.toDouble());
+
+        // Marcar como completado
+        final completedGoal = originalGoal.markAsCompleted(
+          completionNote: notes ?? 'Objetivo completado al alcanzar el 100%'
         );
-        
+
         _goals[index] = completedGoal;
-        
+
         // Actualizar en la base de datos
         await _databaseService.updateGoalStatus(goalId, GoalStatus.completed);
         await _databaseService.setGoalCompletedAt(goalId, DateTime.now());
-        
+
         _logger.i('✅ Objetivo marcado como completado en BD: $goalId');
         _logger.i('📋 Objetivo completado - Status: ${_goals[index].status}, Completed: ${_goals[index].isCompleted}');
+      } else {
+        // Actualizar progreso normal
+        await _databaseService.updateGoalProgress(goalId, clampedValue.toDouble());
+
+        // Actualizar en memoria
+        _goals[index] = originalGoal.copyWith(
+          currentValue: clampedValue,
+          lastUpdated: DateTime.now(),
+          progressNotes: notes != null
+              ? (originalGoal.progressNotes != null
+                  ? '${originalGoal.progressNotes}\n$notes'
+                  : notes)
+              : originalGoal.progressNotes,
+        );
+
+        _logger.i('✅ Progreso actualizado: $clampedValue/${originalGoal.targetValue}');
       }
       
       // Actualizar datos de racha solo si es necesario
