@@ -301,18 +301,17 @@ class _AnalyticsScreenV5State extends State<AnalyticsScreenV5>
           icon: Icons.lightbulb_outline,
         ),
       ],
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: SafeArea(
+      child: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
                 child: _buildHeader(provider),
               ),
-            ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(0, 0, 0, 100),
               sliver: SliverList(
@@ -351,7 +350,8 @@ class _AnalyticsScreenV5State extends State<AnalyticsScreenV5>
                 ]),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
       ),
@@ -360,7 +360,7 @@ class _AnalyticsScreenV5State extends State<AnalyticsScreenV5>
 
   Widget _buildHeader(AnalyticsProviderV4 provider) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
