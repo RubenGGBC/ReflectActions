@@ -6,6 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 
+// Onboarding
+import '../../widgets/screen_onboarding_overlay.dart';
+import '../../../data/services/onboarding_service.dart';
+
 // Core theme imports
 import '../../../core/themes/app_theme.dart' as app_theme;
 import '../../providers/theme_provider.dart';
@@ -245,39 +249,59 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
     return Consumer2<DailyRoadmapProvider, ThemeProvider>(
       builder: (context, provider, themeProvider, child) {
         final theme = themeProvider.currentColors;
-        return Scaffold(
-          backgroundColor: theme.primaryBg,
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.primaryBg,
-                  theme.secondaryBg.withValues(alpha: 0.8),
-                  theme.gradientHeader[0].withValues(alpha: 0.1),
-                ],
-                stops: const [0.0, 0.7, 1.0],
-              ),
+        return ScreenOnboardingOverlay(
+          screenKey: OnboardingScreens.plan,
+          steps: const [
+            OnboardingStep(
+              title: 'Plan tu Día',
+              description: 'Organiza tus actividades diarias y crea un roadmap personalizado para alcanzar tus objetivos.',
+              icon: Icons.map_outlined,
             ),
-            child: Stack(
-              children: [
-                SafeArea(
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: RefreshIndicator(
-                        onRefresh: () => _handleRefresh(provider),
-                        color: theme.gradientHeader[0],
-                        backgroundColor: theme.surface,
-                        strokeWidth: 3,
-                        child: _buildMainContent(provider, themeProvider),
+            OnboardingStep(
+              title: 'Gestiona Tareas',
+              description: 'Agrega, edita y completa tareas. Mantén un seguimiento visual de tu progreso diario.',
+              icon: Icons.checklist,
+            ),
+            OnboardingStep(
+              title: 'Prioriza',
+              description: 'Organiza tus actividades por prioridad y asegúrate de enfocarte en lo más importante.',
+              icon: Icons.priority_high,
+            ),
+          ],
+          child: Scaffold(
+            backgroundColor: theme.primaryBg,
+            body: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    theme.primaryBg,
+                    theme.secondaryBg.withValues(alpha: 0.8),
+                    theme.gradientHeader[0].withValues(alpha: 0.1),
+                  ],
+                  stops: const [0.0, 0.7, 1.0],
+                ),
+              ),
+              child: Stack(
+                children: [
+                  SafeArea(
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: RefreshIndicator(
+                          onRefresh: () => _handleRefresh(provider),
+                          color: theme.gradientHeader[0],
+                          backgroundColor: theme.surface,
+                          strokeWidth: 3,
+                          child: _buildMainContent(provider, themeProvider),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );

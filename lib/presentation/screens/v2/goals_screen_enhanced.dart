@@ -6,6 +6,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// Onboarding
+import '../../widgets/screen_onboarding_overlay.dart';
+import '../../../data/services/onboarding_service.dart';
+
 // Models and Services
 import '../../../data/models/goal_model.dart';
 
@@ -160,31 +164,51 @@ class _GoalsScreenEnhancedState extends State<GoalsScreenEnhanced>
           _initializeData();
         });
 
-        return Scaffold(
-          backgroundColor: MinimalColors.backgroundPrimary(context),
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  MinimalColors.backgroundPrimary(context),
-                  MinimalColors.backgroundSecondary(context).withValues(alpha: 0.8),
-                  MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.1),
-                ],
-                stops: const [0.0, 0.7, 1.0],
+        return ScreenOnboardingOverlay(
+          screenKey: OnboardingScreens.metas,
+          steps: const [
+            OnboardingStep(
+              title: 'Define tus Metas',
+              description: 'Establece objetivos claros y alcanzables. Divide grandes metas en pasos más pequeños.',
+              icon: Icons.flag_outlined,
+            ),
+            OnboardingStep(
+              title: 'Haz Seguimiento',
+              description: 'Monitorea tu progreso y celebra cada logro, por pequeño que sea.',
+              icon: Icons.timeline,
+            ),
+            OnboardingStep(
+              title: 'Mantente Motivado',
+              description: 'Visualiza tu progreso y mantén la motivación viendo cuánto has avanzado.',
+              icon: Icons.celebration,
+            ),
+          ],
+          child: Scaffold(
+            backgroundColor: MinimalColors.backgroundPrimary(context),
+            body: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    MinimalColors.backgroundPrimary(context),
+                    MinimalColors.backgroundSecondary(context).withValues(alpha: 0.8),
+                    MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.1),
+                  ],
+                  stops: const [0.0, 0.7, 1.0],
+                ),
+              ),
+              child: SafeArea(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: goalsProvider.isLoading
+                      ? _buildLoadingState(context)
+                      : _buildMainContent(context, goalsProvider),
+                ),
               ),
             ),
-            child: SafeArea(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: goalsProvider.isLoading 
-                    ? _buildLoadingState(context)
-                    : _buildMainContent(context, goalsProvider),
-              ),
-            ),
+            floatingActionButton: _buildFloatingActionButton(context),
           ),
-          floatingActionButton: _buildFloatingActionButton(context),
         );
       },
     );

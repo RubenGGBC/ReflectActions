@@ -12,6 +12,7 @@ import '../../providers/optimized_providers.dart';
 import '../../providers/theme_provider.dart';
 
 // Screens optimizadas - ACTUALIZADO
+import '../v4/analytics_screen_v4.dart';
 import 'home_screen_v2.dart';
 import 'quick_moments_screen.dart'; // ✅ NUEVA PANTALLA RÁPIDA
 import 'daily_review_screen_v2.dart';

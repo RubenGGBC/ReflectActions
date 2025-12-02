@@ -9,6 +9,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 
+// Onboarding
+import '../../widgets/screen_onboarding_overlay.dart';
+import '../../../data/services/onboarding_service.dart';
+
 import '../../providers/optimized_providers.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/daily_activities_provider.dart';
@@ -339,144 +343,164 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: MinimalColors.backgroundPrimary(context),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: CustomScrollView(
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              _buildAppBar(),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _buildDateCard(),
-                    const SizedBox(height: 24),
+    return ScreenOnboardingOverlay(
+      screenKey: OnboardingScreens.reflexion,
+      steps: const [
+        OnboardingStep(
+          title: 'Reflexión Diaria',
+          description: 'Tómate un momento cada día para reflexionar sobre tus emociones, pensamientos y experiencias.',
+          icon: Icons.edit_note_outlined,
+        ),
+        OnboardingStep(
+          title: 'Registra tu Estado',
+          description: 'Califica tu ánimo, energía y productividad. Esto te ayudará a identificar patrones.',
+          icon: Icons.mood,
+        ),
+        OnboardingStep(
+          title: 'Escribe Libremente',
+          description: 'Expresa tus pensamientos sin filtros. Este espacio es solo para ti.',
+          icon: Icons.auto_stories,
+        ),
+      ],
+      child: Scaffold(
+        backgroundColor: MinimalColors.backgroundPrimary(context),
+        body: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                _buildAppBar(),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildDateCard(),
+                      const SizedBox(height: 24),
 
-                    // Main reflection with smart analysis
-                    _buildReflectionSection(),
-                    const SizedBox(height: 16),
+                      // Main reflection with smart analysis
+                      _buildReflectionSection(),
+                      const SizedBox(height: 16),
 
-                    // Optional sections (collapsible)
-                    _buildExpandableSection(
-                      isExpanded: _showInnerReflection,
-                      onToggle: () => setState(() => _showInnerReflection = !_showInnerReflection),
-                      icon: Icons.self_improvement_rounded,
-                      title: 'Reflexión Interna',
-                      subtitle: 'Profundiza en tus pensamientos',
-                      child: _buildInnerReflection(),
-                    ),
-                    const SizedBox(height: 16),
+                      // Optional sections (collapsible)
+                      _buildExpandableSection(
+                        isExpanded: _showInnerReflection,
+                        onToggle: () => setState(() => _showInnerReflection = !_showInnerReflection),
+                        icon: Icons.self_improvement_rounded,
+                        title: 'Reflexión Interna',
+                        subtitle: 'Profundiza en tus pensamientos',
+                        child: _buildInnerReflection(),
+                      ),
+                      const SizedBox(height: 16),
 
-                    _buildExpandableSection(
-                      isExpanded: _showGratitude,
-                      onToggle: () => setState(() => _showGratitude = !_showGratitude),
-                      icon: Icons.favorite_rounded,
-                      title: 'Gratitud',
-                      subtitle: '¿Por qué estás agradecido?',
-                      child: _buildGratitude(),
-                    ),
-                    const SizedBox(height: 16),
+                      _buildExpandableSection(
+                        isExpanded: _showGratitude,
+                        onToggle: () => setState(() => _showGratitude = !_showGratitude),
+                        icon: Icons.favorite_rounded,
+                        title: 'Gratitud',
+                        subtitle: '¿Por qué estás agradecido?',
+                        child: _buildGratitude(),
+                      ),
+                      const SizedBox(height: 16),
 
-                    _buildExpandableSection(
-                      isExpanded: _showTags,
-                      onToggle: () => setState(() => _showTags = !_showTags),
-                      icon: Icons.tag_rounded,
-                      title: 'Tags Emocionales',
-                      subtitle: 'Identifica tus emociones',
-                      child: _buildTagsSection(),
-                    ),
-                    const SizedBox(height: 20),
+                      _buildExpandableSection(
+                        isExpanded: _showTags,
+                        onToggle: () => setState(() => _showTags = !_showTags),
+                        icon: Icons.tag_rounded,
+                        title: 'Tags Emocionales',
+                        subtitle: 'Identifica tus emociones',
+                        child: _buildTagsSection(),
+                      ),
+                      const SizedBox(height: 20),
 
-                    // Core metrics (always visible)
-                    _buildCoreMetricsSection(),
-                    const SizedBox(height: 20),
+                      // Core metrics (always visible)
+                      _buildCoreMetricsSection(),
+                      const SizedBox(height: 20),
 
-                    // Wellbeing summary visualization
-                    _buildWellbeingSummaryCard(),
-                    const SizedBox(height: 20),
+                      // Wellbeing summary visualization
+                      _buildWellbeingSummaryCard(),
+                      const SizedBox(height: 20),
 
-                    _buildWorthItSection(),
-                    const SizedBox(height: 16),
+                      _buildWorthItSection(),
+                      const SizedBox(height: 16),
 
-                    // Advanced collapsible sections
-                    _buildExpandableSection(
-                      isExpanded: _showPhysicalWellbeing,
-                      onToggle: () => setState(() => _showPhysicalWellbeing = !_showPhysicalWellbeing),
-                      icon: Icons.fitness_center_rounded,
-                      title: 'Bienestar Físico',
-                      subtitle: 'Sueño, ejercicio, hidratación',
-                      child: _buildPhysicalWellbeingSection(),
-                    ),
-                    const SizedBox(height: 16),
+                      // Advanced collapsible sections
+                      _buildExpandableSection(
+                        isExpanded: _showPhysicalWellbeing,
+                        onToggle: () => setState(() => _showPhysicalWellbeing = !_showPhysicalWellbeing),
+                        icon: Icons.fitness_center_rounded,
+                        title: 'Bienestar Físico',
+                        subtitle: 'Sueño, ejercicio, hidratación',
+                        child: _buildPhysicalWellbeingSection(),
+                      ),
+                      const SizedBox(height: 16),
 
-                    _buildExpandableSection(
-                      isExpanded: _showEmotionalWellbeing,
-                      onToggle: () => setState(() => _showEmotionalWellbeing = !_showEmotionalWellbeing),
-                      icon: Icons.psychology_rounded,
-                      title: 'Bienestar Emocional',
-                      subtitle: 'Ansiedad, motivación, social',
-                      child: _buildEmotionalWellbeingSection(),
-                    ),
-                    const SizedBox(height: 16),
+                      _buildExpandableSection(
+                        isExpanded: _showEmotionalWellbeing,
+                        onToggle: () => setState(() => _showEmotionalWellbeing = !_showEmotionalWellbeing),
+                        icon: Icons.psychology_rounded,
+                        title: 'Bienestar Emocional',
+                        subtitle: 'Ansiedad, motivación, social',
+                        child: _buildEmotionalWellbeingSection(),
+                      ),
+                      const SizedBox(height: 16),
 
-                    _buildExpandableSection(
-                      isExpanded: _showProductivity,
-                      onToggle: () => setState(() => _showProductivity = !_showProductivity),
-                      icon: Icons.work_rounded,
-                      title: 'Productividad & Enfoque',
-                      subtitle: 'Trabajo, concentración, satisfacción',
-                      child: _buildProductivitySection(),
-                    ),
-                    const SizedBox(height: 16),
+                      _buildExpandableSection(
+                        isExpanded: _showProductivity,
+                        onToggle: () => setState(() => _showProductivity = !_showProductivity),
+                        icon: Icons.work_rounded,
+                        title: 'Productividad & Enfoque',
+                        subtitle: 'Trabajo, concentración, satisfacción',
+                        child: _buildProductivitySection(),
+                      ),
+                      const SizedBox(height: 16),
 
-                    _buildExpandableSection(
-                      isExpanded: _showActivitiesGoals,
-                      onToggle: () => setState(() => _showActivitiesGoals = !_showActivitiesGoals),
-                      icon: Icons.check_circle_rounded,
-                      title: 'Actividades & Metas',
-                      subtitle: 'Lo que lograste hoy',
-                      child: _buildActivitiesGoalsSection(),
-                    ),
-                    const SizedBox(height: 16),
+                      _buildExpandableSection(
+                        isExpanded: _showActivitiesGoals,
+                        onToggle: () => setState(() => _showActivitiesGoals = !_showActivitiesGoals),
+                        icon: Icons.check_circle_rounded,
+                        title: 'Actividades & Metas',
+                        subtitle: 'Lo que lograste hoy',
+                        child: _buildActivitiesGoalsSection(),
+                      ),
+                      const SizedBox(height: 16),
 
-                    _buildExpandableSection(
-                      isExpanded: _showDailyPhotos,
-                      onToggle: () => setState(() => _showDailyPhotos = !_showDailyPhotos),
-                      icon: Icons.photo_camera_rounded,
-                      title: 'Fotos del Día',
-                      subtitle: 'Captura momentos especiales',
-                      child: _buildDailyPhotosSection(),
-                    ),
-                    const SizedBox(height: 16),
+                      _buildExpandableSection(
+                        isExpanded: _showDailyPhotos,
+                        onToggle: () => setState(() => _showDailyPhotos = !_showDailyPhotos),
+                        icon: Icons.photo_camera_rounded,
+                        title: 'Fotos del Día',
+                        subtitle: 'Captura momentos especiales',
+                        child: _buildDailyPhotosSection(),
+                      ),
+                      const SizedBox(height: 16),
 
-                    _buildExpandableSection(
-                      isExpanded: _showVoiceRecording,
-                      onToggle: () => setState(() => _showVoiceRecording = !_showVoiceRecording),
-                      icon: Icons.mic_rounded,
-                      title: 'Nota de Voz',
-                      subtitle: 'Graba tus pensamientos',
-                      child: _buildVoiceRecordingSection(),
-                    ),
-                    const SizedBox(height: 24),
+                      _buildExpandableSection(
+                        isExpanded: _showVoiceRecording,
+                        onToggle: () => setState(() => _showVoiceRecording = !_showVoiceRecording),
+                        icon: Icons.mic_rounded,
+                        title: 'Nota de Voz',
+                        subtitle: 'Graba tus pensamientos',
+                        child: _buildVoiceRecordingSection(),
+                      ),
+                      const SizedBox(height: 24),
 
-                    // Smart suggestions (collapsible)
-                    _buildSmartSuggestionsCard(),
-                    const SizedBox(height: 24),
+                      // Smart suggestions (collapsible)
+                      _buildSmartSuggestionsCard(),
+                      const SizedBox(height: 24),
 
-                    // Analytics navigation button
-                    _buildAnalyticsButton(),
-                    const SizedBox(height: 24),
+                      // Analytics navigation button
+                      _buildAnalyticsButton(),
+                      const SizedBox(height: 24),
 
-                    _buildSaveButton(),
-                  ]),
+                      _buildSaveButton(),
+                    ]),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -489,29 +513,81 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
       snap: true,
       elevation: 0,
       backgroundColor: Colors.transparent,
-      expandedHeight: 80,
+      expandedHeight: 100,
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-        title: ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: MinimalColors.primaryGradient(context),
-          ).createShader(bounds),
-          child: const Text(
-            'Mi Día',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -1,
-            ),
+        titlePadding: const EdgeInsets.only(left: 0, bottom: 0),
+        title: Container(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: MinimalColors.accentGradient(context)[0].withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.edit_note_outlined,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: MinimalColors.accentGradient(context),
+                      ).createShader(bounds),
+                      child: Text(
+                        'Mi Día',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Reflexiona sobre tu día',
+                      style: TextStyle(
+                        color: MinimalColors.textSecondary(context),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
       actions: [
         IconButton(
-          icon: Icon(
-            Icons.calendar_today_rounded,
-            color: MinimalColors.textSecondary(context),
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.calendar_today_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
           onPressed: () => Navigator.push(
             context,
@@ -522,6 +598,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
       ],
     );
   }
+
 
   Widget _buildDateCard() {
     final now = DateTime.now();
@@ -1376,13 +1453,10 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
         onEntryCreated: (entry) async {
           final goalsProvider = context.read<GoalsProvider>();
 
-          // Actualizar progreso con todas las métricas y notas
-          await goalsProvider.addProgressEntry(entry);
+          // Actualizar progreso
           await goalsProvider.updateGoalProgress(
             goal.id!,
-            entry.primaryValue,
-            notes: entry.notes,
-            metrics: entry.metrics,
+            entry.primaryValue.toDouble(),
           );
 
           HapticFeedback.mediumImpact();

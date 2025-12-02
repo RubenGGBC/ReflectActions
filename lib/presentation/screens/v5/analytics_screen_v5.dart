@@ -13,6 +13,10 @@ import '../../providers/theme_provider.dart';
 import '../v2/components/minimal_colors.dart';
 import '../../../data/services/analytics_database_extension_v4_simple.dart';
 
+// Onboarding
+import '../../widgets/screen_onboarding_overlay.dart';
+import '../../../data/services/onboarding_service.dart';
+
 class AnalyticsScreenV5 extends StatefulWidget {
   const AnalyticsScreenV5({Key? key}) : super(key: key);
 
@@ -278,11 +282,30 @@ class _AnalyticsScreenV5State extends State<AnalyticsScreenV5>
   }
 
   Widget _buildAnalyticsContent(AnalyticsProviderV4 provider) {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: CustomScrollView(
+    return ScreenOnboardingOverlay(
+      screenKey: OnboardingScreens.analytics,
+      steps: const [
+        OnboardingStep(
+          title: 'Analíticas',
+          description: 'Aquí encontrarás estadísticas detalladas sobre tu bienestar emocional y progreso a lo largo del tiempo.',
+          icon: Icons.analytics_outlined,
+        ),
+        OnboardingStep(
+          title: 'Métricas de Bienestar',
+          description: 'Visualiza gráficos de tu estado de ánimo, energía y productividad en diferentes períodos.',
+          icon: Icons.trending_up,
+        ),
+        OnboardingStep(
+          title: 'Insights Personalizados',
+          description: 'Recibe recomendaciones basadas en tus patrones y tendencias emocionales.',
+          icon: Icons.lightbulb_outline,
+        ),
+      ],
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
             _buildAppBar(provider),
@@ -308,6 +331,7 @@ class _AnalyticsScreenV5State extends State<AnalyticsScreenV5>
             ),
           ],
         ),
+      ),
       ),
     );
   }

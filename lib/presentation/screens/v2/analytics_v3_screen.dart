@@ -226,120 +226,84 @@ class _AnalyticsV3ScreenState extends State<AnalyticsV3Screen> with TickerProvid
   // ============================================================================
   Widget _buildProfessionalHeader(ThemeProvider themeProvider) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-            decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            MinimalColors.backgroundCard(context).withOpacity(0.1),
-            Colors.transparent,
-          ],
-        ),
-      ),
-      child: Row(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Enhanced icon with home screen v2 style
-          Container(
-            width: 48,
-            height: 48,
-                  decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: MinimalColors.primaryGradient(context),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: MinimalColors.accentGradient(context)[0].withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.insights,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
-              borderRadius: BorderRadius.circular(ModernSpacing.radiusMedium),
-              boxShadow: [
-                BoxShadow(
-                  color: MinimalColors.gradientShadow(context, alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-            child: Icon(
-              Icons.insights,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Title section
-          Expanded(
-                  child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Analytics',
-                  style: TextStyle(
-                    color: MinimalColors.textPrimary(context),
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                Text(
-                  'Insights de bienestar',
-                  style: TextStyle(
-                    color: MinimalColors.textSecondary(context),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Status indicator
-          Consumer<AnalyticsV3Provider>(
-            builder: (context, provider, _) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                  color: provider.hasData 
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: provider.hasData 
-                      ? Colors.green.withOpacity(0.3)
-                      : Colors.orange.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                            decoration: BoxDecoration(
-                        color: provider.hasData ? Colors.green : Colors.orange,
-                        borderRadius: BorderRadius.circular(3),
+                    ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: MinimalColors.accentGradient(context),
+                      ).createShader(bounds),
+                      child: Text(
+                        'Analytics',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(height: 4),
                     Text(
-                      provider.hasData ? 'Activo' : 'Limitado',
+                      'Insights de bienestar',
                       style: TextStyle(
-                        color: provider.hasData ? Colors.green : Colors.orange,
-                        fontSize: 12,
+                        color: MinimalColors.textSecondary(context),
+                        fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-              );
-            },
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+
 
   // ============================================================================
   // DATA REQUIREMENT BADGE HELPER

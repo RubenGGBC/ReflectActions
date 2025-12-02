@@ -8,6 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 
+// Onboarding
+import '../../widgets/screen_onboarding_overlay.dart';
+import '../../../data/services/onboarding_service.dart';
+
 import 'package:untitled3/presentation/screens/v2/notification_settings_screen.dart';
 
 // Providers optimizados
@@ -144,27 +148,47 @@ class _ProfileScreenV2State extends State<ProfileScreenV2>
       );
     }
 
-    return Scaffold(
-      backgroundColor: MinimalColors.backgroundPrimary(context),
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(ModernSpacing.lg),
-              child: Column(
-                children: [
-                  _buildMinimalHeader(),
-                  const SizedBox(height: ModernSpacing.xl),
-                  _buildProfileCard(),
-                  const SizedBox(height: ModernSpacing.lg),
-                  _buildStatsCard(analyticsProvider),
-                  const SizedBox(height: ModernSpacing.lg),
-                  _buildSettingsCard(),
-                  const SizedBox(height: ModernSpacing.lg),
-                  _buildActionsCard(),
-                ],
+    return ScreenOnboardingOverlay(
+      screenKey: OnboardingScreens.perfil,
+      steps: const [
+        OnboardingStep(
+          title: 'Tu Perfil',
+          description: 'Personaliza tu información y preferencias. Haz que la app sea verdaderamente tuya.',
+          icon: Icons.person_outline,
+        ),
+        OnboardingStep(
+          title: 'Configuración',
+          description: 'Ajusta el tema, las notificaciones y otras preferencias según tus necesidades.',
+          icon: Icons.settings,
+        ),
+        OnboardingStep(
+          title: 'Privacidad',
+          description: 'Todos tus datos están seguros y solo tú tienes acceso a ellos en tu dispositivo.',
+          icon: Icons.lock_outline,
+        ),
+      ],
+      child: Scaffold(
+        backgroundColor: MinimalColors.backgroundPrimary(context),
+        body: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(ModernSpacing.lg),
+                child: Column(
+                  children: [
+                    _buildMinimalHeader(),
+                    const SizedBox(height: ModernSpacing.xl),
+                    _buildProfileCard(),
+                    const SizedBox(height: ModernSpacing.lg),
+                    _buildStatsCard(analyticsProvider),
+                    const SizedBox(height: ModernSpacing.lg),
+                    _buildSettingsCard(),
+                    const SizedBox(height: ModernSpacing.lg),
+                    _buildActionsCard(),
+                  ],
+                ),
               ),
             ),
           ),

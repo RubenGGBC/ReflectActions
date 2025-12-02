@@ -8,6 +8,10 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 
+// Onboarding
+import '../../widgets/screen_onboarding_overlay.dart';
+import '../../../data/services/onboarding_service.dart';
+
 // Providers
 import '../../providers/optimized_providers.dart';
 import '../../providers/image_moments_provider.dart';
@@ -342,40 +346,60 @@ class _QuickMomentsScreenState extends State<QuickMomentsScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: MinimalColors.backgroundPrimary(context),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              MinimalColors.backgroundPrimary(context),
-              MinimalColors.backgroundSecondary(context).withValues(alpha: 0.8),
-              MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.1),
-            ],
-            stops: const [0.0, 0.7, 1.0],
-          ),
+    return ScreenOnboardingOverlay(
+      screenKey: OnboardingScreens.momentos,
+      steps: const [
+        OnboardingStep(
+          title: 'Captura Momentos',
+          description: 'Guarda fotos y notas de los momentos especiales de tu día para recordarlos más tarde.',
+          icon: Icons.camera_alt_outlined,
         ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Column(
-              children: [
-                _buildHeader(),
-                Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: [
-                      _buildStep1(),
-                      _buildStep2(),
-                      _buildStep3(),
-                    ],
-                  ),
-                ),
-                _buildBottomActions(),
+        OnboardingStep(
+          title: 'Galería Personal',
+          description: 'Accede a todos tus momentos guardados y revive tus mejores experiencias.',
+          icon: Icons.photo_library,
+        ),
+        OnboardingStep(
+          title: 'Contexto Emocional',
+          description: 'Cada momento captura no solo una imagen, sino también cómo te sentías en ese instante.',
+          icon: Icons.favorite_outline,
+        ),
+      ],
+      child: Scaffold(
+        backgroundColor: MinimalColors.backgroundPrimary(context),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                MinimalColors.backgroundPrimary(context),
+                MinimalColors.backgroundSecondary(context).withValues(alpha: 0.8),
+                MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.1),
               ],
+              stops: const [0.0, 0.7, 1.0],
+            ),
+          ),
+          child: SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: PageView(
+                      controller: _pageController,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        _buildStep1(),
+                        _buildStep2(),
+                        _buildStep3(),
+                      ],
+                    ),
+                  ),
+                  _buildBottomActions(),
+                ],
+              ),
             ),
           ),
         ),

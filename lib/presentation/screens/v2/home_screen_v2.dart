@@ -33,6 +33,10 @@ import 'components/minimal_colors.dart';
 import 'recommended_activities_screen.dart';
 import 'daily_review_screen_v2.dart';
 
+// Onboarding
+import '../../widgets/screen_onboarding_overlay.dart';
+import '../../../data/services/onboarding_service.dart';
+
 class HomeScreenV2 extends StatefulWidget {
   const HomeScreenV2({super.key});
 
@@ -263,8 +267,27 @@ class _HomeScreenV2State extends State<HomeScreenV2>
               );
             }
 
-            return Stack(
-              children: [
+            return ScreenOnboardingOverlay(
+              screenKey: OnboardingScreens.home,
+              steps: const [
+                OnboardingStep(
+                  title: 'Bienvenido a Inicio',
+                  description: 'Esta es tu pantalla principal donde verás un resumen de tu día, tus rachas, y citas inspiradoras.',
+                  icon: Icons.home_outlined,
+                ),
+                OnboardingStep(
+                  title: 'Sigue tu Progreso',
+                  description: 'Aquí verás tus estadísticas semanales y tu progreso en reflexiones y estados de ánimo.',
+                  icon: Icons.trending_up,
+                ),
+                OnboardingStep(
+                  title: 'Momentos Recientes',
+                  description: 'Accede rápidamente a tus momentos guardados y reflexiones del día.',
+                  icon: Icons.photo_library_outlined,
+                ),
+              ],
+              child: Stack(
+                children: [
                 // Animated background particles
                 ...List.generate(3, (index) =>
                   AnimatedBuilder(
@@ -377,6 +400,7 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                   ),
                 ),
               ],
+            ),
             );
                     },
                   );

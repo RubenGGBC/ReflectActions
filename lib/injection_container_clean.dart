@@ -28,9 +28,13 @@ import 'presentation/providers/daily_activities_provider.dart'; // ✅ NUEVO: Da
 import 'presentation/providers/daily_roadmap_provider.dart'; // ✅ NUEVO: Daily Roadmap
 import 'presentation/providers/enhanced_goals_provider.dart'; // ✅ NUEVO: Enhanced Goals
 import 'presentation/providers/hopecore_quotes_provider.dart'; // ✅ NUEVO: Hopecore Quotes
+import 'presentation/providers/onboarding_provider.dart'; // ✅ NUEVO: Onboarding
 // AI providers removed
 // Theme provider (reutilizado del original)
 import 'presentation/providers/theme_provider.dart';
+
+// Onboarding Service
+import 'data/services/onboarding_service.dart';
 
 final sl = GetIt.instance;
 
@@ -87,7 +91,10 @@ Future<void> initCleanDependencies() async {
           () => VoiceRecordingService(),
     );
 
-
+    // ✅ NUEVO: OnboardingService (async initialization)
+    sl.registerSingletonAsync<OnboardingService>(
+      () async => await OnboardingService.create(),
+    );
 
     // ============================================================================
     // PROVIDERS (Factories - nueva instancia cuando se pide)
@@ -194,6 +201,11 @@ Future<void> initCleanDependencies() async {
           () => HopecoreQuotesProvider(),
     );
 
+    // ✅ NUEVO: OnboardingProvider
+    sl.registerFactory<OnboardingProvider>(
+          () => OnboardingProvider(sl<OnboardingService>()),
+    );
+
     logger.i('✅ Dependencias limpias inicializadas correctamente');
 
   } catch (e) {
@@ -221,6 +233,10 @@ Future<void> initCriticalServices() async {
     await voiceService.initialize();
     logger.i('✅ Servicio de grabación de voz inicializado');
 
+    // Inicializar servicio de onboarding
+    await sl.isReady<OnboardingService>();
+    logger.i('✅ Servicio de onboarding inicializado');
+
     // Inicializar otros servicios críticos aquí si es necesario
 
   } catch (e) {
@@ -244,6 +260,7 @@ bool areCleanServicesRegistered() {
     // AI service removed
     sl<NotificationService>();
     sl<VoiceRecordingService>();
+    sl<OnboardingService>(); // ✅ NUEVO
 
     // Verificar providers
     sl<OptimizedAuthProvider>();
@@ -263,6 +280,7 @@ bool areCleanServicesRegistered() {
     sl<ChallengesProvider>(); // ✅ HIGH PRIORITY ENHANCEMENT
     sl<StreakProvider>(); // ✅ HIGH PRIORITY ENHANCEMENT
     sl<AdvancedEmotionAnalysisProvider>(); // ✅ NUEVO
+    sl<OnboardingProvider>(); // ✅ NUEVO
 
     return true;
   } catch (e) {
