@@ -39,7 +39,8 @@ class _EnhancedCreateGoalDialogState extends State<EnhancedCreateGoalDialog>
   
   bool _isLoading = false;
   int _currentStep = 0;
-  
+  String? _errorMessage;
+
   final List<String> _availableUnits = [
     'días', 'veces', 'minutos', 'horas', 'páginas', 'ejercicios', 'sesiones'
   ];
@@ -105,6 +106,7 @@ class _EnhancedCreateGoalDialogState extends State<EnhancedCreateGoalDialog>
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildHeader(context),
+              if (_errorMessage != null) _buildErrorBanner(),
               Flexible(
                 child: _buildStepContent(context),
               ),
@@ -112,6 +114,51 @@ class _EnhancedCreateGoalDialogState extends State<EnhancedCreateGoalDialog>
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildErrorBanner() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFF6B6B).withValues(alpha: 0.1),
+        border: Border.all(
+          color: const Color(0xFFFF6B6B).withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            color: const Color(0xFFFF6B6B),
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: TextStyle(
+                color: const Color(0xFFFF6B6B),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.close, color: const Color(0xFFFF6B6B), size: 20),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () {
+              setState(() {
+                _errorMessage = null;
+              });
+            },
+          ),
+        ],
       ),
     );
   }
@@ -132,24 +179,39 @@ class _EnhancedCreateGoalDialogState extends State<EnhancedCreateGoalDialog>
         children: [
           Row(
             children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.flag_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Crear Nuevo Objetivo',
-                      style:  TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: MinimalColors.textPrimary(context),
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Define tu próximo logro personal',
-                      style:  TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: MinimalColors.textPrimary(context),
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -157,9 +219,17 @@ class _EnhancedCreateGoalDialogState extends State<EnhancedCreateGoalDialog>
               ),
               IconButton(
                 onPressed: () => Navigator.of(context).pop(),
-                icon:  Icon(
-                  Icons.close,
-                  color: MinimalColors.textPrimary(context),
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
             ],
@@ -709,15 +779,28 @@ class _EnhancedCreateGoalDialogState extends State<EnhancedCreateGoalDialog>
   }
 
   void _handleNextOrSubmit() {
+    // Clear previous error
+    setState(() {
+      _errorMessage = null;
+    });
+
     if (_currentStep < 2) {
       // Validate current step
-      if (_currentStep == 0 && (_titleController.text.isEmpty || _descriptionController.text.isEmpty)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Por favor completa título y descripción')),
-        );
-        return;
+      if (_currentStep == 0) {
+        if (_titleController.text.trim().isEmpty) {
+          setState(() {
+            _errorMessage = 'Por favor ingresa un título para tu objetivo';
+          });
+          return;
+        }
+        if (_descriptionController.text.trim().isEmpty) {
+          setState(() {
+            _errorMessage = 'Por favor agrega una descripción de tu objetivo';
+          });
+          return;
+        }
       }
-      
+
       setState(() {
         _currentStep++;
       });
@@ -728,21 +811,35 @@ class _EnhancedCreateGoalDialogState extends State<EnhancedCreateGoalDialog>
 
   void _createGoal() async {
     // Validate final step
-    if (_targetValueController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingresa un valor meta')),
-      );
+    if (_targetValueController.text.trim().isEmpty) {
+      setState(() {
+        _errorMessage = 'Por favor ingresa un valor meta';
+      });
+      return;
+    }
+
+    final targetValue = int.tryParse(_targetValueController.text.trim());
+    if (targetValue == null || targetValue <= 0) {
+      setState(() {
+        _errorMessage = 'El valor meta debe ser un número mayor a 0';
+      });
+      return;
+    }
+
+    final estimatedDays = int.tryParse(_estimatedDaysController.text.trim()) ?? 30;
+    if (estimatedDays <= 0) {
+      setState(() {
+        _errorMessage = 'La duración debe ser mayor a 0 días';
+      });
       return;
     }
 
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
-      final targetValue = int.tryParse(_targetValueController.text) ?? 0;
-      final estimatedDays = int.tryParse(_estimatedDaysController.text) ?? 30;
-      
       final goal = GoalModel(
         id: DateTime.now().millisecondsSinceEpoch,
         userId: 1, // Will be set by the service
@@ -768,15 +865,16 @@ class _EnhancedCreateGoalDialogState extends State<EnhancedCreateGoalDialog>
       );
 
       widget.onGoalCreated(goal);
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creando objetivo: $e')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error creando objetivo: ${e.toString()}';
+          _isLoading = false;
+        });
+      }
     }
   }
 

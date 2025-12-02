@@ -2765,7 +2765,16 @@ class GoalsProvider with ChangeNotifier {
       if (goalIndex == -1) return false;
 
       final goal = _goals[goalIndex];
-      final updatedGoal = goal.copyWith(currentValue: newValue.toInt());
+
+      // Actualizar progreso en la base de datos
+      final success = await _databaseService.updateGoalProgress(goalId, newValue);
+      if (!success) return false;
+
+      // Actualizar en memoria
+      final updatedGoal = goal.copyWith(
+        currentValue: newValue.toInt(),
+        lastUpdated: DateTime.now(),
+      );
 
       // Verificar si se completó automáticamente
       if (updatedGoal.progress >= 1.0 && goal.status == GoalStatus.active) {
@@ -2774,16 +2783,13 @@ class GoalsProvider with ChangeNotifier {
           completedAt: DateTime.now(),
         );
 
-        final success = await _databaseService.updateGoal(completedGoal);
-        if (success) {
-          _goals[goalIndex] = completedGoal;
-          _logger.i('🎉 ¡Objetivo completado automáticamente!: ${goal.title}');
-        }
+        await _databaseService.updateGoalStatus(goalId, GoalStatus.completed);
+        await _databaseService.setGoalCompletedAt(goalId, DateTime.now());
+
+        _goals[goalIndex] = completedGoal;
+        _logger.i('🎉 ¡Objetivo completado automáticamente!: ${goal.title}');
       } else {
-        final success = await _databaseService.updateGoal(updatedGoal);
-        if (success) {
-          _goals[goalIndex] = updatedGoal;
-        }
+        _goals[goalIndex] = updatedGoal;
       }
 
       notifyListeners();
@@ -2803,21 +2809,26 @@ class GoalsProvider with ChangeNotifier {
       if (goalIndex == -1) return false;
 
       final goal = _goals[goalIndex];
+
+      // Actualizar progreso al 100%
+      await _databaseService.updateGoalProgress(goalId, goal.targetValue.toDouble());
+
+      // Actualizar estado a completado
+      await _databaseService.updateGoalStatus(goalId, GoalStatus.completed);
+      await _databaseService.setGoalCompletedAt(goalId, DateTime.now());
+
+      // Actualizar en memoria
       final completedGoal = goal.copyWith(
         status: GoalStatus.completed,
         completedAt: DateTime.now(),
         currentValue: goal.targetValue, // Marcar como 100% completado
+        lastUpdated: DateTime.now(),
       );
 
-      final success = await _databaseService.updateGoal(completedGoal);
-
-      if (success) {
-        _goals[goalIndex] = completedGoal;
-        _logger.i('🎉 Objetivo completado: ${goal.title}');
-        notifyListeners();
-        return true;
-      }
-      return false;
+      _goals[goalIndex] = completedGoal;
+      _logger.i('🎉 Objetivo completado: ${goal.title}');
+      notifyListeners();
+      return true;
     } catch (e) {
       _logger.e('❌ Error completando objetivo: $e');
       return false;

@@ -631,29 +631,47 @@ class _GoalsScreenEnhancedState extends State<GoalsScreenEnhanced>
   }
 
   Widget _buildFloatingActionButton(BuildContext context) {
-    return ScaleTransition(
-      scale: _fabAnimation,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: MinimalColors.primaryGradient(context)),
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+    final mediaQuery = MediaQuery.of(context);
+    final bottomPadding = mediaQuery.padding.bottom;
+
+    // Detectar si hay botones de navegación del sistema
+    final hasSystemNavButtons = bottomPadding > 0;
+
+    // Altura aproximada de la barra de navegación custom (60px) + márgenes (2-8px)
+    final navigationBarHeight = 60.0;
+    final navigationMargin = hasSystemNavButtons ? bottomPadding + 2.0 : 2.0;
+
+    // Espacio total que ocupa la navegación
+    final totalNavigationSpace = navigationBarHeight + navigationMargin + 16.0; // +16 de separación
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: totalNavigationSpace,
+      ),
+      child: ScaleTransition(
+        scale: _fabAnimation,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: MinimalColors.primaryGradient(context)),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            heroTag: "goals_fab",
+            onPressed: _showCreateGoalDialog,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child:  Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 28,
             ),
-          ],
-        ),
-        child: FloatingActionButton(
-          heroTag: "goals_fab",
-          onPressed: _showCreateGoalDialog,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child:  Icon(
-            Icons.add,
-            color: Colors.white,
-            size: 28,
           ),
         ),
       ),

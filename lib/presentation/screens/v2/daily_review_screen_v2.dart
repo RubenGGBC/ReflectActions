@@ -720,6 +720,16 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             const SizedBox(height: 12),
             _buildSentimentIndicator(sentiment),
           ],
+          // Widget de grabación de voz integrado directamente
+          VoiceRecordingWidget(
+            existingRecordingPath: _voiceRecordingPath,
+            onRecordingComplete: (path) => setState(() => _voiceRecordingPath = path),
+            isExpanded: _showVoiceRecording,
+            onExpand: () {
+              HapticFeedback.selectionClick();
+              setState(() => _showVoiceRecording = !_showVoiceRecording);
+            },
+          ),
         ],
       ),
     );

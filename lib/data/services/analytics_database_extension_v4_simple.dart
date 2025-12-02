@@ -275,7 +275,7 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
   
   Future<SimpleGoalAnalytics> getSimpleGoalAnalytics(int userId, SimpleAnalyticsTimeframe timeframe) async {
     final db = await database;
-    
+
     try {
       // Get all goals for user
       final results = await db.query(
@@ -283,21 +283,61 @@ extension SimpleAnalyticsDatabaseExtensionV4 on OptimizedDatabaseService {
         where: 'user_id = ?',
         whereArgs: [userId],
       );
-      
-      final goals = results.map((map) => GoalModel.fromDatabase(map)).toList();
-      
-      final totalGoals = goals.length;
-      final completedGoals = goals.where((g) => g.status == GoalStatus.completed).length;
-      final activeGoals = goals.where((g) => g.status == GoalStatus.active).length;
+
+      final allGoals = results.map((map) => GoalModel.fromDatabase(map)).toList();
+
+      // Filter goals based on timeframe
+      // Include goals that are:
+      // 1. Active (currently working on them)
+      // 2. Created within timeframe
+      // 3. Completed within timeframe
+      final startTimestamp = timeframe.startDate.millisecondsSinceEpoch ~/ 1000;
+      final endTimestamp = timeframe.endDate.millisecondsSinceEpoch ~/ 1000;
+
+      final relevantGoals = allGoals.where((goal) {
+        // Always include active goals
+        if (goal.status == GoalStatus.active) return true;
+
+        // Include goals created in timeframe
+        final createdTimestamp = goal.createdAt.millisecondsSinceEpoch ~/ 1000;
+        if (createdTimestamp >= startTimestamp && createdTimestamp <= endTimestamp) {
+          return true;
+        }
+
+        // Include goals completed in timeframe
+        if (goal.completedAt != null) {
+          final completedTimestamp = goal.completedAt!.millisecondsSinceEpoch ~/ 1000;
+          if (completedTimestamp >= startTimestamp && completedTimestamp <= endTimestamp) {
+            return true;
+          }
+        }
+
+        return false;
+      }).toList();
+
+      final totalGoals = relevantGoals.length;
+      final completedGoals = relevantGoals.where((g) => g.status == GoalStatus.completed).length;
+      final activeGoals = relevantGoals.where((g) => g.status == GoalStatus.active).length;
       final completionRate = totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0.0;
-      
+
+      print('📊 Goal Analytics Debug:');
+      print('  Total goals in timeframe: $totalGoals');
+      print('  Completed: $completedGoals');
+      print('  Active: $activeGoals');
+      print('  Completion rate: ${completionRate.toStringAsFixed(1)}%');
+
+      // Debug: Print goals status
+      for (final goal in relevantGoals) {
+        print('  Goal "${goal.title}": status=${goal.status.name}, progress=${goal.progressPercentage}%, isCompleted=${goal.isCompleted}');
+      }
+
       // Group by category
       final goalsByCategory = <String, int>{};
-      for (final goal in goals) {
+      for (final goal in relevantGoals) {
         final categoryName = goal.category.toString().split('.').last;
         goalsByCategory[categoryName] = (goalsByCategory[categoryName] ?? 0) + 1;
       }
-      
+
       return SimpleGoalAnalytics(
         totalGoals: totalGoals,
         completedGoals: completedGoals,

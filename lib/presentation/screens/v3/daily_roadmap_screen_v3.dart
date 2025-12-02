@@ -59,6 +59,7 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
   final TextEditingController _morningNotesController = TextEditingController();
 
   bool _isInitialized = false;
+  bool _hasScrolledToCurrentHour = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -218,6 +219,7 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
             _fadeController.forward();
             _slideController.forward();
             _staggerController.forward();
+            _scrollToCurrentHour();
           }
         });
       }
@@ -270,6 +272,8 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
           ],
           child: Scaffold(
             backgroundColor: theme.primaryBg,
+            floatingActionButton: _buildFloatingActionButton(provider, themeProvider),
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
             body: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -398,67 +402,89 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
 
   Widget _buildHeader(DailyRoadmapProvider provider, ThemeProvider theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(colors: theme.gradientHeader),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: theme.shadowColor,
+                      color: theme.gradientHeader[0].withValues(alpha: 0.4),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
                   ],
                 ),
                 child: Icon(
-                  Icons.map_outlined,
+                  Icons.event_note_rounded,
                   color: Colors.white,
-                  size: 28,
+                  size: 26,
                 ),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ShaderMask(
-                      shaderCallback: (bounds) => LinearGradient(
-                        colors: theme.gradientHeader,
-                      ).createShader(bounds),
-                      child: Text(
-                        'Roadmap Diario',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                        ),
+                    Text(
+                      'Plan del Día',
+                      style: TextStyle(
+                        color: theme.textPrimary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Planifica tu día hora por hora',
-                      style: TextStyle(
-                        color: theme.textSecondary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          size: 14,
+                          color: theme.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _getCurrentTimeString(),
+                          style: TextStyle(
+                            color: theme.textSecondary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: theme.gradientHeader),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${provider.totalActivities} actividades',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              _buildOptionsButton(theme),
             ],
           ),
+          const SizedBox(height: 16),
+          _buildQuickStats(provider, theme),
           if (provider.error != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             _buildErrorMessage(provider.error!, theme),
           ],
         ],
@@ -466,10 +492,108 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
     );
   }
 
+  Widget _buildQuickStats(DailyRoadmapProvider provider, ThemeProvider theme) {
+    final completionPercentage = provider.completionPercentage.round();
+    final remainingActivities = provider.totalActivities - provider.completedActivities;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatBadge(
+            icon: Icons.check_circle_outline,
+            label: 'Completadas',
+            value: '${provider.completedActivities}',
+            color: theme.positiveMain,
+            gradient: [theme.positiveMain, theme.positiveMain.withValues(alpha: 0.7)],
+            theme: theme,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatBadge(
+            icon: Icons.pending_actions,
+            label: 'Pendientes',
+            value: '$remainingActivities',
+            color: theme.accentPrimary,
+            gradient: theme.gradientHeader,
+            theme: theme,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatBadge(
+            icon: Icons.trending_up,
+            label: 'Progreso',
+            value: '$completionPercentage%',
+            color: theme.accentSecondary,
+            gradient: [theme.accentSecondary, theme.accentSecondary.withValues(alpha: 0.7)],
+            theme: theme,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatBadge({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    required List<Color> gradient,
+    required ThemeProvider theme,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: theme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 18,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: theme.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              color: theme.textSecondary,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDateSelector(DailyRoadmapProvider provider, ThemeProvider theme) {
     return Container(
-      height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      height: 80,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: 7,
@@ -495,8 +619,8 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 400),
                       curve: Curves.easeOutCubic,
-                      width: 60,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: 68,
+                      margin: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
                 gradient: isSelected
                     ? LinearGradient(colors: theme.gradientHeader)
@@ -537,25 +661,34 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
                   Text(
                     _getDayName(date),
                     style: TextStyle(
-                      color: isSelected ? Colors.white : theme.textSecondary,
-                      fontSize: 11,
+                      color: isSelected ? Colors.white.withValues(alpha: 0.9) : theme.textSecondary,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     date.day.toString(),
                     style: TextStyle(
                       color: isSelected ? Colors.white : theme.textPrimary,
-                      fontSize: 16,
+                      fontSize: 20,
                       fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _getMonthName(date),
+                    style: TextStyle(
+                      color: isSelected ? Colors.white.withValues(alpha: 0.8) : theme.textSecondary.withValues(alpha: 0.7),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   if (isToday) ...[
                     const SizedBox(height: 4),
                     Container(
-                      width: 6,
-                      height: 6,
+                      width: 4,
+                      height: 4,
                       decoration: BoxDecoration(
                         color: isSelected ? Colors.white : theme.accentPrimary,
                         shape: BoxShape.circle,
@@ -580,6 +713,42 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
         },
       ),
     );
+  }
+
+  void _scrollToCurrentHour() {
+    if (_hasScrolledToCurrentHour) return;
+
+    final now = DateTime.now();
+    final provider = context.read<DailyRoadmapProvider>();
+    final selectedDate = provider.selectedDate;
+
+    // Solo hacer scroll si es el día de hoy
+    final isToday = selectedDate.year == now.year &&
+                   selectedDate.month == now.month &&
+                   selectedDate.day == now.day;
+
+    if (!isToday) return;
+
+    // Calcular offset aproximado (header + date selector + progress + cada hora)
+    const headerHeight = 260.0; // Header con stats
+    const dateHeight = 100.0;
+    const progressHeight = 100.0;
+    const timelineHeaderHeight = 60.0;
+    const hourHeight = 80.0;
+
+    final currentHour = now.hour;
+    final targetOffset = headerHeight + dateHeight + progressHeight + timelineHeaderHeight + (currentHour * hourHeight) - 150;
+
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      if (mounted && _scrollController.hasClients) {
+        _scrollController.animateTo(
+          targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeOutCubic,
+        );
+        _hasScrolledToCurrentHour = true;
+      }
+    });
   }
 
   Widget _buildProgressIndicator(DailyRoadmapProvider provider, ThemeProvider theme) {
@@ -787,9 +956,22 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
   }
 
   Widget _buildTimelineSlivers(DailyRoadmapProvider provider, ThemeProvider theme) {
+    final mediaQuery = MediaQuery.of(context);
+    final bottomPadding = mediaQuery.padding.bottom;
+    final hasSystemNavButtons = bottomPadding > 0;
+
+    final navigationBarHeight = 60.0;
+    final navigationMargin = hasSystemNavButtons ? bottomPadding + 2.0 : 2.0;
+    final totalBottomPadding = navigationBarHeight + navigationMargin + 80.0; // +80 extra padding
+
     return SliverList(
       delegate: SliverChildBuilderDelegate(
             (context, index) {
+          if (index == 24) {
+            // Padding final
+            return SizedBox(height: totalBottomPadding);
+          }
+
           final hour = index;
           final isCurrentHour = _isCurrentHour(hour);
           final isPastHour = _isPastHour(hour);
@@ -797,7 +979,7 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
 
           return _buildHourSection(hour, isCurrentHour, isPastHour, activities, provider, theme);
         },
-        childCount: 24,
+        childCount: 25, // 24 horas + 1 padding
       ),
     );
   }
@@ -1410,47 +1592,69 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
         }
       },
       child: Container(
-        margin: const EdgeInsets.only(right: 16, top: 16, bottom: 16),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
         decoration: BoxDecoration(
-          color: theme.isDarkMode
-              ? theme.surfaceVariant.withValues(alpha: 0.3)
-              : theme.surfaceVariant.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(12),
+          color: isPastHour
+              ? (theme.isDarkMode
+                  ? theme.surfaceVariant.withValues(alpha: 0.2)
+                  : theme.surfaceVariant.withValues(alpha: 0.5))
+              : (theme.isDarkMode
+                  ? theme.surfaceVariant.withValues(alpha: 0.4)
+                  : theme.accentPrimary.withValues(alpha: 0.05)),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: theme.isDarkMode
-                ? theme.borderColor.withValues(alpha: 0.2)
-                : theme.borderColor.withValues(alpha: 0.5),
-            width: 1,
+            color: isPastHour
+                ? theme.borderColor.withValues(alpha: 0.3)
+                : theme.accentPrimary.withValues(alpha: 0.3),
+            width: 1.5,
+            strokeAlign: BorderSide.strokeAlignInside,
           ),
-          boxShadow: theme.isDarkMode ? null : [
+          boxShadow: !isPastHour && !theme.isDarkMode ? [
             BoxShadow(
-              color: theme.shadowColor.withValues(alpha: 0.08),
-              blurRadius: 6,
+              color: theme.accentPrimary.withValues(alpha: 0.1),
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
-          ],
+          ] : null,
         ),
         child: Row(
           children: [
-            Icon(
-              isPastHour ? Icons.history : Icons.add,
-              size: 16,
-              color: theme.isDarkMode
-                  ? theme.textSecondary
-                  : theme.textSecondary.withValues(alpha: 0.8),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              isPastHour ? 'Sin actividad' : 'Agregar actividad',
-              style: TextStyle(
-                color: theme.isDarkMode
-                    ? theme.textSecondary
-                    : theme.textSecondary.withValues(alpha: 0.8),
-                fontSize: 13,
-                fontStyle: FontStyle.italic,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isPastHour
+                    ? theme.borderColor.withValues(alpha: 0.2)
+                    : theme.accentPrimary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                isPastHour ? Icons.history_outlined : Icons.add_circle_outline,
+                size: 18,
+                color: isPastHour
+                    ? theme.textSecondary.withValues(alpha: 0.7)
+                    : theme.accentPrimary,
               ),
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                isPastHour ? 'Sin actividad registrada' : 'Toca para agregar actividad',
+                style: TextStyle(
+                  color: isPastHour
+                      ? theme.textSecondary.withValues(alpha: 0.7)
+                      : theme.accentPrimary,
+                  fontSize: 13,
+                  fontWeight: isPastHour ? FontWeight.w500 : FontWeight.w600,
+                ),
+              ),
+            ),
+            if (!isPastHour)
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: theme.accentPrimary.withValues(alpha: 0.6),
+              ),
           ],
         ),
       ),
@@ -1458,11 +1662,11 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
   }
 
   Widget _buildActivitiesColumn(List<RoadmapActivityModel> activities, bool isPastHour, ThemeProvider theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: activities.asMap().entries.map((entry) {
-        final index = entry.key;
-        final activity = entry.value;
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      itemCount: activities.length,
+      itemBuilder: (context, index) {
+        final activity = activities[index];
         return Container(
           margin: EdgeInsets.only(
             right: 16,
@@ -1471,87 +1675,90 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
           ),
           child: _buildActivityCard(activity, isPastHour, theme),
         );
-      }).toList(),
+      },
     );
   }
 
   Widget _buildActivityCard(RoadmapActivityModel activity, bool isPastHour, ThemeProvider theme) {
     final isCompleted = activity.isCompleted;
 
-    return AnimatedBuilder(
-      animation: _bounceAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: 0.8 + (_bounceAnimation.value * 0.2),
-          child: Opacity(
-            opacity: _bounceAnimation.value,
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                _rippleController.forward().then((_) => _rippleController.reset());
-                _showActivityDetailsModal(context.read<DailyRoadmapProvider>(), activity);
-              },
-              onTapDown: (_) {
-                _microInteractionController.forward();
-              },
-              onTapUp: (_) {
-                _microInteractionController.reverse();
-              },
-              onTapCancel: () {
-                _microInteractionController.reverse();
-              },
-              child: AnimatedBuilder(
-                animation: _microInteractionAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _microInteractionAnimation.value,
-                    child: Stack(
-                      children: [
-                        Container(
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        _rippleController.forward().then((_) => _rippleController.reset());
+        _showActivityDetailsModal(context.read<DailyRoadmapProvider>(), activity);
+      },
+      onTapDown: (_) {
+        _microInteractionController.forward();
+      },
+      onTapUp: (_) {
+        _microInteractionController.reverse();
+      },
+      onTapCancel: () {
+        _microInteractionController.reverse();
+      },
+      child: AnimatedBuilder(
+        animation: _microInteractionAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _microInteractionAnimation.value,
+            child: Stack(
+              children: [
+                Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: isCompleted
               ? LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: theme.isDarkMode ? [
-              theme.positiveMain.withValues(alpha: 0.1),
-              theme.positiveMain.withValues(alpha: 0.05),
+              theme.positiveMain.withValues(alpha: 0.15),
+              theme.positiveMain.withValues(alpha: 0.08),
             ] : [
               theme.positiveLight,
-              theme.positiveLight.withValues(alpha: 0.7),
+              theme.positiveLight.withValues(alpha: 0.8),
             ],
           )
               : null,
           color: !isCompleted
               ? (theme.isDarkMode
               ? theme.surfaceVariant
-              : theme.surfaceVariant.withValues(alpha: 0.9))
+              : Colors.white)
               : null,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isCompleted
-                ? theme.positiveMain.withValues(alpha: theme.isDarkMode ? 0.3 : 0.5)
-                : theme.borderColor.withValues(alpha: theme.isDarkMode ? 0.3 : 0.6),
-            width: 1,
+                ? theme.positiveMain.withValues(alpha: 0.4)
+                : theme.accentPrimary.withValues(alpha: 0.3),
+            width: 1.5,
+            strokeAlign: BorderSide.strokeAlignInside,
           ),
-          boxShadow: theme.isDarkMode ? null : [
+          boxShadow: !theme.isDarkMode ? [
             BoxShadow(
-              color: theme.shadowColor.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: isCompleted
+                  ? theme.positiveMain.withValues(alpha: 0.1)
+                  : theme.accentPrimary.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+              spreadRadius: -1,
             ),
-          ],
+          ] : null,
         ),
         child: Row(
           children: [
-            // Status indicator
+            // Status indicator with improved design
             Container(
-              width: 8,
-              height: 8,
+              width: 3,
+              height: 36,
               decoration: BoxDecoration(
-                color: isCompleted
-                    ? theme.positiveMain
-                    : theme.accentPrimary,
-                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: isCompleted
+                      ? [theme.positiveMain, theme.positiveMain.withValues(alpha: 0.5)]
+                      : [theme.accentPrimary, theme.accentPrimary.withValues(alpha: 0.5)],
+                ),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(width: 12),
@@ -1559,18 +1766,32 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
             // Activity content
             Expanded(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    activity.title,
-                    style: TextStyle(
-                      color: theme.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      decoration: isCompleted ? TextDecoration.lineThrough : null,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          activity.title,
+                          style: TextStyle(
+                            color: theme.textPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            decoration: isCompleted ? TextDecoration.lineThrough : null,
+                            decorationThickness: 2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isCompleted)
+                        Icon(
+                          Icons.check_circle,
+                          size: 14,
+                          color: theme.positiveMain,
+                        ),
+                    ],
                   ),
                   if (activity.description?.isNotEmpty == true) ...[
                     const SizedBox(height: 2),
@@ -1578,70 +1799,123 @@ class _DailyRoadmapScreenV3State extends State<DailyRoadmapScreenV3>
                       activity.description!,
                       style: TextStyle(
                         color: theme.textSecondary,
-                        fontSize: 12,
+                        fontSize: 11,
+                        height: 1.2,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 11,
+                        color: theme.textSecondary.withValues(alpha: 0.7),
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        activity.timeString,
+                        style: TextStyle(
+                          color: theme.textSecondary.withValues(alpha: 0.8),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (activity.estimatedDuration != null) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.timer_outlined,
+                          size: 11,
+                          color: theme.textSecondary.withValues(alpha: 0.7),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${activity.estimatedDuration}min',
+                          style: TextStyle(
+                            color: theme.textSecondary.withValues(alpha: 0.8),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
             ),
-
-            // Time and status
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  activity.timeString,
-                  style: TextStyle(
-                    color: theme.textSecondary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (isCompleted) ...[
-                  const SizedBox(height: 2),
-                  Icon(
-                    Icons.check_circle,
-                    size: 12,
-                    color: theme.positiveMain,
-                  ),
-                ],
-              ],
+            Icon(
+              Icons.chevron_right,
+              size: 16,
+              color: theme.textSecondary.withValues(alpha: 0.4),
             ),
           ],
         ),
-                        ),
-                        // Ripple effect overlay
-                        if (isCompleted)
-                          Positioned.fill(
-                            child: AnimatedBuilder(
-                              animation: _rippleAnimation,
-                              builder: (context, child) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: theme.positiveMain.withValues(
-                                        alpha: 0.6 * (1 - _rippleAnimation.value),
-                                      ),
-                                      width: 2 * _rippleAnimation.value,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                      ],
+        ),
+        // Ripple effect overlay
+        if (isCompleted)
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _rippleAnimation,
+              builder: (context, child) {
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.positiveMain.withValues(
+                        alpha: 0.6 * (1 - _rippleAnimation.value),
+                      ),
+                      width: 2 * _rippleAnimation.value,
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
           ),
-        );
-      },
+      ],
+        ),
+      );
+    },
+      ),
+    );
+  }
+
+  String _getMonthName(DateTime date) {
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return months[date.month - 1];
+  }
+
+  Widget _buildFloatingActionButton(DailyRoadmapProvider provider, ThemeProvider theme) {
+    final mediaQuery = MediaQuery.of(context);
+    final bottomPadding = mediaQuery.padding.bottom;
+    final hasSystemNavButtons = bottomPadding > 0;
+
+    final navigationBarHeight = 60.0;
+    final navigationMargin = hasSystemNavButtons ? bottomPadding + 2.0 : 2.0;
+    final totalNavigationSpace = navigationBarHeight + navigationMargin + 16.0;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: totalNavigationSpace),
+      child: FloatingActionButton.extended(
+        heroTag: "roadmap_fab",
+        onPressed: () => _showQuickAddModal(provider),
+        backgroundColor: theme.accentPrimary,
+        elevation: 8,
+        icon: Icon(
+          Icons.add_circle_outline,
+          color: Colors.white,
+          size: 24,
+        ),
+        label: Text(
+          'Nueva Actividad',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
     );
   }
 }
