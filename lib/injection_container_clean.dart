@@ -1,53 +1,51 @@
 // ============================================================================
-// injection_container_clean.dart - DEPENDENCY INJECTION OPTIMIZADO + NOTIFICATIONS
+// injection_container_clean.dart - DEPENDENCY INJECTION OPTIMIZADO
 // ============================================================================
 
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 
-// Services optimizados
+// Services
 import 'data/services/optimized_database_service.dart';
 import 'data/services/image_picker_service.dart';
 import 'data/services/enhanced_goals_service.dart';
-// AI services removed
+import 'data/services/local_insights_service.dart';
 import 'services/notification_service.dart';
 import 'services/voice_recording_service.dart';
 
-// Providers optimizados
+// Providers
 import 'presentation/providers/optimized_providers.dart';
 import 'presentation/providers/extended_daily_entries_provider.dart';
-import 'presentation/providers/image_moments_provider.dart'; // ✅ NUEVO PROVIDER AÑADIDO
-import 'presentation/providers/analytics_provider.dart'; // ✅ PROVIDER AÑADIDO
-import 'presentation/providers/analytics_v3_provider.dart'; // ✅ NUEVO: Analytics V3 Provider
-import 'presentation/providers/advanced_emotion_analysis_provider.dart'; // ✅ NUEVO PROVIDER AVANZADO
-import 'presentation/providers/challenges_provider.dart'; // ✅ HIGH PRIORITY ENHANCEMENT
-import 'presentation/providers/streak_provider.dart'; // ✅ HIGH PRIORITY ENHANCEMENT
-import 'presentation/providers/recommended_activities_provider.dart'; // ✅ NUEVO: Recommended Activities
-import 'presentation/providers/daily_activities_provider.dart'; // ✅ NUEVO: Daily Activities
-import 'presentation/providers/daily_roadmap_provider.dart'; // ✅ NUEVO: Daily Roadmap
-import 'presentation/providers/enhanced_goals_provider.dart'; // ✅ NUEVO: Enhanced Goals
-import 'presentation/providers/hopecore_quotes_provider.dart'; // ✅ NUEVO: Hopecore Quotes
-import 'presentation/providers/onboarding_provider.dart'; // ✅ NUEVO: Onboarding
-// AI providers removed
-// Theme provider (reutilizado del original)
+import 'presentation/providers/image_moments_provider.dart';
+import 'presentation/providers/analytics_provider.dart';
+import 'presentation/providers/analytics_v3_provider.dart';
+import 'presentation/providers/advanced_emotion_analysis_provider.dart';
+import 'presentation/providers/challenges_provider.dart';
+import 'presentation/providers/streak_provider.dart';
+import 'presentation/providers/recommended_activities_provider.dart';
+import 'presentation/providers/daily_activities_provider.dart';
+import 'presentation/providers/daily_roadmap_provider.dart';
+import 'presentation/providers/enhanced_goals_provider.dart';
+import 'presentation/providers/hopecore_quotes_provider.dart';
+import 'presentation/providers/onboarding_provider.dart';
+import 'presentation/providers/insights_provider.dart';
 import 'presentation/providers/theme_provider.dart';
 
-// Onboarding Service
+// Services
 import 'data/services/onboarding_service.dart';
 
 final sl = GetIt.instance;
 
-/// Inicializar todas las dependencias de la app limpia
+/// Inicializar todas las dependencias de la app
 Future<void> initCleanDependencies() async {
   Logger? logger;
   
   try {
     // ============================================================================
-    // CORE SERVICES (Singletons - solo una instancia)
+    // CORE SERVICES (Singletons)
     // ============================================================================
     
-    // Solo registrar Logger si no está ya registrado
     if (!sl.isRegistered<Logger>()) {
       sl.registerLazySingleton<Logger>(() => Logger(
         printer: PrettyPrinter(
@@ -62,7 +60,7 @@ Future<void> initCleanDependencies() async {
     }
     
     logger = sl<Logger>();
-    logger.i('🧹 Inicializando dependencias limpias...');
+    logger.i('🧹 Inicializando dependencias...');
 
     sl.registerLazySingleton<OptimizedDatabaseService>(
           () => OptimizedDatabaseService(),
@@ -72,7 +70,6 @@ Future<void> initCleanDependencies() async {
           () => ImagePickerService(),
     );
 
-    // ✅ NUEVO: EnhancedGoalsService
     sl.registerLazySingleton<EnhancedGoalsService>(
           () {
             final service = EnhancedGoalsService();
@@ -80,8 +77,6 @@ Future<void> initCleanDependencies() async {
             return service;
           },
     );
-
-    // Predictive analysis service removed
 
     sl.registerLazySingleton<NotificationService>(
           () => NotificationService(),
@@ -91,15 +86,16 @@ Future<void> initCleanDependencies() async {
           () => VoiceRecordingService(),
     );
 
-    // ✅ NUEVO: OnboardingService (async initialization)
+    sl.registerLazySingleton<LocalInsightsService>(
+          () => LocalInsightsService(sl<OptimizedDatabaseService>()),
+    );
+
     sl.registerSingletonAsync<OnboardingService>(
       () async => await OnboardingService.create(),
     );
 
     // ============================================================================
-    // PROVIDERS (Factories - nueva instancia cuando se pide)
-    // ✅ CORREGIDO: Se cambia de registerLazySingleton a registerFactory para
-    // evitar problemas de estado entre Hot Restarts.
+    // PROVIDERS (Factories)
     // ============================================================================
 
     sl.registerFactory<OptimizedAuthProvider>(
@@ -114,7 +110,6 @@ Future<void> initCleanDependencies() async {
           () => OptimizedDailyEntriesProvider(sl<OptimizedDatabaseService>()),
     );
 
-    // ✅ ExtendedDailyEntriesProvider con IA
     sl.registerFactory<ExtendedDailyEntriesProvider>(
           () => ExtendedDailyEntriesProvider(sl<OptimizedDatabaseService>()),
     );
@@ -131,24 +126,18 @@ Future<void> initCleanDependencies() async {
           () => AnalyticsProvider(sl<OptimizedDatabaseService>()),
     );
 
-
-    // ✅ NUEVO: Analytics V3 Provider
     sl.registerFactory<AnalyticsV3Provider>(
           () => AnalyticsV3Provider(sl<OptimizedDatabaseService>()),
     );
 
-    // ✅ NUEVO: Analytics V4 Provider
     sl.registerFactory<AnalyticsProviderV4>(
           () => AnalyticsProviderV4(sl<OptimizedDatabaseService>()),
     );
-
-    // AI provider removed
 
     sl.registerFactory<GoalsProvider>(
           () => GoalsProvider(sl<OptimizedDatabaseService>()),
     );
 
-    // ✅ NUEVO: EnhancedGoalsProvider
     sl.registerFactory<EnhancedGoalsProvider>(
           () => EnhancedGoalsProvider(
             sl<OptimizedDatabaseService>(),
@@ -156,16 +145,10 @@ Future<void> initCleanDependencies() async {
           ),
     );
 
-    // ✅ NUEVO: NotificationsProvider
-
-    // ✅ NUEVO: ImageMomentsProvider
     sl.registerFactory<ImageMomentsProvider>(
           () => ImageMomentsProvider(),
     );
 
-    // All AI providers removed
-
-    // ✅ HIGH PRIORITY ENHANCEMENTS: New providers
     sl.registerFactory<ChallengesProvider>(
           () => ChallengesProvider(sl<OptimizedDatabaseService>()),
     );
@@ -174,39 +157,37 @@ Future<void> initCleanDependencies() async {
           () => StreakProvider(sl<OptimizedDatabaseService>()),
     );
 
-    // ✅ NUEVO: AdvancedEmotionAnalysisProvider
     sl.registerFactory<AdvancedEmotionAnalysisProvider>(
           () => AdvancedEmotionAnalysisProvider(sl<OptimizedDatabaseService>()),
     );
 
-    // ✅ NUEVO: RecommendedActivitiesProvider
     sl.registerFactory<RecommendedActivitiesProvider>(
           () => RecommendedActivitiesProvider(),
     );
 
-    // ✅ NUEVO: DailyActivitiesProvider
     sl.registerFactory<DailyActivitiesProvider>(
           () => DailyActivitiesProvider(),
     );
 
-    // ✅ NUEVO: DailyRoadmapProvider
     sl.registerFactory<DailyRoadmapProvider>(
           () => DailyRoadmapProvider(
             databaseService: sl<OptimizedDatabaseService>(),
           ),
     );
 
-    // ✅ NUEVO: HopecoreQuotesProvider
     sl.registerFactory<HopecoreQuotesProvider>(
           () => HopecoreQuotesProvider(),
     );
 
-    // ✅ NUEVO: OnboardingProvider
     sl.registerFactory<OnboardingProvider>(
           () => OnboardingProvider(sl<OnboardingService>()),
     );
 
-    logger.i('✅ Dependencias limpias inicializadas correctamente');
+    sl.registerFactory<InsightsProvider>(
+          () => InsightsProvider(sl<LocalInsightsService>()),
+    );
+
+    logger.i('✅ Dependencias inicializadas correctamente');
 
   } catch (e) {
     logger?.e('❌ Error inicializando dependencias limpias: $e');
@@ -256,11 +237,10 @@ bool areCleanServicesRegistered() {
     sl<Logger>();
     sl<OptimizedDatabaseService>();
     sl<ImagePickerService>();
-    sl<EnhancedGoalsService>(); // ✅ NUEVO
-    // AI service removed
+    sl<EnhancedGoalsService>();
     sl<NotificationService>();
     sl<VoiceRecordingService>();
-    sl<OnboardingService>(); // ✅ NUEVO
+    sl<OnboardingService>();
 
     // Verificar providers
     sl<OptimizedAuthProvider>();
@@ -270,17 +250,15 @@ bool areCleanServicesRegistered() {
     sl<OptimizedMomentsProvider>();
     sl<OptimizedAnalyticsProvider>();
     sl<AnalyticsProvider>();
-    sl<AnalyticsV3Provider>(); // ✅ NUEVO
-    sl<AnalyticsProviderV4>(); // ✅ NUEVO
-    // AI provider removed
+    sl<AnalyticsV3Provider>();
+    sl<AnalyticsProviderV4>();
     sl<GoalsProvider>();
-    sl<EnhancedGoalsProvider>(); // ✅ NUEVO
-    sl<ImageMomentsProvider>(); // ✅ NUEVO
-    // AI providers removed
-    sl<ChallengesProvider>(); // ✅ HIGH PRIORITY ENHANCEMENT
-    sl<StreakProvider>(); // ✅ HIGH PRIORITY ENHANCEMENT
-    sl<AdvancedEmotionAnalysisProvider>(); // ✅ NUEVO
-    sl<OnboardingProvider>(); // ✅ NUEVO
+    sl<EnhancedGoalsProvider>();
+    sl<ImageMomentsProvider>();
+    sl<ChallengesProvider>();
+    sl<StreakProvider>();
+    sl<AdvancedEmotionAnalysisProvider>();
+    sl<OnboardingProvider>();
 
     return true;
   } catch (e) {
@@ -288,18 +266,19 @@ bool areCleanServicesRegistered() {
   }
 }
 
-/// Información del contenedor limpio
+/// Información del contenedor
 Map<String, dynamic> getCleanContainerInfo() {
   return {
-    'total_services': 20, // ✅ ACTUALIZADO after cleanup
+    'total_services': 20,
     'services_ready': areCleanServicesRegistered(),
     'core_services': [
       'Logger',
       'OptimizedDatabaseService',
-      'ImagePickerService', // ✅ NUEVO
-      'EnhancedGoalsService', // ✅ NUEVO
-      // AI services removed
-      'NotificationService', // ✅ NUEVO
+      'ImagePickerService',
+      'EnhancedGoalsService',
+      'NotificationService',
+      'VoiceRecordingService',
+      'OnboardingService',
     ],
     'providers': [
       'OptimizedAuthProvider',
@@ -309,20 +288,19 @@ Map<String, dynamic> getCleanContainerInfo() {
       'OptimizedMomentsProvider',
       'OptimizedAnalyticsProvider',
       'AnalyticsProvider',
+      'AnalyticsV3Provider',
+      'AnalyticsProviderV4',
       'GoalsProvider',
-      'NotificationsProvider', // ✅ NUEVO
-      'ImageMomentsProvider', // ✅ NUEVO
-      // AI providers removed
-      'ChallengesProvider', // ✅ HIGH PRIORITY ENHANCEMENT
-      'StreakProvider', // ✅ HIGH PRIORITY ENHANCEMENT
-      'AdvancedEmotionAnalysisProvider', // ✅ NUEVO
-    ],
-    'removed_legacy': [
-      'AnalyticsProvider (legacy)',
-      'EnhancedAnalyticsProvider (duplicate)',
-      'InteractiveMomentsProvider (legacy)',
-      'AuthProvider (legacy)',
-      'AdvancedUserAnalytics (merged)',
+      'EnhancedGoalsProvider',
+      'ImageMomentsProvider',
+      'ChallengesProvider',
+      'StreakProvider',
+      'AdvancedEmotionAnalysisProvider',
+      'RecommendedActivitiesProvider',
+      'DailyActivitiesProvider',
+      'DailyRoadmapProvider',
+      'HopecoreQuotesProvider',
+      'OnboardingProvider',
     ],
   };
 }
@@ -382,9 +360,8 @@ extension CleanGetItExtension on GetIt {
 class CleanDIConstants {
   static const String logger = 'Logger';
   static const String databaseService = 'OptimizedDatabaseService';
-  static const String enhancedGoalsService = 'EnhancedGoalsService'; // ✅ NUEVO
-  // AI services removed
-  static const String notificationService = 'NotificationService'; // ✅ NUEVO
+  static const String enhancedGoalsService = 'EnhancedGoalsService';
+  static const String notificationService = 'NotificationService';
   static const String authProvider = 'OptimizedAuthProvider';
   static const String themeProvider = 'ThemeProvider';
   static const String dailyEntriesProvider = 'OptimizedDailyEntriesProvider';
@@ -392,11 +369,9 @@ class CleanDIConstants {
   static const String momentsProvider = 'OptimizedMomentsProvider';
   static const String analyticsProvider = 'OptimizedAnalyticsProvider';
   static const String goalsProvider = 'GoalsProvider';
-  static const String notificationsProvider = 'NotificationsProvider'; // ✅ NUEVO
-  static const String imageMomentsProvider = 'ImageMomentsProvider'; // ✅ NUEVO
-  // AI providers removed
-  static const String challengesProvider = 'ChallengesProvider'; // ✅ HIGH PRIORITY ENHANCEMENT
-  static const String streakProvider = 'StreakProvider'; // ✅ HIGH PRIORITY ENHANCEMENT
+  static const String imageMomentsProvider = 'ImageMomentsProvider';
+  static const String challengesProvider = 'ChallengesProvider';
+  static const String streakProvider = 'StreakProvider';
 }
 
 // ============================================================================

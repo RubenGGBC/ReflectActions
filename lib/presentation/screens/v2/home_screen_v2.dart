@@ -32,6 +32,10 @@ import '../../widgets/dev_seeder_fab.dart'; // DEV: Seeder de Analytics V4
 import 'components/minimal_colors.dart';
 import 'recommended_activities_screen.dart';
 import 'daily_review_screen_v2.dart';
+import 'insights_screen.dart';
+
+// Providers
+import '../../providers/insights_provider.dart';
 
 // Onboarding
 import '../../widgets/screen_onboarding_overlay.dart';
@@ -370,6 +374,9 @@ class _HomeScreenV2State extends State<HomeScreenV2>
                     const SizedBox(height: 24),
                     // 🆕 HOPECORE QUOTES CAROUSEL
                     HopecoreQuotesCarousel(animationController: _fadeController),
+                    const SizedBox(height: 24),
+                    // 🆕 INSIGHTS CARD - ACCESO A ANÁLISIS AUTOMÁTICOS
+                    _buildInsightsAccessCard(),
                     const SizedBox(height: 24),
                     // 🆕 WELLBEING SCORE DE HOY
                     _buildTodaysWellbeingScore(analyticsProvider),
@@ -2121,6 +2128,109 @@ class _HomeScreenV2State extends State<HomeScreenV2>
       MaterialPageRoute(
         builder: (context) => DailyReviewScreenV2(),
       ),
+    );
+  }
+
+  // ============================================================================
+  // INSIGHTS ACCESS CARD
+  // ============================================================================
+  Widget _buildInsightsAccessCard() {
+    return Consumer<InsightsProvider>(
+      builder: (context, insightsProvider, _) {
+        final hasPatterns = insightsProvider.patterns.isNotEmpty;
+        final patternCount = insightsProvider.patterns.length;
+        
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const InsightsScreen()),
+            );
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.purple.shade900.withOpacity(0.4),
+                  Colors.blue.shade900.withOpacity(0.4),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.purple.withOpacity(0.3),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.purple.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.purple.shade400, Colors.blue.shade400],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tus Insights',
+                        style: TextStyle(
+                          color: MinimalColors.textPrimary(context),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        hasPatterns 
+                            ? '$patternCount patrones detectados'
+                            : 'Descubre patrones en tus emociones',
+                        style: TextStyle(
+                          color: MinimalColors.textSecondary(context),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.purple.shade300,
+                    size: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

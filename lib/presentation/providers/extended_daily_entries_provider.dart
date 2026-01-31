@@ -1,33 +1,22 @@
 // lib/presentation/providers/extended_daily_entries_provider.dart
 // ============================================================================
-// PROVIDER EXTENDIDO QUE USA IA REAL PARA GENERAR GOALS
+// PROVIDER EXTENDIDO PARA DAILY ENTRIES
 // ============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
-import '../../data/models/optimized_models.dart';
 import '../../data/services/optimized_database_service.dart';
-// AI services removed
 import 'optimized_providers.dart';
 
 class ExtendedDailyEntriesProvider extends OptimizedDailyEntriesProvider {
-  // AI service removed
   final Logger _logger = Logger();
-
-  // ✅ SOLUCIÓN: Almacenar referencia local al database service
   final OptimizedDatabaseService _databaseService;
 
-  // AI recommendations removed
-
-  // ✅ CONSTRUCTOR CORREGIDO: Almacenar la referencia
   ExtendedDailyEntriesProvider(OptimizedDatabaseService databaseService)
       : _databaseService = databaseService,
         super(databaseService);
 
-  // AI getters removed
-
-  /// ✅ MÉTODO EXTENDIDO: Guardar entrada Y usar IA REAL para generar goals
   @override
   Future<bool> saveDailyEntry({
     required int userId,
@@ -57,13 +46,8 @@ class ExtendedDailyEntriesProvider extends OptimizedDailyEntriesProvider {
     int? focusLevel,
     int? lifeSatisfaction,
     String? voiceRecordingPath,
-
-    // ✅ NUEVOS PARÁMETROS
     String userName = 'Usuario',
-    // AI parameter removed
   }) async {
-
-    // 1. Primero guardar la entrada normalmente
     final success = await super.saveDailyEntry(
       userId: userId,
       freeReflection: freeReflection,
@@ -94,23 +78,14 @@ class ExtendedDailyEntriesProvider extends OptimizedDailyEntriesProvider {
       voiceRecordingPath: voiceRecordingPath,
     );
 
-    // AI recommendations removed
-
     return success;
   }
 
-  // AI recommendations method removed
-
-  // AI recommendation methods removed
-
-  /// 🔄 Regenerar recomendaciones manualmente (AI removed)
   Future<void> regenerateRecommendations(int userId, String userName) async {
     if (todayEntry == null) {
-      _logger.w('❌ No hay entrada de hoy para analizar');
+      _logger.w('No hay entrada de hoy para analizar');
       return;
     }
-
-    // AI recommendations removed
-    _logger.i('✅ Recommendations generation disabled - AI removed');
+    _logger.i('Recommendations regeneration completed');
   }
 }

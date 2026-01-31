@@ -12,13 +12,12 @@ import '../../providers/optimized_providers.dart';
 import '../../providers/theme_provider.dart';
 
 // Screens optimizadas - ACTUALIZADO
-import '../v4/analytics_screen_v4.dart';
 import 'home_screen_v2.dart';
 import 'quick_moments_screen.dart'; // ✅ NUEVA PANTALLA RÁPIDA
-import 'daily_review_screen_v2.dart';
+import 'daily_review_paged_screen.dart'; // ✅ NUEVA PANTALLA PAGINADA
 import 'profile_screen_v2.dart';
 import 'goals_screen_enhanced.dart';
-import '../v3/daily_roadmap_screen_v3.dart';
+import 'daily_planner_modern_screen.dart'; // ✅ NUEVA PANTALLA DE PLANNER
 import '../v5/analytics_screen_v5.dart'; // ✅ NUEVA PANTALLA DE ANALYTICS V5
 
 // Componentes modernos
@@ -178,13 +177,18 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
   void _initializeScreens() {
     _screens = [
       const _SafeScreenWrapper(child: AnalyticsScreenV5()),
-      const _SafeScreenWrapper(child: DailyRoadmapScreenV3()),
+      const _SafeScreenWrapper(child: DailyPlannerModernScreen()),
       const _SafeScreenWrapper(child: QuickMomentsScreen()),
       const _SafeScreenWrapper(child: HomeScreenV2()),
-      const _SafeScreenWrapper(child: DailyReviewScreenV2()),
+      _SafeScreenWrapper(child: DailyReviewPagedScreen(onSaveComplete: _goToHome)),
       const _SafeScreenWrapper(child: GoalsScreenEnhanced()),
       const _SafeScreenWrapper(child: ProfileScreenV2()),
     ];
+  }
+  
+  void _goToHome() {
+    // Navigate to Home tab (index 3)
+    _onNavigationTap(3);
   }
 
   Future<void> _initializeNavigation() async {

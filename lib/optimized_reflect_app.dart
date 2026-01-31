@@ -1,30 +1,29 @@
 // lib/optimized_reflect_app.dart
-// VERSIÓN FINAL CON LÓGICA DE NAVEGACIÓN CORREGIDA + IA + NOTIFICATIONS
+// Aplicación principal con navegación y providers
 
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 
-// Dependency Injection optimizado
 import 'injection_container_clean.dart' as clean_di;
 
 // Providers
 import 'presentation/providers/optimized_providers.dart';
 import 'presentation/providers/extended_daily_entries_provider.dart';
 import 'presentation/providers/theme_provider.dart';
-import 'presentation/providers/image_moments_provider.dart'; // ✅ NUEVO
-import 'presentation/providers/analytics_provider.dart'; // ✅ PROVIDER AÑADIDO
-import 'presentation/providers/analytics_v3_provider.dart'; // ✅ NUEVO: Analytics V3 Provider
-import 'presentation/providers/advanced_emotion_analysis_provider.dart'; // ✅ NUEVO PROVIDER AVANZADO
-// AI providers removed
-import 'presentation/providers/challenges_provider.dart'; // ✅ HIGH PRIORITY ENHANCEMENT
-import 'presentation/providers/streak_provider.dart'; // ✅ HIGH PRIORITY ENHANCEMENT
-import 'presentation/providers/recommended_activities_provider.dart'; // ✅ NUEVO: Recommended Activities
-import 'presentation/providers/daily_activities_provider.dart'; // ✅ NUEVO: Daily Activities
-import 'presentation/providers/daily_roadmap_provider.dart'; // ✅ NUEVO: Daily Roadmap
-import 'presentation/providers/enhanced_goals_provider.dart'; // ✅ NUEVO: Enhanced Goals
-import 'presentation/providers/hopecore_quotes_provider.dart'; // ✅ NUEVO: Hopecore Quotes
-import 'presentation/providers/onboarding_provider.dart'; // ✅ NUEVO: Onboarding
+import 'presentation/providers/image_moments_provider.dart';
+import 'presentation/providers/analytics_provider.dart';
+import 'presentation/providers/analytics_v3_provider.dart';
+import 'presentation/providers/advanced_emotion_analysis_provider.dart';
+import 'presentation/providers/challenges_provider.dart';
+import 'presentation/providers/streak_provider.dart';
+import 'presentation/providers/recommended_activities_provider.dart';
+import 'presentation/providers/daily_activities_provider.dart';
+import 'presentation/providers/daily_roadmap_provider.dart';
+import 'presentation/providers/enhanced_goals_provider.dart';
+import 'presentation/providers/hopecore_quotes_provider.dart';
+import 'presentation/providers/onboarding_provider.dart';
+import 'presentation/providers/insights_provider.dart';
 
 // Screens
 import 'presentation/screens/v2/login_screen_v2.dart';
@@ -42,7 +41,7 @@ class OptimizedReflectApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         // ============================================================================
-        // CORE PROVIDERS (independientes)
+        // CORE PROVIDERS
         // ============================================================================
         ChangeNotifierProvider<OptimizedAuthProvider>(
           create: (_) => clean_di.sl<OptimizedAuthProvider>()..initialize(),
@@ -50,12 +49,10 @@ class OptimizedReflectApp extends StatelessWidget {
         ChangeNotifierProvider<ThemeProvider>(
           create: (_) => clean_di.sl<ThemeProvider>(),
         ),
-        // AI provider removed
         ChangeNotifierProvider<GoalsProvider>(
           create: (_) => clean_di.sl<GoalsProvider>(),
         ),
 
-        // ✅ NUEVO: EnhancedGoalsProvider (proxy provider para auto-carga)
         ChangeNotifierProxyProvider<OptimizedAuthProvider, EnhancedGoalsProvider>(
           create: (_) => clean_di.sl<EnhancedGoalsProvider>(),
           update: (context, auth, previous) {
@@ -66,23 +63,20 @@ class OptimizedReflectApp extends StatelessWidget {
           },
         ),
 
-        // ✅ NUEVO: ImageMomentsProvider
         ChangeNotifierProvider<ImageMomentsProvider>(
           create: (_) => clean_di.sl<ImageMomentsProvider>(),
         ),
 
-        // ✅ NUEVO: HopecoreQuotesProvider (independiente del usuario)
         ChangeNotifierProvider<HopecoreQuotesProvider>(
           create: (_) => clean_di.sl<HopecoreQuotesProvider>(),
         ),
 
-        // ✅ NUEVO: OnboardingProvider (independiente del usuario)
         ChangeNotifierProvider<OnboardingProvider>(
           create: (_) => clean_di.sl<OnboardingProvider>()..initialize(),
         ),
 
         // ============================================================================
-        // PROVIDERS DEPENDIENTES (se actualizan cuando el usuario se autentica)
+        // DEPENDENT PROVIDERS
         // ============================================================================
         ChangeNotifierProxyProvider<OptimizedAuthProvider, OptimizedDailyEntriesProvider>(
           create: (_) => clean_di.sl<OptimizedDailyEntriesProvider>(),
@@ -94,7 +88,6 @@ class OptimizedReflectApp extends StatelessWidget {
           },
         ),
 
-        // ExtendedDailyEntriesProvider con IA
         ChangeNotifierProxyProvider<OptimizedAuthProvider, ExtendedDailyEntriesProvider>(
           create: (_) => clean_di.sl<ExtendedDailyEntriesProvider>(),
           update: (context, auth, previous) {
@@ -135,8 +128,6 @@ class OptimizedReflectApp extends StatelessWidget {
           },
         ),
 
-
-        // ✅ NUEVO: Analytics V3 Provider
         ChangeNotifierProxyProvider<OptimizedAuthProvider, AnalyticsV3Provider>(
           create: (_) => clean_di.sl<AnalyticsV3Provider>(),
           update: (context, auth, previous) {
@@ -147,7 +138,6 @@ class OptimizedReflectApp extends StatelessWidget {
           },
         ),
 
-        // ✅ NUEVO: Analytics V4 Provider
         ChangeNotifierProxyProvider<OptimizedAuthProvider, AnalyticsProviderV4>(
           create: (_) => clean_di.sl<AnalyticsProviderV4>(),
           update: (context, auth, previous) {
@@ -158,11 +148,6 @@ class OptimizedReflectApp extends StatelessWidget {
           },
         ),
 
-        // Predictive analysis provider removed
-
-        // Chat providers removed
-
-        // ✅ HIGH PRIORITY ENHANCEMENTS: New providers
         ChangeNotifierProvider<ChallengesProvider>(
           create: (_) => clean_di.sl<ChallengesProvider>(),
         ),
@@ -171,24 +156,30 @@ class OptimizedReflectApp extends StatelessWidget {
           create: (_) => clean_di.sl<StreakProvider>(),
         ),
 
-        // ✅ NUEVO: AdvancedEmotionAnalysisProvider
         ChangeNotifierProvider<AdvancedEmotionAnalysisProvider>(
           create: (_) => clean_di.sl<AdvancedEmotionAnalysisProvider>(),
         ),
 
-        // ✅ NUEVO: RecommendedActivitiesProvider
         ChangeNotifierProvider<RecommendedActivitiesProvider>(
           create: (_) => clean_di.sl<RecommendedActivitiesProvider>(),
         ),
 
-        // ✅ NUEVO: DailyActivitiesProvider
         ChangeNotifierProvider<DailyActivitiesProvider>(
           create: (_) => clean_di.sl<DailyActivitiesProvider>(),
         ),
 
-        // ✅ NUEVO: DailyRoadmapProvider
         ChangeNotifierProvider<DailyRoadmapProvider>(
           create: (_) => clean_di.sl<DailyRoadmapProvider>(),
+        ),
+
+        ChangeNotifierProxyProvider<OptimizedAuthProvider, InsightsProvider>(
+          create: (_) => clean_di.sl<InsightsProvider>(),
+          update: (context, auth, previous) {
+            if (auth.isLoggedIn && auth.currentUser != null) {
+              previous?.loadInsights(auth.currentUser!.id);
+            }
+            return previous!;
+          },
         ),
       ],
       child: Consumer<ThemeProvider>(
@@ -197,8 +188,6 @@ class OptimizedReflectApp extends StatelessWidget {
             title: 'ReflectFlutter',
             debugShowCheckedModeBanner: false,
             theme: ModernTheme.darkTheme,
-
-            // ✅ CORRECCIÓN: Definir la ruta inicial y las rutas nombradas
             initialRoute: '/',
             routes: {
               '/': (context) => const AuthWrapper(),

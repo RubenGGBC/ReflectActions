@@ -723,3 +723,443 @@ class ModernTheme {
     );
   }
 }
+
+// ============================================================================
+// 🪟 GLASS CARD - Efecto vidrio con blur
+// ============================================================================
+
+class GlassCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final double? width;
+  final double? height;
+  final double blur;
+  final double opacity;
+  final VoidCallback? onTap;
+  final BorderRadius? borderRadius;
+
+  const GlassCard({
+    super.key,
+    required this.child,
+    this.padding,
+    this.margin,
+    this.width,
+    this.height,
+    this.blur = 10,
+    this.opacity = 0.1,
+    this.onTap,
+    this.borderRadius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final container = Container(
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding ?? const EdgeInsets.all(ModernSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(opacity),
+        borderRadius: borderRadius ?? BorderRadius.circular(ModernSpacing.radiusLarge),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: blur,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: container,
+      );
+    }
+
+    return container;
+  }
+}
+
+// ============================================================================
+// 🌈 GRADIENT CARD - Card con fondo gradiente
+// ============================================================================
+
+class GradientCard extends StatelessWidget {
+  final Widget child;
+  final List<Color> gradient;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final double? width;
+  final double? height;
+  final VoidCallback? onTap;
+  final Alignment gradientBegin;
+  final Alignment gradientEnd;
+  final BorderRadius? borderRadius;
+  final List<BoxShadow>? boxShadow;
+
+  const GradientCard({
+    super.key,
+    required this.child,
+    this.gradient = ModernColors.primaryGradient,
+    this.padding,
+    this.margin,
+    this.width,
+    this.height,
+    this.onTap,
+    this.gradientBegin = Alignment.topLeft,
+    this.gradientEnd = Alignment.bottomRight,
+    this.borderRadius,
+    this.boxShadow,
+  });
+
+  /// Presets de gradientes comunes
+  factory GradientCard.positive({
+    required Widget child,
+    EdgeInsetsGeometry? padding,
+    VoidCallback? onTap,
+  }) {
+    return GradientCard(
+      gradient: ModernColors.positiveGradient,
+      padding: padding,
+      onTap: onTap,
+      child: child,
+    );
+  }
+
+  factory GradientCard.warning({
+    required Widget child,
+    EdgeInsetsGeometry? padding,
+    VoidCallback? onTap,
+  }) {
+    return GradientCard(
+      gradient: ModernColors.warningGradient,
+      padding: padding,
+      onTap: onTap,
+      child: child,
+    );
+  }
+
+  factory GradientCard.error({
+    required Widget child,
+    EdgeInsetsGeometry? padding,
+    VoidCallback? onTap,
+  }) {
+    return GradientCard(
+      gradient: ModernColors.errorGradient,
+      padding: padding,
+      onTap: onTap,
+      child: child,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveShadow = boxShadow ?? [
+      BoxShadow(
+        color: gradient.first.withOpacity(0.3),
+        blurRadius: 15,
+        offset: const Offset(0, 8),
+      ),
+    ];
+
+    final container = Container(
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding ?? const EdgeInsets.all(ModernSpacing.md),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradient,
+          begin: gradientBegin,
+          end: gradientEnd,
+        ),
+        borderRadius: borderRadius ?? BorderRadius.circular(ModernSpacing.radiusLarge),
+        boxShadow: effectiveShadow,
+      ),
+      child: child,
+    );
+
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: container,
+      );
+    }
+
+    return container;
+  }
+}
+
+// ============================================================================
+// 👆 ACTION CARD - Card interactiva con chevron
+// ============================================================================
+
+class ActionCard extends StatefulWidget {
+  final String title;
+  final String? subtitle;
+  final Widget? leading;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final bool showChevron;
+  final bool enableHaptic;
+  final List<Color>? gradient;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+
+  const ActionCard({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.leading,
+    this.trailing,
+    this.onTap,
+    this.showChevron = true,
+    this.enableHaptic = true,
+    this.gradient,
+    this.padding,
+    this.margin,
+  });
+
+  @override
+  State<ActionCard> createState() => _ActionCardState();
+}
+
+class _ActionCardState extends State<ActionCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: ModernAnimations.fast,
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    _controller.forward();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    _controller.reverse();
+  }
+
+  void _handleTapCancel() {
+    _controller.reverse();
+  }
+
+  void _handleTap() {
+    if (widget.enableHaptic) {
+      // HapticFeedback.lightImpact(); // Descomentar si se importa services
+    }
+    widget.onTap?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: GestureDetector(
+        onTapDown: widget.onTap != null ? _handleTapDown : null,
+        onTapUp: widget.onTap != null ? _handleTapUp : null,
+        onTapCancel: widget.onTap != null ? _handleTapCancel : null,
+        onTap: widget.onTap != null ? _handleTap : null,
+        child: Container(
+          margin: widget.margin,
+          padding: widget.padding ?? const EdgeInsets.all(ModernSpacing.md),
+          decoration: BoxDecoration(
+            gradient: widget.gradient != null
+                ? LinearGradient(
+                    colors: widget.gradient!,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: widget.gradient == null ? ModernColors.glassPrimary : null,
+            borderRadius: BorderRadius.circular(ModernSpacing.radiusLarge),
+            border: Border.all(
+              color: ModernColors.borderPrimary,
+              width: 1,
+            ),
+            boxShadow: widget.gradient != null
+                ? [
+                    BoxShadow(
+                      color: widget.gradient!.first.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : ModernShadows.glass,
+          ),
+          child: Row(
+            children: [
+              if (widget.leading != null) ...[
+                widget.leading!,
+                const SizedBox(width: ModernSpacing.md),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.title,
+                      style: ModernTypography.bodyLarge.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (widget.subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.subtitle!,
+                        style: ModernTypography.bodySmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (widget.trailing != null)
+                widget.trailing!
+              else if (widget.showChevron && widget.onTap != null)
+                Icon(
+                  Icons.chevron_right,
+                  color: ModernColors.textSecondary,
+                  size: 24,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// 📊 STAT CARD - Card para métricas y estadísticas
+// ============================================================================
+
+class StatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color? color;
+  final List<Color>? gradient;
+  final String? trend;
+  final bool trendPositive;
+  final VoidCallback? onTap;
+
+  const StatCard({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.icon,
+    this.color,
+    this.gradient,
+    this.trend,
+    this.trendPositive = true,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveColor = color ?? ModernColors.primaryGradient.first;
+    final effectiveGradient = gradient ?? [effectiveColor, effectiveColor.withOpacity(0.7)];
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(ModernSpacing.md),
+        decoration: BoxDecoration(
+          color: ModernColors.glassPrimary,
+          borderRadius: BorderRadius.circular(ModernSpacing.radiusMedium),
+          border: Border.all(color: ModernColors.borderSecondary),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: effectiveGradient),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                if (trend != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (trendPositive ? ModernColors.success : ModernColors.error)
+                          .withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          trendPositive ? Icons.trending_up : Icons.trending_down,
+                          color: trendPositive ? ModernColors.success : ModernColors.error,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          trend!,
+                          style: ModernTypography.bodySmall.copyWith(
+                            color: trendPositive ? ModernColors.success : ModernColors.error,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              value,
+              style: ModernTypography.heading2.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: ModernTypography.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

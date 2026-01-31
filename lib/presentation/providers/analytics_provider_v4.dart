@@ -14,7 +14,6 @@ class AnalyticsProviderV4 extends ChangeNotifier {
   bool _isLoading = false;
   bool _isLoadingTrends = false;
   bool _isLoadingGoals = false;
-  bool _isLoadingRoadmaps = false;
   bool _isLoadingMoments = false;
   
   String? _error;
@@ -34,7 +33,6 @@ class AnalyticsProviderV4 extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoadingTrends => _isLoadingTrends;
   bool get isLoadingGoals => _isLoadingGoals;
-  bool get isLoadingRoadmaps => _isLoadingRoadmaps;
   bool get isLoadingMoments => _isLoadingMoments;
   String? get error => _error;
   
@@ -298,13 +296,6 @@ class AnalyticsProviderV4 extends ChangeNotifier {
   void _setLoadingGoals(bool loading) {
     if (_isLoadingGoals != loading) {
       _isLoadingGoals = loading;
-      notifyListeners();
-    }
-  }
-  
-  void _setLoadingRoadmaps(bool loading) {
-    if (_isLoadingRoadmaps != loading) {
-      _isLoadingRoadmaps = loading;
       notifyListeners();
     }
   }
