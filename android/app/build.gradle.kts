@@ -24,7 +24,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.temp_clean_project"
-        minSdk = 23  // Required by record plugin
+        minSdk = flutter.minSdkVersion  // Required by record plugin
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

@@ -11,7 +11,8 @@ import 'package:timezone/data/latest.dart' as tz;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Configurar FFI para sqflite en desktop
+  // Configurar FFI para sqflit º
+  // e en desktop
 
 
   // Configurar orientación

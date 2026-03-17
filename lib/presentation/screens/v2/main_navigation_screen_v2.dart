@@ -17,7 +17,7 @@ import 'quick_moments_screen.dart'; // ✅ NUEVA PANTALLA RÁPIDA
 import 'daily_review_screen_v2.dart';
 import 'profile_screen_v2.dart';
 import 'goals_screen_enhanced.dart';
-import '../v3/daily_roadmap_screen_v3.dart';
+import '../v4/daily_roadmap_screen_v4.dart';
 import 'analytics_v3_screen.dart';// ✅ NUEVA PANTALLA DE ROADMAP DIARIO
 
 // Componentes modernos
@@ -177,7 +177,7 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
   void _initializeScreens() {
     _screens = [
       const _SafeScreenWrapper(child: AnalyticsV3Screen()),
-      const _SafeScreenWrapper(child: DailyRoadmapScreenV3()),
+      const _SafeScreenWrapper(child: DailyRoadmapScreenV4()),
       const _SafeScreenWrapper(child: QuickMomentsScreen()),
       const _SafeScreenWrapper(child: HomeScreenV2()),
       const _SafeScreenWrapper(child: DailyReviewScreenV2()),
