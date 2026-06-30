@@ -1016,7 +1016,9 @@ class _CalendarScreenV2State extends State<CalendarScreenV2>
               surface: MinimalColors.backgroundCard(context),
               onSurface: Colors.black,
             ),
-            dialogBackgroundColor: MinimalColors.backgroundSecondary(context),
+            dialogTheme: DialogThemeData(
+              backgroundColor: MinimalColors.backgroundSecondary(context),
+            ),
           ),
           child: child!,
         );

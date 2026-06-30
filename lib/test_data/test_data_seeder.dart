@@ -73,10 +73,8 @@ class TestDataSeeder {
       final momentsCount = _random.nextInt(3) + 1;
       
       for (int j = 0; j < momentsCount; j++) {
-        final momentTitle = _generateMomentTitle();
         final momentDescription = _generateMomentDescription();
         final emotionalImpact = _random.nextInt(5) + 1;
-        final tags = _generateMomentTags();
         final momentType = momentTypes[_random.nextInt(momentTypes.length)];
         final timestamp = date.add(Duration(hours: _random.nextInt(16) + 6));
 
@@ -194,36 +192,6 @@ class TestDataSeeder {
     return entries[_random.nextInt(entries.length)];
   }
 
-  String _generateGratitudeNote() {
-    final notes = [
-      'Grateful for good health and energy',
-      'Thankful for supportive friends and family',
-      'Appreciating the beautiful weather today',
-      'Grateful for opportunities to learn and grow',
-      'Thankful for moments of peace and quiet',
-      'Appreciating small acts of kindness',
-      'Grateful for a comfortable home',
-      'Thankful for meaningful work',
-    ];
-    return notes[_random.nextInt(notes.length)];
-  }
-
-  String _generateMomentTitle() {
-    final titles = [
-      'Coffee with a friend',
-      'Beautiful sunset',
-      'Productive work session',
-      'Family dinner',
-      'Morning walk',
-      'Good book',
-      'Relaxing music',
-      'Helpful conversation',
-      'Achievement unlocked',
-      'Peaceful moment',
-    ];
-    return titles[_random.nextInt(titles.length)];
-  }
-
   String _generateMomentDescription() {
     final descriptions = [
       'A wonderful moment that brought joy to my day',
@@ -236,27 +204,6 @@ class TestDataSeeder {
       'A peaceful and calming experience',
     ];
     return descriptions[_random.nextInt(descriptions.length)];
-  }
-
-  List<String> _generateMomentTags() {
-    final allTags = [
-      'family', 'friends', 'work', 'nature', 'achievement',
-      'peace', 'joy', 'growth', 'learning', 'gratitude',
-      'health', 'creativity', 'mindfulness', 'connection',
-    ];
-    
-    // Return 1-3 random tags
-    final tagCount = _random.nextInt(3) + 1;
-    final selectedTags = <String>[];
-    
-    for (int i = 0; i < tagCount; i++) {
-      final tag = allTags[_random.nextInt(allTags.length)];
-      if (!selectedTags.contains(tag)) {
-        selectedTags.add(tag);
-      }
-    }
-    
-    return selectedTags;
   }
 
   /// Clear all test data for a user

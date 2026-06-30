@@ -11,7 +11,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-import 'package:device_info_plus/device_info_plus.dart';
 
 enum VoiceRecordingState {
   idle,

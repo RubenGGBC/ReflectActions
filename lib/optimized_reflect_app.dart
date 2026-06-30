@@ -13,7 +13,6 @@ import 'presentation/providers/optimized_providers.dart';
 import 'presentation/providers/extended_daily_entries_provider.dart';
 import 'presentation/providers/theme_provider.dart';
 import 'presentation/providers/image_moments_provider.dart'; // ✅ NUEVO
-import 'presentation/providers/analytics_provider.dart'; // ✅ PROVIDER AÑADIDO
 import 'presentation/providers/analytics_v3_provider.dart'; // ✅ NUEVO: Analytics V3 Provider
 import 'presentation/providers/advanced_emotion_analysis_provider.dart'; // ✅ NUEVO PROVIDER AVANZADO
 // AI providers removed
@@ -30,9 +29,6 @@ import 'presentation/screens/v2/login_screen_v2.dart';
 import 'presentation/screens/v2/main_navigation_screen_v2.dart';
 import 'presentation/screens/v2/welcome_onboarding_screen.dart';
 
-// Components
-import 'presentation/screens/components/modern_design_system.dart';
-
 class OptimizedReflectApp extends StatelessWidget {
   const OptimizedReflectApp({super.key});
 
@@ -47,7 +43,7 @@ class OptimizedReflectApp extends StatelessWidget {
           create: (_) => clean_di.sl<OptimizedAuthProvider>()..initialize(),
         ),
         ChangeNotifierProvider<ThemeProvider>(
-          create: (_) => clean_di.sl<ThemeProvider>(),
+          create: (_) => clean_di.sl<ThemeProvider>()..initialize(),
         ),
         // AI provider removed
         ChangeNotifierProvider<GoalsProvider>(
@@ -119,34 +115,12 @@ class OptimizedReflectApp extends StatelessWidget {
           },
         ),
 
-        ChangeNotifierProxyProvider<OptimizedAuthProvider, AnalyticsProvider>(
-          create: (_) => clean_di.sl<AnalyticsProvider>(),
-          update: (context, auth, previous) {
-            if (auth.isLoggedIn && auth.currentUser != null) {
-              previous?.loadCompleteAnalytics(auth.currentUser!.id);
-            }
-            return previous!;
-          },
-        ),
-
-
         // ✅ NUEVO: Analytics V3 Provider
         ChangeNotifierProxyProvider<OptimizedAuthProvider, AnalyticsV3Provider>(
           create: (_) => clean_di.sl<AnalyticsV3Provider>(),
           update: (context, auth, previous) {
             if (auth.isLoggedIn && auth.currentUser != null) {
               previous?.loadAnalytics(auth.currentUser!.id);
-            }
-            return previous!;
-          },
-        ),
-
-        // ✅ NUEVO: Analytics V4 Provider
-        ChangeNotifierProxyProvider<OptimizedAuthProvider, AnalyticsProviderV4>(
-          create: (_) => clean_di.sl<AnalyticsProviderV4>(),
-          update: (context, auth, previous) {
-            if (auth.isLoggedIn && auth.currentUser != null) {
-              previous?.loadAllAnalytics(auth.currentUser!.id);
             }
             return previous!;
           },
@@ -190,7 +164,7 @@ class OptimizedReflectApp extends StatelessWidget {
           return MaterialApp(
             title: 'ReflectFlutter',
             debugShowCheckedModeBanner: false,
-            theme: ModernTheme.darkTheme,
+            theme: themeProvider.currentThemeData,
 
             // ✅ CORRECCIÓN: Definir la ruta inicial y las rutas nombradas
             initialRoute: '/',

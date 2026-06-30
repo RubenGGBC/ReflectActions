@@ -276,7 +276,7 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
                     end: Alignment.bottomCenter,
                     colors: [
                       themeProvider.primaryBg,
-                      themeProvider.primaryBg.withOpacity(0.98),
+                      themeProvider.primaryBg.withValues(alpha: 0.98),
                     ],
                   ),
                 ),
@@ -443,86 +443,86 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
 
   Widget _buildBottomNavigationContent(ThemeProvider themeProvider) {
     final mediaQuery = MediaQuery.of(context);
-    final bottomPadding = mediaQuery.padding.bottom;
     final isTablet = mediaQuery.size.width > 600;
     final screenWidth = mediaQuery.size.width;
-    
-    // Fixed dimensions for 7 navigation items
+
     final navigationHeight = isTablet ? 70.0 : 60.0;
     final horizontalMargin = screenWidth > 400 ? 12.0 : 8.0;
-    final bottomMargin = bottomPadding > 0 ? bottomPadding + 4.0 : 8.0;
-    
-    return Container(
-      height: navigationHeight,
-      margin: EdgeInsets.fromLTRB(horizontalMargin, 0, horizontalMargin, bottomMargin),
+
+    return DecoratedBox(
       decoration: BoxDecoration(
-        // Enhanced glassmorphism effect
-        color: themeProvider.surface.withOpacity(0.92),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: themeProvider.borderColor.withOpacity(0.2),
-          width: 1.5,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.transparent,
+            themeProvider.surface,
+          ],
         ),
-        boxShadow: [
-          // Primary shadow for depth
-          BoxShadow(
-            color: themeProvider.shadowColor.withOpacity(0.15),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-            spreadRadius: -4,
-          ),
-          // Secondary shadow for ambient light
-          BoxShadow(
-            color: themeProvider.shadowColor.withOpacity(0.08),
-            blurRadius: 6,
-            offset: const Offset(0, 4),
-          ),
-          // Inner highlight effect (simulated with light color)
-          BoxShadow(
-            color: Colors.white.withOpacity(0.08),
-            blurRadius: 2,
-            offset: const Offset(0, -1),
-          ),
-        ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(horizontalMargin, 4, horizontalMargin, 0),
           child: Container(
-            padding: EdgeInsets.only(
-              bottom: bottomPadding > 0 ? 4 : 2,
-              top: 2,
-              left: 2,
-              right: 2,
-            ),
+            height: navigationHeight,
             decoration: BoxDecoration(
-              // Subtle gradient overlay
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white.withOpacity(0.05),
-                  Colors.transparent,
-                ],
+              color: themeProvider.surface.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: themeProvider.borderColor.withValues(alpha: 0.2),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: themeProvider.shadowColor.withValues(alpha: 0.15),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
+                  spreadRadius: -4,
+                ),
+                BoxShadow(
+                  color: themeProvider.shadowColor.withValues(alpha: 0.08),
+                  blurRadius: 6,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  blurRadius: 2,
+                  offset: const Offset(0, -1),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.05),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: _navigationItems.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final item = entry.value;
+                      final isSelected = _currentIndex == index;
+                      return Expanded(
+                        child: _buildNavigationItem(item, index, isSelected, themeProvider),
+                      );
+                    }).toList(),
+                  ),
+                ),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: _navigationItems.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
-                final isSelected = _currentIndex == index;
-
-                return Expanded(
-                  child: _buildNavigationItem(item, index, isSelected, themeProvider),
-                );
-              }).toList(),
-            ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildNavigationItem(NavigationItem item, int index, bool isSelected, ThemeProvider themeProvider) {
@@ -537,8 +537,8 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
         child: InkWell(
           onTap: () => _onNavigationTap(index),
           borderRadius: BorderRadius.circular(20),
-          splashColor: item.color.withOpacity(0.1),
-          highlightColor: item.color.withOpacity(0.05),
+          splashColor: item.color.withValues(alpha: 0.1),
+          highlightColor: item.color.withValues(alpha: 0.05),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOutCubic,
@@ -553,16 +553,16 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        item.color.withOpacity(0.15),
-                        item.color.withOpacity(0.08),
-                        item.color.withOpacity(0.03),
+                        item.color.withValues(alpha: 0.15),
+                        item.color.withValues(alpha: 0.08),
+                        item.color.withValues(alpha: 0.03),
                       ],
                     )
                   : null,
               borderRadius: BorderRadius.circular(20),
               border: isSelected
                   ? Border.all(
-                      color: item.color.withOpacity(0.2),
+                      color: item.color.withValues(alpha: 0.2),
                       width: 1,
                     )
                   : null,
@@ -584,20 +584,20 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
                         decoration: BoxDecoration(
                           color: Color.lerp(
                             Colors.transparent,
-                            item.color.withOpacity(0.25),
+                            item.color.withValues(alpha: 0.25),
                             value,
                           ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: item.color.withOpacity(0.4 * value),
+                                    color: item.color.withValues(alpha: 0.4 * value),
                                     blurRadius: 12 * value,
                                     offset: Offset(0, 4 * value),
                                     spreadRadius: -2 * value,
                                   ),
                                   BoxShadow(
-                                    color: item.color.withOpacity(0.2 * value),
+                                    color: item.color.withValues(alpha: 0.2 * value),
                                     blurRadius: 6 * value,
                                     offset: Offset(0, 2 * value),
                                   ),
@@ -608,7 +608,7 @@ class _MainNavigationScreenV2State extends State<MainNavigationScreenV2>
                           isSelected ? item.activeIcon : item.icon,
                           size: isTablet ? 20 : 18,
                           color: Color.lerp(
-                            themeProvider.textSecondary.withOpacity(0.8),
+                            themeProvider.textSecondary.withValues(alpha: 0.8),
                             item.color,
                             isSelected ? 1.0 : 0.6,
                           ),

@@ -9,9 +9,7 @@ import 'package:sqflite/sqflite.dart';
 import '../data/services/optimized_database_service.dart';
 import '../data/models/optimized_models.dart';
 import '../data/models/goal_model.dart';
-import '../data/models/daily_roadmap_model.dart';
 import '../data/models/roadmap_activity_model.dart';
-import '../data/models/user_model.dart';
 
 class EnhancedTestDataSeeder {
   final OptimizedDatabaseService _databaseService;
@@ -60,30 +58,6 @@ class EnhancedTestDataSeeder {
     if (kDebugMode) {
       debugPrint('👤 Adding user info...');
     }
-
-    final userInfo = UserModel(
-      id: userId,
-      email: 'testuser@example.com',
-      name: 'Alex Johnson',
-      avatarEmoji: '🌟',
-      bio: 'Passionate about personal growth, mindfulness, and creating positive daily habits. Love exploring nature and connecting with others.',
-      age: 28,
-      isFirstTimeUser: false,
-      preferences: {
-        'theme': 'light',
-        'notifications': true,
-        'dailyReminders': true,
-        'preferredReminderTime': '09:00',
-        'language': 'en',
-        'weekStartsOn': 'monday',
-        'goalCategories': ['mindfulness', 'health', 'productivity', 'relationships'],
-        'favoriteEmojis': ['🌟', '💪', '🧘‍♀️', '📚', '🌱'],
-        'motivationalStyle': 'encouraging',
-        'privacyLevel': 'private',
-      },
-      createdAt: DateTime.now().subtract(const Duration(days: 90)),
-      lastLogin: DateTime.now().subtract(const Duration(hours: 2)),
-    );
 
     // Note: This would require a method to update user info in the database service
     if (kDebugMode) {
@@ -208,18 +182,6 @@ class EnhancedTestDataSeeder {
     for (int i = 0; i < 21; i++) {
       final date = now.subtract(Duration(days: i));
       final activities = _generateRoadmapActivities(date);
-      
-      final roadmap = DailyRoadmapModel.create(
-        userId: userId,
-        targetDate: date,
-        dailyGoal: _generateDailyGoal(),
-        morningNotes: _generateMorningNotes(),
-      ).copyWith(
-        activities: activities,
-        eveningReflection: i > 0 ? _generateEveningReflection() : null,
-        status: i > 0 ? _getRandomRoadmapStatus() : RoadmapStatus.planned,
-        overallMood: i > 0 ? _getRandomMood() : null,
-      );
 
       // Note: This would require a method to save daily roadmaps in the database service
       if (kDebugMode) {
@@ -676,53 +638,6 @@ As I prepare for tomorrow, I\'m holding onto the feeling of being exactly where 
     return activities;
   }
 
-  String _generateDailyGoal() {
-    final goals = [
-      'Focus on being present in each moment and interaction',
-      'Practice gratitude and notice three things I appreciate',
-      'Move my body mindfully and with joy',
-      'Create something meaningful, however small',
-      'Connect authentically with someone I care about',
-      'Learn something new that sparks curiosity',
-      'Take care of my physical and emotional needs',
-      'Approach challenges with patience and creativity',
-      'Celebrate small wins and progress made',
-      'End the day feeling grateful and at peace',
-    ];
-    
-    return goals[_random.nextInt(goals.length)];
-  }
-
-  String _generateMorningNotes() {
-    final notes = [
-      'Feeling energized and ready to tackle the day with intention and purpose.',
-      'Starting slow and gentle, honoring my body\'s rhythm and needs.',
-      'Excited about the creative projects I have planned for today.',
-      'Focusing on connection and meaningful interactions throughout the day.',
-      'Committed to staying present and not rushing through moments.',
-      'Ready to learn and grow, approaching challenges with curiosity.',
-      'Grateful for this new day and the opportunities it brings.',
-      'Setting an intention to be kind to myself and others today.',
-    ];
-    
-    return notes[_random.nextInt(notes.length)];
-  }
-
-  String _generateEveningReflection() {
-    final reflections = [
-      'Today brought a nice balance of productivity and rest. I\'m grateful for the moments of connection I experienced.',
-      'I handled today\'s challenges with more grace than I expected. Proud of the progress I\'m making.',
-      'The creative work I did today felt fulfilling. It\'s amazing how expression can shift my entire mood.',
-      'I noticed myself being more present during conversations today. This mindfulness practice is really helping.',
-      'Even though not everything went as planned, I adapted well and found joy in unexpected moments.',
-      'Today reinforced the importance of self-care. Taking breaks actually made me more productive.',
-      'I feel grateful for the support system around me and for my growing self-awareness.',
-      'Tomorrow I want to build on today\'s momentum while also being gentle with myself.',
-    ];
-    
-    return reflections[_random.nextInt(reflections.length)];
-  }
-
   String _generateActivityDescription(String title) {
     final descriptions = {
       'Morning Meditation': 'Start the day with 15 minutes of mindful breathing and intention setting',
@@ -780,30 +695,9 @@ As I prepare for tomorrow, I\'m holding onto the feeling of being exactly where 
     return moods[_random.nextInt(moods.length)];
   }
 
-  RoadmapStatus _getRandomRoadmapStatus() {
-    final statuses = [
-      RoadmapStatus.completed,
-      RoadmapStatus.partiallyCompleted,
-      RoadmapStatus.inProgress,
-    ];
-    final weights = [0.6, 0.3, 0.1]; // More likely to be completed for past days
-    final randomValue = _random.nextDouble();
-    
-    double cumulativeWeight = 0.0;
-    for (int i = 0; i < statuses.length; i++) {
-      cumulativeWeight += weights[i];
-      if (randomValue <= cumulativeWeight) {
-        return statuses[i];
-      }
-    }
-    
-    return RoadmapStatus.completed;
-  }
-
   // Helper methods for realistic productivity patterns
   int _getProductiveHour(int entryIndex, int totalEntries) {
     // Create realistic work hour patterns
-    final workHours = [9, 10, 11, 14, 15, 16, 19, 20]; // Common productive hours
     final selectedHours = <int>[];
     
     // Morning productivity (9-11)

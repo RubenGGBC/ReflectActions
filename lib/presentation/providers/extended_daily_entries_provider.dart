@@ -3,10 +3,8 @@
 // PROVIDER EXTENDIDO QUE USA IA REAL PARA GENERAR GOALS
 // ============================================================================
 
-import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
-import '../../data/models/optimized_models.dart';
 import '../../data/services/optimized_database_service.dart';
 // AI services removed
 import 'optimized_providers.dart';
@@ -15,15 +13,11 @@ class ExtendedDailyEntriesProvider extends OptimizedDailyEntriesProvider {
   // AI service removed
   final Logger _logger = Logger();
 
-  // ✅ SOLUCIÓN: Almacenar referencia local al database service
-  final OptimizedDatabaseService _databaseService;
-
   // AI recommendations removed
 
   // ✅ CONSTRUCTOR CORREGIDO: Almacenar la referencia
   ExtendedDailyEntriesProvider(OptimizedDatabaseService databaseService)
-      : _databaseService = databaseService,
-        super(databaseService);
+      : super(databaseService);
 
   // AI getters removed
 
@@ -32,6 +26,9 @@ class ExtendedDailyEntriesProvider extends OptimizedDailyEntriesProvider {
   Future<bool> saveDailyEntry({
     required int userId,
     required String freeReflection,
+    String? innerReflection,
+    List<String> completedActivitiesToday = const [],
+    List<String> goalsSummary = const [],
     List<String> positiveTags = const [],
     List<String> negativeTags = const [],
     bool? worthIt,
@@ -67,6 +64,9 @@ class ExtendedDailyEntriesProvider extends OptimizedDailyEntriesProvider {
     final success = await super.saveDailyEntry(
       userId: userId,
       freeReflection: freeReflection,
+      innerReflection: innerReflection,
+      completedActivitiesToday: completedActivitiesToday,
+      goalsSummary: goalsSummary,
       positiveTags: positiveTags,
       negativeTags: negativeTags,
       worthIt: worthIt,

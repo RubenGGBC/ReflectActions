@@ -200,7 +200,7 @@ class _EnhancedGoalCardState extends State<EnhancedGoalCard>
             widget.goal.isCompleted 
                 ? Icons.check_circle
                 : _getCategoryIconData(widget.goal.categoryIcon),
-            color: MinimalColors.textPrimaryStatic,
+            color: Colors.white,
             size: 24,
           ),
         ),
@@ -582,15 +582,15 @@ class _EnhancedGoalCardState extends State<EnhancedGoalCard>
               Icon(
                 icon,
                 size: 16,
-                color: MinimalColors.textPrimaryStatic,
+                color: Colors.white,
               ),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: MinimalColors.textPrimaryStatic,
+                  color: Colors.white,
                 ),
               ),
             ],
@@ -705,14 +705,14 @@ class _EnhancedGoalCardState extends State<EnhancedGoalCard>
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [MinimalColors.warning, const Color(0xFFFF8C00)],
+                colors: [MinimalColors.warning, MinimalColors.neutralGradientStatic.last],
               ),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.celebration,
               size: 16,
-              color: MinimalColors.textPrimaryStatic,
+              color: Colors.white,
             ),
           ),
         );
@@ -734,10 +734,10 @@ class _EnhancedGoalCardState extends State<EnhancedGoalCard>
               ),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check_circle,
               size: 16,
-              color: MinimalColors.textPrimaryStatic,
+              color: Colors.white,
             ),
           ),
         );

@@ -16,6 +16,7 @@ import '../../providers/optimized_providers.dart';
 // Componentes
 import 'components/minimal_colors.dart';
 import 'components/modern_design_system.dart';
+import '../../widgets/test_data_seeder_button.dart';
 
 // Modelos
 
@@ -111,8 +112,8 @@ class _ProfileScreenV2State extends State<ProfileScreenV2>
       final user = context.read<OptimizedAuthProvider>().currentUser;
       if (user != null) {
         setState(() {
-          _nameController.text = user.name ?? '';
-          _bioController.text = user.bio ?? '';
+          _nameController.text = user.name;
+          _bioController.text = user.bio;
           _selectedAvatar = user.avatarEmoji;
           _selectedProfilePicture = user.profilePicturePath;
           _useProfilePicture = user.hasProfilePicture;
@@ -160,6 +161,8 @@ class _ProfileScreenV2State extends State<ProfileScreenV2>
                   _buildProfileCard(),
                   const SizedBox(height: ModernSpacing.lg),
                   _buildStatsCard(analyticsProvider),
+                  const SizedBox(height: ModernSpacing.lg),
+                  _buildDevToolsCard(),
                   const SizedBox(height: ModernSpacing.lg),
                   _buildSettingsCard(),
                   const SizedBox(height: ModernSpacing.lg),
@@ -289,23 +292,7 @@ class _ProfileScreenV2State extends State<ProfileScreenV2>
   // CARD DE PERFIL PRINCIPAL
   // ============================================================================
   Widget _buildProfileCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: MinimalColors.backgroundCard(context),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: MinimalColors.textSecondary(context).withValues(alpha: 0.1),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: MinimalColors.textSecondary(context).withValues(alpha: 0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
+    return ModernCard(
       child: Column(
         children: [
           // Avatar
@@ -553,15 +540,7 @@ class _ProfileScreenV2State extends State<ProfileScreenV2>
   Widget _buildStatsCard(OptimizedAnalyticsProvider analyticsProvider) {
     final stats = analyticsProvider.getDashboardSummary();
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: MinimalColors.backgroundCard(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: MinimalColors.textSecondary(context).withValues(alpha: 0.1),
-        ),
-      ),
+    return ModernCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -632,15 +611,7 @@ class _ProfileScreenV2State extends State<ProfileScreenV2>
   // CONFIGURACIONES Y ACCIONES
   // ============================================================================
   Widget _buildSettingsCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: MinimalColors.backgroundCard(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: MinimalColors.textSecondary(context).withValues(alpha: 0.1),
-        ),
-      ),
+    return ModernCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -728,27 +699,57 @@ class _ProfileScreenV2State extends State<ProfileScreenV2>
     );
   }
 
-  Widget _buildActionsCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: MinimalColors.backgroundCard(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: MinimalColors.textSecondary(context).withValues(alpha: 0.1),
-        ),
+  Widget _buildDevToolsCard() {
+    final user = context.read<OptimizedAuthProvider>().currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    return ModernCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Herramientas de Desarrollo',
+            style: TextStyle(
+              color: MinimalColors.textPrimary(context),
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TestDataSeederButton(
+            userId: user.id,
+            onSeedingComplete: () {
+              // Recargar datos despues de seeding
+              final auth = context.read<OptimizedAuthProvider>();
+              if (auth.currentUser != null) {
+                final userId = auth.currentUser!.id;
+                context.read<OptimizedDailyEntriesProvider>().loadEntries(userId);
+                context.read<OptimizedMomentsProvider>().loadMoments(userId);
+                context.read<GoalsProvider>().loadUserGoals(userId);
+              }
+              _showSnackBar('Datos recargados exitosamente');
+            },
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildActionsCard() {
+    return ModernCard(
       child: SizedBox(
         width: double.infinity,
         child: Container(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFdc2626), Color(0xFFef4444)],
+            gradient: LinearGradient(
+              colors: MinimalColors.negativeGradient(context),
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFdc2626).withValues(alpha: 0.3),
+                color: MinimalColors.coloredShadow(
+                    context, MinimalColors.negativeGradient(context).first,
+                    alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -952,8 +953,8 @@ class _ProfileScreenV2State extends State<ProfileScreenV2>
           ),
           Container(
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFdc2626), Color(0xFFef4444)],
+              gradient: LinearGradient(
+                colors: MinimalColors.negativeGradient(context),
               ),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -978,7 +979,7 @@ class _ProfileScreenV2State extends State<ProfileScreenV2>
       SnackBar(
         content: Text(message),
         backgroundColor: isError
-            ? const Color(0xFFdc2626)
+            ? MinimalColors.negativeMain(context)
             : MinimalColors.accentGradient(context)[0],
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(

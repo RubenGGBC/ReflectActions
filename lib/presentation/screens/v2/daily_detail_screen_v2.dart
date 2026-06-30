@@ -217,7 +217,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
               ),
               child: IconButton(
                 onPressed: _navigateToCalendar,
-                icon: const Icon(
+                icon: Icon(
                   Icons.apps,
                   color: Colors.white,
                   size: 22,
@@ -310,7 +310,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                   gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.self_improvement, color: Colors.white, size: 20),
+                child: Icon(Icons.self_improvement, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Text(
@@ -429,7 +429,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
       ),
       child: Column(
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 20)),
+          Text(emoji, style: TextStyle(fontSize: 20)),
           const SizedBox(height: 4),
           Text(
             '$value/10',
@@ -483,7 +483,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                     gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.auto_stories, color: Colors.white, size: 20),
+                  child: Icon(Icons.auto_stories, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -522,7 +522,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       '🙏 Gratitud',
                       style: TextStyle(
                         color: MinimalColors.info,
@@ -579,7 +579,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (entry.positiveTags.isNotEmpty) ...[
-          const Text(
+          Text(
             '✅ Aspectos Positivos',
             style: TextStyle(
               color: MinimalColors.info,
@@ -597,7 +597,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
         ],
 
         if (entry.negativeTags.isNotEmpty) ...[
-          const Text(
+          Text(
             '❌ Aspectos a Mejorar',
             style: TextStyle(
               color: MinimalColors.error,
@@ -643,7 +643,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                         gradient: LinearGradient(colors: MinimalColors.lightGradient(context)),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.analytics, color: Colors.white, size: 20),
+                      child: Icon(Icons.analytics, color: Colors.white, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -756,7 +756,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 28)),
+          Text(emoji, style: TextStyle(fontSize: 28)),
           const SizedBox(height: 8),
           Text(
             '$displayValue$unit',
@@ -800,7 +800,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                   gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.psychology, color: Colors.white, size: 20),
+                child: Icon(Icons.psychology, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Text(
@@ -833,7 +833,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
       ),
       child: Row(
         children: [
-          Text(insight['emoji'], style: const TextStyle(fontSize: 20)),
+          Text(insight['emoji'], style: TextStyle(fontSize: 20)),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -928,7 +928,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
             const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -1005,8 +1005,8 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text(
+                icon: Icon(Icons.add, color: Colors.white),
+                label: Text(
                   'Crear Reflexión',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
@@ -1057,7 +1057,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                 const SizedBox(width: 8),
                 Text(
                   entry != null ? 'Editar' : 'Crear',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1216,19 +1216,6 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
     return '$monthName ${date.year}';
   }
 
-  String _getRelativeDayText(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final targetDate = DateTime(date.year, date.month, date.day);
-    final difference = targetDate.difference(today).inDays;
-
-    if (difference == 0) return 'Hoy';
-    if (difference == -1) return 'Ayer';
-    if (difference == 1) return 'Mañana';
-    if (difference < 0) return 'Hace ${-difference} días';
-    return 'En $difference días';
-  }
-
   Color _getScoreColor(int score) {
     if (score <= 3) return MinimalColors.error;
     if (score <= 5) return MinimalColors.warning;
@@ -1293,7 +1280,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                   gradient: LinearGradient(colors: MinimalColors.lightGradient(context)),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.sentiment_satisfied, color: Colors.white, size: 20),
+                child: Icon(Icons.sentiment_satisfied, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1340,7 +1327,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                 const SizedBox(width: 8),
                 Text(
                   'Momentos Buenos (${positiveMoments.length})',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: MinimalColors.success,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -1378,7 +1365,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                 const SizedBox(width: 8),
                 Text(
                   'Momentos Malos (${negativeMoments.length})',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: MinimalColors.error,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -1508,7 +1495,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                     children: [
                       Text(
                         moment.emoji,
-                        style: const TextStyle(fontSize: 16),
+                        style: TextStyle(fontSize: 16),
                       ),
                       const Spacer(),
                       Text(
@@ -1611,7 +1598,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                   gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.insights, color: Colors.white, size: 20),
+                child: Icon(Icons.insights, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Text(
@@ -1723,7 +1710,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                   gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.mic, color: Colors.white, size: 20),
+                child: Icon(Icons.mic, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Text(
@@ -1771,7 +1758,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                   gradient: LinearGradient(colors: MinimalColors.primaryGradient(context)),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.task_alt, color: Colors.white, size: 20),
+                child: Icon(Icons.task_alt, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1804,7 +1791,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                 ),
                 child: Text(
                   '$totalActivities',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -1840,7 +1827,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                     child: Center(
                       child: Text(
                         '${index + 1}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -1862,7 +1849,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Row(
+                        Row(
                           children: [
                             Icon(Icons.check_circle, color: MinimalColors.success, size: 16),
                             SizedBox(width: 4),
@@ -1885,7 +1872,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                       color: MinimalColors.success.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Icon(Icons.done, color: MinimalColors.success, size: 16),
+                    child: Icon(Icons.done, color: MinimalColors.success, size: 16),
                   ),
                 ],
               ),
@@ -1908,7 +1895,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
             ),
             child: Row(
               children: [
-                const Text('🎯', style: TextStyle(fontSize: 20)),
+                Text('🎯', style: TextStyle(fontSize: 20)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -1964,7 +1951,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                   gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.track_changes, color: Colors.white, size: 20),
+                child: Icon(Icons.track_changes, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -2066,7 +2053,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.note_alt, color: MinimalColors.warning, size: 18),
+                  Icon(Icons.note_alt, color: MinimalColors.warning, size: 18),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -2096,7 +2083,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
               ),
               child: Row(
                 children: [
-                  const Text('📊', style: TextStyle(fontSize: 20)),
+                  Text('📊', style: TextStyle(fontSize: 20)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -2277,7 +2264,7 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
                   gradient: LinearGradient(colors: MinimalColors.primaryGradient(context)),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.route, color: Colors.white, size: 20),
+                child: Icon(Icons.route, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -2332,13 +2319,13 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.flag, color: MinimalColors.info, size: 20),
+                  Icon(Icons.flag, color: MinimalColors.info, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Meta del Día',
                           style: TextStyle(
                             color: MinimalColors.info,
@@ -2373,13 +2360,13 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.wb_sunny, color: MinimalColors.warning, size: 20),
+                  Icon(Icons.wb_sunny, color: MinimalColors.warning, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Notas Matutinas',
                           style: TextStyle(
                             color: MinimalColors.warning,
@@ -2437,13 +2424,13 @@ class _DailyDetailScreenV2State extends State<DailyDetailScreenV2>
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.nights_stay, color: MinimalColors.accent, size: 20),
+                  Icon(Icons.nights_stay, color: MinimalColors.accent, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Reflexión Vespertina',
                           style: TextStyle(
                             color: MinimalColors.accent,

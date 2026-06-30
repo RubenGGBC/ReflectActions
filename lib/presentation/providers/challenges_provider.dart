@@ -76,14 +76,13 @@ class Challenge {
 }
 
 class ChallengesProvider extends ChangeNotifier {
-  final OptimizedDatabaseService _databaseService;
   final Logger _logger = Logger();
 
   List<Challenge> _challenges = [];
   bool _isLoading = false;
   String? _errorMessage;
 
-  ChallengesProvider(this._databaseService);
+  ChallengesProvider(OptimizedDatabaseService databaseService);
 
   // Getters
   List<Challenge> get challenges => List.unmodifiable(_challenges);

@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:logger/logger.dart';
 
 // Models and Services
 import '../../../data/models/goal_model.dart';
@@ -23,6 +24,8 @@ import '../../widgets/enhanced_create_goal_dialog.dart';
 // New Advanced Screens  
 import 'goal_progress_screen.dart';
 import 'goal_lifetime_screen.dart';
+
+final _logger = Logger();
 
 class GoalsScreenEnhanced extends StatefulWidget {
   const GoalsScreenEnhanced({super.key});
@@ -126,14 +129,14 @@ class _GoalsScreenEnhancedState extends State<GoalsScreenEnhanced>
       final user = authProvider.currentUser;
       
       if (user != null) {
-        print('🔄 Refrescando objetivos para usuario: ${user.id}');
+        _logger.d('🔄 Refrescando objetivos para usuario: ${user.id}');
         await goalsProvider.loadGoals(user.id);
         
         
-        print('✅ Objetivos refrescados exitosamente');
+        _logger.d('✅ Objetivos refrescados exitosamente');
       }
     } catch (e) {
-      print('❌ Error refrescando objetivos: $e');
+      _logger.e('❌ Error refrescando objetivos: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error refrescando objetivos: $e')),
@@ -286,10 +289,10 @@ class _GoalsScreenEnhancedState extends State<GoalsScreenEnhanced>
         final averageProgress = stats['completionRate'] as double;
         
         // DEBUG: Log current metrics
-        print('📊 Quick Stats Update:');
-        print('  Active Goals: ${activeGoals.length}');
-        print('  Completed Goals: ${completedGoals.length}');
-        print('  Average Progress: ${(averageProgress * 100).round()}%');
+        _logger.d('📊 Quick Stats Update:');
+        _logger.d('  Active Goals: ${activeGoals.length}');
+        _logger.d('  Completed Goals: ${completedGoals.length}');
+        _logger.d('  Average Progress: ${(averageProgress * 100).round()}%');
 
         return Row(
           children: [
@@ -686,14 +689,14 @@ class _GoalsScreenEnhancedState extends State<GoalsScreenEnhanced>
         onEntryCreated: (entry) async {
           try {
             // DEBUG: Log los valores antes de actualizar
-            print('🎯 DEBUG updateGoalProgress llamado:');
-            print('  Goal ID: ${goal.id}');
-            print('  Goal Title: ${goal.title}');
-            print('  Current Value: ${goal.currentValue}');
-            print('  Target Value: ${goal.targetValue}');
-            print('  Entry Primary Value: ${entry.primaryValue}');
-            print('  Current Progress: ${goal.progress} (${goal.progressPercentage}%)');
-            print('  ¿Debería completarse?: ${entry.primaryValue >= goal.targetValue}');
+            _logger.d('🎯 DEBUG updateGoalProgress llamado:');
+            _logger.d('  Goal ID: ${goal.id}');
+            _logger.d('  Goal Title: ${goal.title}');
+            _logger.d('  Current Value: ${goal.currentValue}');
+            _logger.d('  Target Value: ${goal.targetValue}');
+            _logger.d('  Entry Primary Value: ${entry.primaryValue}');
+            _logger.d('  Current Progress: ${goal.progress} (${goal.progressPercentage}%)');
+            _logger.d('  ¿Debería completarse?: ${entry.primaryValue >= goal.targetValue}');
             
             await goalsProvider.addProgressEntry(entry);
             await goalsProvider.updateGoalProgress(

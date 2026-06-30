@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../data/models/optimized_models.dart';
+import '../screens/v2/components/minimal_colors.dart';
 
 class ExpandableMomentDetailWidget extends StatefulWidget {
   final String imagePath;
@@ -488,22 +489,22 @@ class _ExpandableMomentDetailWidgetState extends State<ExpandableMomentDetailWid
   Color _getMomentGlowColor(String? type) {
     switch (type) {
       case 'positive':
-        return const Color(0xFF10B981); // Green glow for positive moments
+        return MinimalColors.positiveMain(context); // Green glow for positive moments
       case 'negative':
-        return const Color(0xFFef4444); // Red glow for negative moments
+        return MinimalColors.negativeMain(context); // Red glow for negative moments
       default:
-        return const Color(0xFFf59e0b); // Orange glow for neutral moments
+        return MinimalColors.warningMain(context); // Orange glow for neutral moments
     }
   }
 
   List<Color> _getMomentTypeGradient(String? type) {
     switch (type) {
       case 'positive':
-        return [const Color(0xFF10B981), const Color(0xFF34D399)];
+        return MinimalColors.positiveGradient(context);
       case 'negative':
-        return [const Color(0xFFb91c1c), const Color(0xFFef4444)];
+        return MinimalColors.negativeGradient(context);
       default:
-        return [const Color(0xFFf59e0b), const Color(0xFFfbbf24)];
+        return MinimalColors.neutralGradient(context);
     }
   }
 
@@ -519,9 +520,9 @@ class _ExpandableMomentDetailWidgetState extends State<ExpandableMomentDetailWid
   }
 
   Color _getIntensityColor(int intensity) {
-    if (intensity <= 3) return const Color(0xFF10B981);
-    if (intensity <= 6) return const Color(0xFFf59e0b);
-    return const Color(0xFFef4444);
+    if (intensity <= 3) return MinimalColors.positiveMain(context);
+    if (intensity <= 6) return MinimalColors.warningMain(context);
+    return MinimalColors.negativeMain(context);
   }
 
   String _formatDateTime(DateTime dateTime) {

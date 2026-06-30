@@ -5,8 +5,15 @@
 
 import 'package:flutter/foundation.dart';
 import '../../data/models/daily_activity_model.dart';
+import '../../data/services/optimized_database_service.dart';
 
 class DailyActivitiesProvider extends ChangeNotifier {
+  final OptimizedDatabaseService _databaseService;
+
+  DailyActivitiesProvider(this._databaseService) {
+    _loadDefaultActivities();
+  }
+
   List<DailyActivity> _activities = [];
   List<DailyActivity> _completedActivities = [];
   bool _isLoading = false;
@@ -25,16 +32,53 @@ class DailyActivitiesProvider extends ChangeNotifier {
   int get pendingCount => pendingActivities.length;
   double get completionPercentage => totalActivities > 0 ? (completedCount / totalActivities) * 100 : 0.0;
 
-  DailyActivitiesProvider() {
-    _loadDefaultActivities();
-  }
-
   void _loadDefaultActivities() {
     _isLoading = true;
     notifyListeners();
 
     try {
       _activities = DailyActivity.getDefaultActivities();
+      _updateCompletedActivities();
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Carga el estado de completado persistido para el usuario en el día actual.
+  Future<void> loadForUser(int userId, {DateTime? date}) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final today = date ?? DateTime.now();
+      final completions = await _databaseService.getActivityCompletions(
+        userId: userId,
+        source: 'daily',
+        completionDate: today,
+      );
+
+      // Reset to defaults, then apply persisted completion state.
+      _activities = DailyActivity.getDefaultActivities();
+      for (final row in completions) {
+        final activityId = row['activity_id'] as String;
+        final index = _activities.indexWhere((a) => a.id == activityId);
+        if (index != -1) {
+          final completedAtStr = row['completed_at'] as String?;
+          final ratingValue = row['rating'];
+          _activities[index] = _activities[index].copyWith(
+            isCompleted: true,
+            completedAt: completedAtStr != null
+                ? DateTime.tryParse(completedAtStr)
+                : today,
+            completionNotes: row['notes'] as String?,
+            rating: ratingValue != null ? (ratingValue as num).round() : null,
+          );
+        }
+      }
       _updateCompletedActivities();
       _error = null;
     } catch (e) {

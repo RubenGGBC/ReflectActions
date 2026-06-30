@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/themes/app_theme.dart';
+
 class ThemeProvider with ChangeNotifier {
   final Logger _logger = Logger();
 
@@ -13,31 +15,32 @@ class ThemeProvider with ChangeNotifier {
   static const Color darkPrimaryBg = Color(0xFF0A0E1A);
   static const Color darkSurface = Color(0xFF141B2D);
   static const Color darkSurfaceVariant = Color(0xFF1E2A3F);
-  static const Color darkAccentPrimary = Color(0xFF1E3A8A);
-  static const Color darkAccentSecondary = Color(0xFF3B82F6);
+  static const Color darkAccentPrimary = Color(0xFF581C87);
+  static const Color darkAccentSecondary = Color(0xFF9333EA);
   static const Color darkTextPrimary = Color(0xFFE8EAF0);
   static const Color darkTextSecondary = Color(0xFFB3B8C8);
   static const Color darkTextHint = Color(0xFF8691A8);
   static const Color darkPositiveMain = Color(0xFF10B981);
   static const Color darkNegativeMain = Color(0xFFEF4444);
-  static const Color darkBorderColor = Color(0xFF1E3A8A);
-  static const Color darkShadowColor = Color(0x331E3A8A);
-  static const List<Color> darkGradientHeader = [Color(0xFF1E3A8A), Color(0xFF7C3AED)];
+  static const Color darkBorderColor = Color(0xFF581C87);
+  static const Color darkShadowColor = Color(0x33581C87);
+  static const List<Color> darkGradientHeader = [Color(0xFF581C87), Color(0xFF7C3AED)];
 
   // Light Theme Colors
   static const Color lightPrimaryBg = Color(0xFFF8FAFC);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightSurfaceVariant = Color(0xFFF1F5F9);
-  static const Color lightAccentPrimary = Color(0xFF1E3A8A);
-  static const Color lightAccentSecondary = Color(0xFF3B82F6);
+  static const Color lightAccentPrimary = Color(0xFF7C3AED);
+  static const Color lightAccentSecondary = Color(0xFF9333EA);
   static const Color lightTextPrimary = Color(0xFF1F2937);
   static const Color lightTextSecondary = Color(0xFF4B5563);
   static const Color lightTextHint = Color(0xFF9CA3AF);
   static const Color lightPositiveMain = Color(0xFF059669);
   static const Color lightNegativeMain = Color(0xFFDC2626);
   static const Color lightBorderColor = Color(0xFFD1D5DB);
-  static const Color lightShadowColor = Color(0x331E3A8A);
-  static const List<Color> lightGradientHeader = [Color(0xFF1E3A8A), Color(0xFF7C3AED)];
+  static const Color lightShadowColor = Color(0x337C3AED);
+  // Violeta → índigo (análogos): vívido como sólido y limpio como tinte sobre blanco
+  static const List<Color> lightGradientHeader = [Color(0xFF7C3AED), Color(0xFF6366F1)];
 
   bool _isInitialized = false;
   bool _isDarkMode = true;
@@ -58,14 +61,14 @@ class ThemeProvider with ChangeNotifier {
   Color get borderColor => _isDarkMode ? darkBorderColor : lightBorderColor;
   Color get shadowColor => _isDarkMode ? darkShadowColor : lightShadowColor;
   List<Color> get gradientHeader => _isDarkMode ? darkGradientHeader : lightGradientHeader;
-  
+
   // Additional getters for compatibility
   Color get secondaryBg => _isDarkMode ? darkSurface : lightSurface;
   Color get positiveLight => _isDarkMode ? darkPositiveMain.withValues(alpha: 0.3) : lightPositiveMain.withValues(alpha: 0.3);
   Color get negativeLight => _isDarkMode ? darkNegativeMain.withValues(alpha: 0.3) : lightNegativeMain.withValues(alpha: 0.3);
-  List<Color> get gradientButton => gradientHeader; // Use same as header for simplicity
+  List<Color> get gradientButton => gradientHeader;
   bool get isDark => _isDarkMode;
-  
+
   // Legacy getters
   Color get primaryBgColor => primaryBg;
   Color get surfaceColor => surface;
@@ -79,10 +82,13 @@ class ThemeProvider with ChangeNotifier {
   Color get borderColorValue => borderColor;
   List<Color> get gradientHeaderColors => gradientHeader;
 
-  // Objeto de colores actuales para compatibilidad
-  AppColors get currentColors => AppColors(
+  /// Alias para compatibilidad con código existente
+  AppColors get currentColors => currentAppColors;
+
+  /// Objeto de colores actuales usando el sistema unificado AppColors
+  AppColors get currentAppColors => AppColors(
     primaryBg: primaryBg,
-    secondaryBg: _isDarkMode ? darkSurface : lightSurface, // Secondary background
+    secondaryBg: secondaryBg,
     surface: surface,
     surfaceVariant: surfaceVariant,
     accentPrimary: accentPrimary,
@@ -91,12 +97,30 @@ class ThemeProvider with ChangeNotifier {
     textSecondary: textSecondary,
     textHint: textHint,
     positiveMain: positiveMain,
-    positiveLight: _isDarkMode ? darkPositiveMain.withValues(alpha: 0.3) : lightPositiveMain.withValues(alpha: 0.3),
+    positiveLight: positiveLight,
+    positiveGlow: positiveMain.withValues(alpha: 0.4),
     negativeMain: negativeMain,
-    negativeLight: _isDarkMode ? darkNegativeMain.withValues(alpha: 0.3) : lightNegativeMain.withValues(alpha: 0.3),
-    borderColor: borderColor,
+    negativeLight: negativeLight,
+    negativeGlow: negativeMain.withValues(alpha: 0.4),
+    warningMain: const Color(0xFFF59E0B),
+    infoMain: accentSecondary,
     shadowColor: shadowColor,
+    borderColor: borderColor,
+    glassBg: accentPrimary.withValues(alpha: 0.2),
     gradientHeader: gradientHeader,
+    gradientButton: gradientHeader,
+    categories: const {
+      'emocional': Color(0xFF8B5CF6),
+      'fisico': Color(0xFF11998e),
+      'social': Color(0xFFff6b6b),
+      'mental': Color(0xFF4ecdc4),
+      'espiritual': Color(0xFF764ba2),
+    },
+    name: _isDarkMode ? 'dark' : 'light',
+    displayName: _isDarkMode ? 'Dark' : 'Light',
+    icon: _isDarkMode ? '🌙' : '☀️',
+    description: _isDarkMode ? 'Dark theme' : 'Light theme',
+    isDark: _isDarkMode,
   );
 
   bool get isInitialized => _isInitialized;
@@ -105,23 +129,23 @@ class ThemeProvider with ChangeNotifier {
   Future<void> initialize() async {
     if (_isInitialized) return;
     _logger.i('🎨 Inicializando ThemeProvider');
-    
+
     // Load saved theme preference
     final prefs = await SharedPreferences.getInstance();
     _isDarkMode = prefs.getBool('is_dark_mode') ?? true;
-    
+
     _isInitialized = true;
     notifyListeners();
   }
-  
+
   /// Toggle between dark and light theme
   Future<void> toggleTheme() async {
     _isDarkMode = !_isDarkMode;
-    
+
     // Save preference
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_dark_mode', _isDarkMode);
-    
+
     _logger.i('🎨 Theme toggled to ${_isDarkMode ? 'Dark' : 'Light'} mode');
     notifyListeners();
   }
@@ -129,13 +153,13 @@ class ThemeProvider with ChangeNotifier {
   /// Set theme explicitly
   Future<void> setTheme(bool isDarkMode) async {
     if (_isDarkMode == isDarkMode) return;
-    
+
     _isDarkMode = isDarkMode;
-    
+
     // Save preference
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_dark_mode', _isDarkMode);
-    
+
     _logger.i('🎨 Theme set to ${_isDarkMode ? 'Dark' : 'Light'} mode');
     notifyListeners();
   }
@@ -166,62 +190,6 @@ class ThemeProvider with ChangeNotifier {
     }
   }
 
-  /// Tema data para Material
-  ThemeData get currentThemeData => ThemeData(
-    useMaterial3: true,
-    brightness: _isDarkMode ? Brightness.dark : Brightness.light,
-    scaffoldBackgroundColor: primaryBg,
-    colorScheme: _isDarkMode 
-      ? ColorScheme.dark(
-          primary: accentPrimary,
-          secondary: accentSecondary,
-          surface: surface,
-          error: negativeMain,
-        )
-      : ColorScheme.light(
-          primary: accentPrimary,
-          secondary: accentSecondary,
-          surface: surface,
-          error: negativeMain,
-        ),
-  );
-}
-
-// Clase de colores para compatibilidad - SOLO AQUÍ
-class AppColors {
-  final Color primaryBg;
-  final Color secondaryBg;
-  final Color surface;
-  final Color surfaceVariant;
-  final Color accentPrimary;
-  final Color accentSecondary;
-  final Color textPrimary;
-  final Color textSecondary;
-  final Color textHint;
-  final Color positiveMain;
-  final Color positiveLight;
-  final Color negativeMain;
-  final Color negativeLight;
-  final Color borderColor;
-  final Color shadowColor;
-  final List<Color> gradientHeader;
-
-  const AppColors({
-    required this.primaryBg,
-    required this.secondaryBg,
-    required this.surface,
-    required this.surfaceVariant,
-    required this.accentPrimary,
-    required this.accentSecondary,
-    required this.textPrimary,
-    required this.textSecondary,
-    required this.textHint,
-    required this.positiveMain,
-    required this.positiveLight,
-    required this.negativeMain,
-    required this.negativeLight,
-    required this.borderColor,
-    required this.shadowColor,
-    required this.gradientHeader,
-  });
+  /// Tema data para Material usando el sistema unificado
+  ThemeData get currentThemeData => AppThemeData.buildTheme(currentAppColors);
 }

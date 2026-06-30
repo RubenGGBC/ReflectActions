@@ -17,11 +17,10 @@ import 'package:logger/logger.dart';
 import '../models/goal_model.dart';
 import '../models/optimized_models.dart';
 import '../models/daily_roadmap_model.dart';
-import '../models/roadmap_activity_model.dart';
 
 class OptimizedDatabaseService {
   static const String _databaseName = 'reflect_optimized_v2.db';
-  static const int _databaseVersion = 15;
+  static const int _databaseVersion = 16;
 
   static Database? _database;
   static final OptimizedDatabaseService _instance = OptimizedDatabaseService
@@ -80,24 +79,32 @@ class OptimizedDatabaseService {
   
   Future<List<String>> _getDatabasePaths() async {
     final paths = <String>[];
-    
+
     try {
-      // Primary path: Application documents directory
+      // Primary: sqflite native path (no objective_c dependency, works on all iOS/Android)
+      final dbsPath = await getDatabasesPath();
+      paths.add(join(dbsPath, _databaseName));
+    } catch (e) {
+      _logger.w('⚠️ Error obteniendo getDatabasesPath: $e');
+    }
+
+    try {
+      // Secondary path: Application documents directory
       final documentsDir = await getApplicationDocumentsDirectory();
       paths.add(join(documentsDir.path, _databaseName));
     } catch (e) {
       _logger.w('⚠️ Error obteniendo documents directory: $e');
     }
-    
+
     try {
-      // Secondary path: Application support directory
+      // Tertiary path: Application support directory
       final supportDir = await getApplicationSupportDirectory();
       paths.add(join(supportDir.path, _databaseName));
     }
     catch (e) {
       _logger.w('⚠️ Error obteniendo support directory: $e');
     }
-    
+
     try {
       // Last resort: Internal storage (Android specific)
       if (Platform.isAndroid) {
@@ -108,7 +115,7 @@ class OptimizedDatabaseService {
     catch (e) {
       _logger.w('⚠️ Error obteniendo internal directory: $e');
     }
-    
+
     return paths;
   }
   
@@ -153,93 +160,6 @@ class OptimizedDatabaseService {
       _logger.w('⚠️ Advertencia en configuración de BD: $e');
       // Continuar sin configuraciones avanzadas si fallan
     }
-  }
-
-  // ✅ ESQUEMA MÍNIMO PARA FALLBACK
-  Future<void> _createMinimalSchema(Database db) async {
-    await db.execute('''
-      CREATE TABLE users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        name TEXT NOT NULL,
-        avatar_emoji TEXT DEFAULT '🧘‍♀️',
-        profile_picture_path TEXT,
-        bio TEXT,
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-        is_active BOOLEAN DEFAULT 1
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE daily_entries (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        entry_date TEXT NOT NULL,
-        free_reflection TEXT NOT NULL,
-        mood_score INTEGER DEFAULT 5,
-        energy_level INTEGER DEFAULT 5,
-        stress_level INTEGER DEFAULT 5,
-        worth_it INTEGER DEFAULT 1,
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-        UNIQUE(user_id, entry_date)
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE interactive_moments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        entry_date TEXT NOT NULL,
-        emoji TEXT NOT NULL,
-        text TEXT NOT NULL,
-        type TEXT NOT NULL CHECK (type IN ('positive', 'negative', 'neutral')),
-        intensity INTEGER DEFAULT 5,
-        category TEXT DEFAULT 'general',
-        timestamp INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-      )
-    ''');
-
-    // ✅ NUEVO: Tabla user_goals agregada al esquema mínimo
-    await db.execute('''
-      CREATE TABLE user_goals (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT NOT NULL,
-        type TEXT NOT NULL CHECK (type IN ('mindfulness', 'stress', 'sleep', 'social', 'physical', 'emotional', 'productivity', 'habits')),
-        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'paused', 'cancelled')),
-        target_value REAL NOT NULL CHECK (target_value > 0),
-        current_value REAL NOT NULL DEFAULT 0.0 CHECK (current_value >= 0),
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-        completed_at INTEGER,
-        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-      )
-    ''');
-
-    // ✅ NUEVO: Tabla personalized_challenges agregada al esquema mínimo
-    await db.execute('''
-      CREATE TABLE personalized_challenges (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT NOT NULL,
-        challenge_type TEXT NOT NULL,
-        difficulty TEXT NOT NULL DEFAULT 'medium',
-        target_value REAL NOT NULL,
-        current_progress REAL NOT NULL DEFAULT 0.0,
-        reward_points INTEGER DEFAULT 0,
-        is_active INTEGER DEFAULT 1,
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-        completed_at INTEGER,
-        expires_at INTEGER,
-        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-      )
-    ''');
-
-    _logger.i('✅ Esquema mínimo creado para fallback');
   }
 
   Future<void> _createOptimizedSchema(Database db, int version) async {
@@ -444,6 +364,24 @@ class OptimizedDatabaseService {
           )
         ''');
 
+        // ✅ NUEVA TABLA: ACTIVITY_COMPLETIONS - Persistencia de actividades completadas (diarias y recomendadas)
+        await txn.execute('''
+          CREATE TABLE activity_completions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            activity_id TEXT NOT NULL,
+            source TEXT NOT NULL DEFAULT 'daily' CHECK (source IN ('daily', 'recommended')),
+            completion_date TEXT NOT NULL,
+            completed_at TEXT NOT NULL DEFAULT (datetime('now')),
+            duration_minutes INTEGER DEFAULT 0,
+            rating REAL,
+            notes TEXT,
+
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+            UNIQUE(user_id, activity_id, source, completion_date)
+          )
+        ''');
+
         await _createOptimizedIndexes(txn);
 
         _logger.i('✅ Esquema optimizado creado exitosamente para APK');
@@ -498,6 +436,12 @@ class OptimizedDatabaseService {
         'CREATE INDEX idx_challenges_type ON personalized_challenges (user_id, challenge_type)');
     await txn.execute(
         'CREATE INDEX idx_challenges_difficulty ON personalized_challenges (difficulty, reward_points DESC)');
+
+    // Índices para activity_completions
+    await txn.execute(
+        'CREATE INDEX idx_activity_completions_user_date ON activity_completions (user_id, completion_date)');
+    await txn.execute(
+        'CREATE INDEX idx_activity_completions_source ON activity_completions (user_id, source, completion_date)');
   }
 
   Future<void> _upgradeSchema(Database db, int oldVersion,
@@ -546,6 +490,9 @@ class OptimizedDatabaseService {
       }
       if (oldVersion < 15) {
         await _migrateToV15(db);
+      }
+      if (oldVersion < 16) {
+        await _migrateToV16(db);
       }
     } catch (e) {
       _logger.e('❌ Error en migración: $e');
@@ -1052,6 +999,47 @@ class OptimizedDatabaseService {
     }
   }
 
+  Future<void> _migrateToV16(Database db) async {
+    try {
+      _logger.i('📦 Creando tabla activity_completions en migración v16');
+
+      final tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='activity_completions'",
+      );
+
+      if (tables.isEmpty) {
+        await db.execute('''
+          CREATE TABLE activity_completions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            activity_id TEXT NOT NULL,
+            source TEXT NOT NULL DEFAULT 'daily' CHECK (source IN ('daily', 'recommended')),
+            completion_date TEXT NOT NULL,
+            completed_at TEXT NOT NULL DEFAULT (datetime('now')),
+            duration_minutes INTEGER DEFAULT 0,
+            rating REAL,
+            notes TEXT,
+
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+            UNIQUE(user_id, activity_id, source, completion_date)
+          )
+        ''');
+        await db.execute(
+            'CREATE INDEX idx_activity_completions_user_date ON activity_completions (user_id, completion_date)');
+        await db.execute(
+            'CREATE INDEX idx_activity_completions_source ON activity_completions (user_id, source, completion_date)');
+        _logger.i('✅ Tabla activity_completions creada');
+      } else {
+        _logger.i('✅ Tabla activity_completions ya existe');
+      }
+
+      _logger.i('✅ Migración v16 completada');
+    } catch (e) {
+      _logger.e('❌ Error en migración v16: $e');
+      rethrow;
+    }
+  }
+
   // ============================================================================
   // MÉTODOS OPTIMIZADOS PARA USUARIOS
   // ============================================================================
@@ -1460,6 +1448,124 @@ class OptimizedDatabaseService {
   }
 
   // ============================================================================
+  // MÉTODOS PARA COMPLETADO DE ACTIVIDADES (DAILY + RECOMMENDED)
+  // ============================================================================
+
+  /// Marca una actividad como completada para un usuario en una fecha concreta.
+  /// Idempotente por (user_id, activity_id, source, completion_date).
+  Future<bool> saveActivityCompletion({
+    required int userId,
+    required String activityId,
+    String source = 'daily',
+    DateTime? completionDate,
+    int durationMinutes = 0,
+    double? rating,
+    String? notes,
+  }) async {
+    try {
+      final db = await database;
+      final date = completionDate ?? DateTime.now();
+      final dateStr = date.toIso8601String().split('T')[0];
+
+      return await db.transaction((txn) async {
+        final existing = await txn.query(
+          'activity_completions',
+          where:
+              'user_id = ? AND activity_id = ? AND source = ? AND completion_date = ?',
+          whereArgs: [userId, activityId, source, dateStr],
+          limit: 1,
+        );
+
+        final data = {
+          'user_id': userId,
+          'activity_id': activityId,
+          'source': source,
+          'completion_date': dateStr,
+          'completed_at': date.toIso8601String(),
+          'duration_minutes': durationMinutes,
+          'rating': rating,
+          'notes': notes,
+        };
+
+        if (existing.isNotEmpty) {
+          await txn.update(
+            'activity_completions',
+            data,
+            where: 'id = ?',
+            whereArgs: [existing.first['id']],
+          );
+        } else {
+          await txn.insert('activity_completions', data);
+        }
+        return true;
+      });
+    } catch (e) {
+      _logger.e('❌ Error guardando actividad completada: $e');
+      return false;
+    }
+  }
+
+  /// Elimina (deshace) el completado de una actividad en una fecha concreta.
+  Future<bool> deleteActivityCompletion({
+    required int userId,
+    required String activityId,
+    String source = 'daily',
+    DateTime? completionDate,
+  }) async {
+    try {
+      final db = await database;
+      final date = completionDate ?? DateTime.now();
+      final dateStr = date.toIso8601String().split('T')[0];
+
+      final deleted = await db.delete(
+        'activity_completions',
+        where:
+            'user_id = ? AND activity_id = ? AND source = ? AND completion_date = ?',
+        whereArgs: [userId, activityId, source, dateStr],
+      );
+      return deleted > 0;
+    } catch (e) {
+      _logger.e('❌ Error eliminando actividad completada: $e');
+      return false;
+    }
+  }
+
+  /// Devuelve las filas de actividades completadas para un usuario,
+  /// opcionalmente filtradas por fuente y fecha.
+  Future<List<Map<String, dynamic>>> getActivityCompletions({
+    required int userId,
+    String? source,
+    DateTime? completionDate,
+  }) async {
+    try {
+      final db = await database;
+
+      String whereClause = 'user_id = ?';
+      final whereArgs = <dynamic>[userId];
+
+      if (source != null) {
+        whereClause += ' AND source = ?';
+        whereArgs.add(source);
+      }
+
+      if (completionDate != null) {
+        whereClause += ' AND completion_date = ?';
+        whereArgs.add(completionDate.toIso8601String().split('T')[0]);
+      }
+
+      return await db.query(
+        'activity_completions',
+        where: whereClause,
+        whereArgs: whereArgs,
+        orderBy: 'completed_at DESC',
+      );
+    } catch (e) {
+      _logger.e('❌ Error obteniendo actividades completadas: $e');
+      return [];
+    }
+  }
+
+  // ============================================================================
   // MÉTODOS OPTIMIZADOS PARA MOMENTOS INTERACTIVOS
   // ============================================================================
 
@@ -1643,59 +1749,6 @@ class OptimizedDatabaseService {
     ''', [userId]);
 
     return _calculateStreaksOptimized(results.map((r) => r['entry_date'] as String).toList());
-  }
-
-  Map<String, dynamic> _calculateStreaks(List<String> dateStrings) {
-    if (dateStrings.isEmpty) {
-      return {'current_streak': 0, 'longest_streak': 0};
-    }
-
-    // 1. Parse and sort dates in descending order (most recent first)
-    final dates = dateStrings.map((d) => DateTime.parse(d)).toList();
-    dates.sort((a, b) => b.compareTo(a));
-
-    int currentStreak = 0;
-    int longestStreak = 0;
-
-    // 2. Check if the most recent entry is today or yesterday
-    final today = DateTime.now();
-    final mostRecentDate = dates.first;
-    if (DateUtils.isSameDay(mostRecentDate, today) ||
-        DateUtils.isSameDay(mostRecentDate, today.subtract(const Duration(days: 1)))) {
-      currentStreak = 1;
-    }
-
-    // 3. Iterate to calculate streaks
-    int tempStreak = 1;
-    for (int i = 0; i < dates.length - 1; i++) {
-      final date = dates[i];
-      final prevDate = dates[i + 1];
-
-      if (DateUtils.isSameDay(date, prevDate.add(const Duration(days: 1)))) {
-        // Dates are consecutive
-        tempStreak++;
-      } else {
-        // Gap found, streak is broken
-        longestStreak = math.max(longestStreak, tempStreak);
-        tempStreak = 1; // Reset for the next potential streak
-      }
-    }
-
-    // 4. Final check for the longest streak
-    longestStreak = math.max(longestStreak, tempStreak);
-
-    // 5. If the most recent streak is not the current one, reset currentStreak
-    if (currentStreak == 0) {
-      // No entry today or yesterday, so current streak is 0
-    } else {
-      // The current streak is the last one calculated
-      currentStreak = tempStreak;
-    }
-
-    return {
-      'current_streak': currentStreak,
-      'longest_streak': longestStreak,
-    };
   }
 
   /// Optimized streak calculation with proper midnight handling

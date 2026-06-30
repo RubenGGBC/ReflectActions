@@ -1,35 +1,19 @@
 // ============================================================================
 // lib/presentation/screens/v2/analytics_v3_screen.dart
-// ANALYTICS V3 SCREEN - PROFESSIONAL CLEAN DESIGN
-// 
-// DATA REQUIREMENTS DOCUMENTATION:
-// --------------------------------
-// 1. WellnessScoreModel: 5+ daily entries for accurate calculation
-// 2. SleepPatternModel: 7+ sleep records for pattern analysis  
-// 3. StressManagementModel: 5+ stress ratings for trend analysis
-// 4. ActivityCorrelationModel: 10+ activity entries for correlations
-// 5. ProductivityPatterns: 7+ productivity entries for peak analysis
-// 6. MoodStability: 7+ mood entries for variance calculation
-// 7. LifestyleBalance: 10+ entries across different life areas
-// 8. EnergyPatterns: 7+ energy level entries for chronotype detection
-// 9. SocialWellness: 5+ social interaction entries
-// 10. HabitConsistency: 14+ habit tracking entries for streak analysis
+// ANALYTICS SCREEN - REBUILT V4
 // ============================================================================
 
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'dart:math' as math;
+import 'package:logger/logger.dart';
 
-// Providers
 import '../../providers/analytics_v3_provider.dart';
 import '../../providers/optimized_providers.dart';
-import '../../providers/theme_provider.dart';
-import '../../providers/enhanced_goals_provider.dart';
-
-// Modern Design System
-import '../components/modern_design_system.dart';
 import 'components/minimal_colors.dart';
+
+final _logger = Logger();
 
 class AnalyticsV3Screen extends StatefulWidget {
   const AnalyticsV3Screen({super.key});
@@ -38,297 +22,809 @@ class AnalyticsV3Screen extends StatefulWidget {
   State<AnalyticsV3Screen> createState() => _AnalyticsV3ScreenState();
 }
 
-class _AnalyticsV3ScreenState extends State<AnalyticsV3Screen> with TickerProviderStateMixin {
-  
+class _AnalyticsV3ScreenState extends State<AnalyticsV3Screen>
+    with TickerProviderStateMixin {
   int _selectedPeriod = 30;
-  final List<int> _periodOptions = [7, 30, 90];
-  
   bool _isLoading = false;
-  
-  // Animation controllers
+  int _insightPage = 0;
+  late PageController _insightPageController;
+
   late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late AnimationController _staggerController;
-  
-  // Animations
+  late AnimationController _scoreController;
   late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _staggerAnimation;
+  late Animation<double> _scoreAnimation;
 
   @override
   void initState() {
     super.initState();
-    
-    // Initialize animation controllers
+    _insightPageController = PageController();
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 700),
       vsync: this,
     );
-    
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+    _scoreController = AnimationController(
+      duration: const Duration(milliseconds: 1400),
       vsync: this,
     );
-    
-    _staggerController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    
-    // Initialize animations
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
+    _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
       curve: Curves.easeOut,
-    ));
-    
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
+    );
+    _scoreAnimation = CurvedAnimation(
+      parent: _scoreController,
       curve: Curves.easeOutCubic,
-    ));
-    
-    _staggerAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _staggerController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    // Start animations after data loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadAnalyticsData();
-    });
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
+  @override
+  void dispose() {
+    _insightPageController.dispose();
+    _fadeController.dispose();
+    _scoreController.dispose();
+    super.dispose();
+  }
 
-  void _loadAnalyticsData() async {
-    // Prevent multiple simultaneous loads
-    if (_isLoading) return;
+  Future<void> _loadData() async {
+    if (!mounted) return;
+    final authProvider =
+        Provider.of<OptimizedAuthProvider>(context, listen: false);
+    final user = authProvider.currentUser;
+    if (user == null) return;
+
     setState(() => _isLoading = true);
-    
-    // Start fade animation for loading state
-    _fadeController.forward();
-    
     try {
-      final userProvider = Provider.of<OptimizedAuthProvider>(context, listen: false);
-      final currentUser = userProvider.currentUser;
-      
-      if (currentUser != null) {
-        print('🔍 Analytics Screen: Loading analytics for user ${currentUser.id}');
-        final analyticsProvider = Provider.of<AnalyticsV3Provider>(context, listen: false);
-        print('📊 Analytics Screen: Provider obtained, calling loadAnalytics...');
-        await analyticsProvider.loadAnalytics(currentUser.id, periodDays: _selectedPeriod);
-        print('✨ Analytics Screen: loadAnalytics completed');
-        // Load new analytics methods
-        print('🔧 Analytics Screen: Loading new analytics methods...');
-        await analyticsProvider.loadAllNewAnalytics(currentUser.id, periodDays: _selectedPeriod);
-        print('🎯 Analytics Screen: All new analytics loaded');
-        print('📊 Checking loaded data:');
-        print('   - Productivity: ${analyticsProvider.productivityPatterns != null ? "✅" : "❌"}');
-        print('   - Mood Stability: ${analyticsProvider.moodStability != null ? "✅" : "❌"}');
-        print('   - Lifestyle Balance: ${analyticsProvider.lifestyleBalance != null ? "✅" : "❌"}');
-        
-        // Start animations after data loads successfully
-        if (mounted) {
-          _startAnimations();
-        }
-      } else {
-        print('❌ Analytics Screen: No current user');
+      final provider =
+          Provider.of<AnalyticsV3Provider>(context, listen: false);
+      await provider.loadAnalytics(user.id, periodDays: _selectedPeriod);
+      await provider.loadAllNewAnalytics(user.id, periodDays: _selectedPeriod);
+      if (mounted) {
+        _fadeController.forward(from: 0);
+        _scoreController.forward(from: 0);
       }
     } catch (e) {
-      print('❌ Analytics Screen Error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading analytics: $e')),
-        );
-      }
+      if (kDebugMode) _logger.e('Analytics load error: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _startAnimations() {
-    // Reset all animations
+  void _changePeriod(int period) {
+    if (_selectedPeriod == period) return;
+    setState(() => _selectedPeriod = period);
+    _scoreController.reset();
     _fadeController.reset();
-    _slideController.reset();
-    _staggerController.reset();
-    
-    // Start animations with staggered timing
-    _fadeController.forward();
-    
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (mounted) _slideController.forward();
-    });
-    
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) _staggerController.forward();
-    });
+    _loadData();
   }
-
-  @override
-  void dispose() {
-    _fadeController.dispose();
-    _slideController.dispose();
-    _staggerController.dispose();
-    super.dispose();
-  }
-
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, _) {
-        return Scaffold(
-          backgroundColor: MinimalColors.backgroundPrimary(context),
-          body: Container(
-                  decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  MinimalColors.backgroundPrimary(context),
-                  MinimalColors.backgroundSecondary(context),
-                ],
-                stops: const [0.0, 1.0],
-              ),
-            ),
-            child: SafeArea(
-                    child: Column(
-                children: [
-                  _buildProfessionalHeader(themeProvider),
-                  _buildCompactPeriodSelector(themeProvider),
-                  Expanded(
-                    child: _isLoading
-                        ? _buildMinimalLoadingState(themeProvider)
-                        : _buildProfessionalAnalyticsContent(),
+    return Scaffold(
+      backgroundColor: MinimalColors.backgroundPrimary(context),
+      body: Consumer<AnalyticsV3Provider>(
+        builder: (context, provider, _) {
+          final isLoadingAny = _isLoading || provider.isLoading;
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              _buildSliverAppBar(context),
+              if (isLoadingAny)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _LoadingSkeleton(),
+                )
+              else if (!provider.hasData)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _EmptyState(onRetry: _loadData),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildHeroSection(context, provider),
+                            const SizedBox(height: 14),
+                            _buildQuickStats(context, provider),
+                            const SizedBox(height: 22),
+                            _buildSectionTitle(
+                                context, 'Bienestar', 'por componentes'),
+                            const SizedBox(height: 12),
+                            _buildWellnessBreakdown(context, provider),
+                            const SizedBox(height: 22),
+                            _buildSectionTitle(context, 'Métricas clave', null),
+                            const SizedBox(height: 12),
+                            _buildMetricGrid(context, provider),
+                            if (provider.sleepPattern?.weeklyPattern.isNotEmpty ==
+                                true) ...[
+                              const SizedBox(height: 22),
+                              _buildSectionTitle(
+                                  context, 'Sueño semanal', 'horas por día'),
+                              const SizedBox(height: 12),
+                              _buildSleepSection(context, provider),
+                            ],
+                            if (provider.activityCorrelations.isNotEmpty) ...[
+                              const SizedBox(height: 22),
+                              _buildSectionTitle(context, 'Correlaciones',
+                                  'actividades vs bienestar'),
+                              const SizedBox(height: 12),
+                              _buildCorrelationsSection(context, provider),
+                            ],
+                            if (provider.topInsights.isNotEmpty ||
+                                provider.topRecommendations.isNotEmpty) ...[
+                              const SizedBox(height: 22),
+                              _buildSectionTitle(
+                                  context,
+                                  'Insights',
+                                  '${_selectedPeriod}d analizados'),
+                              const SizedBox(height: 12),
+                              _buildInsightsSection(context, provider),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ]),
                   ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 
   // ============================================================================
-  // PROFESSIONAL HEADER WIDGET WITH MODERN EFFECTS
+  // SECTIONS
   // ============================================================================
-  // DATA SOURCE: Static UI elements + period selection state
-  // REQUIRED DATA: None (pure UI component)
-  // PURPOSE: Clean, minimal header with modern visual effects
-  // ============================================================================
-  Widget _buildProfessionalHeader(ThemeProvider themeProvider) {
+
+  Widget _buildSliverAppBar(BuildContext context) {
+    return SliverAppBar(
+      floating: true,
+      pinned: true,
+      snap: false,
+      backgroundColor: MinimalColors.backgroundPrimary(context),
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      toolbarHeight: 56,
+      title: Text(
+        'Analytics',
+        style: TextStyle(
+          color: MinimalColors.textPrimary(context),
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.8,
+        ),
+      ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: _PeriodSelector(
+            selected: _selectedPeriod,
+            onChanged: _changePeriod,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle(
+      BuildContext context, String title, String? subtitle) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: MinimalColors.textPrimary(context),
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
+          ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(width: 8),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: MinimalColors.textMuted(context),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildHeroSection(
+      BuildContext context, AnalyticsV3Provider provider) {
+    final score = provider.wellnessScore?.overallScore ?? 0.0;
+    final gradients = MinimalColors.primaryGradient(context);
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-            decoration: BoxDecoration(
+      height: 210,
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            MinimalColors.backgroundCard(context).withOpacity(0.1),
-            Colors.transparent,
+            gradients.first,
+            gradients.length > 1 ? gradients.last : gradients.first,
           ],
         ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: gradients.first.withValues(alpha: 0.4),
+            blurRadius: 28,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      child: Row(
+      child: Stack(
         children: [
-          // Enhanced icon with home screen v2 style
-          Container(
-            width: 48,
-            height: 48,
-                  decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: MinimalColors.primaryGradient(context),
-              ),
-              borderRadius: BorderRadius.circular(ModernSpacing.radiusMedium),
-              boxShadow: [
-                BoxShadow(
-                  color: MinimalColors.gradientShadow(context, alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: CustomPaint(
+                painter: _GridPatternPainter(
+                  color: Colors.white.withValues(alpha: 0.04),
                 ),
-              ],
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-                width: 1,
               ),
-            ),
-            child: Icon(
-              Icons.insights,
-              color: Colors.white,
-              size: 24,
             ),
           ),
-          const SizedBox(width: 16),
-          // Title section
-          Expanded(
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                AnimatedBuilder(
+                  animation: _scoreAnimation,
+                  builder: (context, _) {
+                    final animated = score * _scoreAnimation.value;
+                    return SizedBox(
+                      width: 130,
+                      height: 130,
+                      child: CustomPaint(
+                        painter: _WellnessArcPainter(
+                          score: animated,
+                          maxScore: 10,
+                          trackColor: Colors.white.withValues(alpha: 0.15),
+                          fillColor: Colors.white,
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                animated.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -1,
+                                ),
+                              ),
+                              Text(
+                                'de 10',
+                                style: TextStyle(
+                                  color:
+                                      Colors.white.withValues(alpha: 0.65),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 20),
+                Expanded(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Score de\nBienestar',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _getWellnessLabel(score),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.65),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'Últimos $_selectedPeriod días',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickStats(
+      BuildContext context, AnalyticsV3Provider provider) {
+    final sleep = provider.sleepPattern?.averageSleepHours;
+    final stress = provider.stressManagement?.averageStressLevel;
+    final goals = provider.goalAnalytics?.completionRate;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _QuickStatCard(
+            label: 'Sueño',
+            value: sleep != null ? '${sleep.toStringAsFixed(1)}h' : '—',
+            icon: Icons.bedtime_rounded,
+            subtitle: _getSleepLabel(provider.sleepPattern?.averageSleepQuality),
+            gradientColors: MinimalColors.positiveGradient(context),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _QuickStatCard(
+            label: 'Estrés',
+            value: stress != null ? stress.toStringAsFixed(1) : '—',
+            icon: Icons.monitor_heart_rounded,
+            subtitle: _getStressLabel(stress),
+            gradientColors: (stress != null && stress > 6)
+                ? MinimalColors.negativeGradient(context)
+                : MinimalColors.neutralGradient(context),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _QuickStatCard(
+            label: 'Metas',
+            value: goals != null ? '${(goals * 100).toInt()}%' : '—',
+            icon: Icons.track_changes_rounded,
+            subtitle: 'completadas',
+            gradientColors: (goals != null && goals >= 0.7)
+                ? MinimalColors.positiveGradient(context)
+                : MinimalColors.neutralGradient(context),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWellnessBreakdown(
+      BuildContext context, AnalyticsV3Provider provider) {
+    final components = provider.wellnessScore?.componentScores ?? {};
+    if (components.isEmpty) return const SizedBox.shrink();
+
+    final order = [
+      'mood', 'energy', 'sleep', 'motivation',
+      'stress', 'anxiety', 'emotional_stability', 'life_satisfaction'
+    ];
+    final labels = {
+      'mood': 'Ánimo',
+      'energy': 'Energía',
+      'sleep': 'Sueño',
+      'motivation': 'Motivación',
+      'stress': 'Estrés',
+      'anxiety': 'Ansiedad',
+      'emotional_stability': 'Estabilidad',
+      'life_satisfaction': 'Satisfacción',
+    };
+
+    final sorted = [
+      ...order.where(components.containsKey).map((k) => MapEntry(k, components[k]!)),
+      ...components.entries.where((e) => !order.contains(e.key)),
+    ].take(6).toList();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: MinimalColors.backgroundCard(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: MinimalColors.backgroundSecondary(context), width: 1),
+      ),
+      child: Column(
+        children: sorted.map((entry) {
+          final k = entry.key;
+          final raw = entry.value;
+          final display = (k == 'stress' || k == 'anxiety')
+              ? (11.0 - raw).clamp(0.0, 10.0)
+              : raw.clamp(0.0, 10.0);
+          return _WellnessBar(
+            label: labels[k] ?? k,
+            value: display,
+            maxValue: 10.0,
+            gradientColors: _barGradient(context, k, display),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildMetricGrid(
+      BuildContext context, AnalyticsV3Provider provider) {
+    final moodStab =
+        provider.moodStability?['stability_score'] as double?;
+    final chronotype =
+        provider.energyPatterns?['chronotype'] as String?;
+    final socialScore =
+        provider.socialWellness?['social_wellness_score'] as double?;
+    final streak =
+        provider.habitConsistency?['longest_streak'] as int?;
+    final productivity =
+        provider.productivityPatterns?['productivity_score'] as double?;
+    final balance =
+        provider.lifestyleBalance?['balance_score'] as double?;
+
+    final cards = <_MetricCardData>[
+      _MetricCardData(
+        title: 'Estabilidad\nEmocional',
+        value: moodStab != null
+            ? '${(moodStab * 10).toStringAsFixed(0)}%'
+            : '—',
+        icon: Icons.psychology_alt_rounded,
+        color: MinimalColors.primaryGradient(context).first,
+        subtitle: _moodStabLabel(moodStab),
+      ),
+      _MetricCardData(
+        title: 'Cronotipo',
+        value: _chronotypeEmoji(chronotype),
+        icon: Icons.wb_sunny_rounded,
+        color: MinimalColors.neutralGradient(context).first,
+        subtitle: _chronotypeLabel(chronotype),
+        isEmoji: true,
+      ),
+      _MetricCardData(
+        title: 'Bienestar\nSocial',
+        value: socialScore != null ? socialScore.toStringAsFixed(1) : '—',
+        icon: Icons.people_rounded,
+        color: MinimalColors.positiveGradient(context).first,
+        subtitle: 'de 10',
+      ),
+      _MetricCardData(
+        title: 'Racha\nMáxima',
+        value: streak != null ? '$streak d' : '—',
+        icon: Icons.local_fire_department_rounded,
+        color: MinimalColors.neutralGradient(context).last,
+        subtitle: 'días seguidos',
+      ),
+      _MetricCardData(
+        title: 'Productividad',
+        value: productivity != null
+            ? '${(productivity * 10).toStringAsFixed(0)}%'
+            : '—',
+        icon: Icons.bolt_rounded,
+        color: MinimalColors.accentGradient(context).first,
+        subtitle: _productivityLabel(productivity),
+      ),
+      _MetricCardData(
+        title: 'Balance\nVital',
+        value: balance != null ? balance.toStringAsFixed(1) : '—',
+        icon: Icons.balance_rounded,
+        color: MinimalColors.positiveGradient(context).last,
+        subtitle: 'de 10',
+      ),
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 1.55,
+      ),
+      itemCount: cards.length,
+      itemBuilder: (context, i) => _MetricCard(data: cards[i]),
+    );
+  }
+
+  Widget _buildSleepSection(
+      BuildContext context, AnalyticsV3Provider provider) {
+    final pattern = provider.sleepPattern!.weeklyPattern;
+    final optimal = provider.sleepPattern!.optimalSleepHours;
+    final maxH = math.max(
+        optimal, pattern.values.fold<double>(0, (a, b) => math.max(a, b)));
+
+    final dayOrder = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    final sorted = [
+      ...dayOrder.where(pattern.containsKey).map((d) => MapEntry(d, pattern[d]!)),
+      ...pattern.entries.where((e) => !dayOrder.contains(e.key)),
+    ].take(7).toList();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: MinimalColors.backgroundCard(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: MinimalColors.backgroundSecondary(context), width: 1),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Promedio: ${provider.sleepPattern!.averageSleepHours.toStringAsFixed(1)}h',
+                style: TextStyle(
+                  color: MinimalColors.textSecondary(context),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                'Óptimo: ${optimal.toStringAsFixed(1)}h',
+                style: TextStyle(
+                  color: MinimalColors.textMuted(context),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 80,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: sorted.map((entry) {
+                final ratio = maxH > 0 ? (entry.value / maxH) : 0.0;
+                final isOptimal =
+                    entry.value >= optimal - 0.5 && entry.value <= optimal + 1;
+                final grad = isOptimal
+                    ? MinimalColors.positiveGradient(context)
+                    : MinimalColors.primaryGradient(context);
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Container(
+                              width: double.infinity,
+                              height: math.max(4, 64 * ratio),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: grad,
+                                ),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          entry.key,
+                          style: TextStyle(
+                            color: MinimalColors.textMuted(context),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCorrelationsSection(
+      BuildContext context, AnalyticsV3Provider provider) {
+    final correlations = provider.activityCorrelations.take(5).toList();
+    final metricLabels = {
+      'mood': 'Ánimo',
+      'energy': 'Energía',
+      'stress': 'Estrés',
+      'sleep': 'Sueño',
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: MinimalColors.backgroundCard(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: MinimalColors.backgroundSecondary(context), width: 1),
+      ),
+      child: Column(
+        children: correlations.map((corr) {
+          final strength = corr.correlationStrength.clamp(-1.0, 1.0);
+          final isPositive = strength >= 0;
+          final abs = strength.abs();
+          final grad = isPositive
+              ? MinimalColors.positiveGradient(context)
+              : MinimalColors.negativeGradient(context);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Analytics',
-                  style: TextStyle(
-                    color: MinimalColors.textPrimary(context),
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        corr.activityName,
+                        style: TextStyle(
+                          color: MinimalColors.textPrimary(context),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      metricLabels[corr.targetMetric] ?? corr.targetMetric,
+                      style: TextStyle(
+                        color: MinimalColors.textMuted(context),
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: grad.first.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${isPositive ? '+' : ''}${(strength * 100).toInt()}%',
+                        style: TextStyle(
+                          color: grad.first,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  'Insights de bienestar',
-                  style: TextStyle(
-                    color: MinimalColors.textSecondary(context),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Stack(
+                    children: [
+                      Container(
+                        height: 6,
+                        color: MinimalColors.backgroundSecondary(context),
+                      ),
+                      FractionallySizedBox(
+                        widthFactor: abs.clamp(0.0, 1.0),
+                        child: Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: grad),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-          // Status indicator
-          Consumer<AnalyticsV3Provider>(
-            builder: (context, provider, _) {
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildInsightsSection(
+      BuildContext context, AnalyticsV3Provider provider) {
+    final allCards = [
+      ...provider.topInsights
+          .map((t) => _InsightCardData(text: t, isInsight: true)),
+      ...provider.topRecommendations
+          .map((t) => _InsightCardData(text: t, isInsight: false)),
+    ];
+    if (allCards.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 118,
+          child: PageView.builder(
+            controller: _insightPageController,
+            onPageChanged: (i) => setState(() => _insightPage = i),
+            itemCount: allCards.length,
+            itemBuilder: (context, i) {
+              final card = allCards[i];
+              final grad = card.isInsight
+                  ? MinimalColors.primaryGradient(context)
+                  : MinimalColors.positiveGradient(context);
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                  color: provider.hasData 
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      grad.first.withValues(alpha: 0.15),
+                      grad.last.withValues(alpha: 0.07),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: provider.hasData 
-                      ? Colors.green.withOpacity(0.3)
-                      : Colors.orange.withOpacity(0.3),
+                    color: grad.first.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 6,
-                      height: 6,
-                            decoration: BoxDecoration(
-                        color: provider.hasData ? Colors.green : Colors.orange,
-                        borderRadius: BorderRadius.circular(3),
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: grad.first.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        card.isInsight
+                            ? Icons.lightbulb_rounded
+                            : Icons.tips_and_updates_rounded,
+                        color: grad.first,
+                        size: 16,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      provider.hasData ? 'Activo' : 'Limitado',
-                      style: TextStyle(
-                        color: provider.hasData ? Colors.green : Colors.orange,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        card.text,
+                        style: TextStyle(
+                          color: MinimalColors.textSecondary(context),
+                          fontSize: 13,
+                          height: 1.45,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -336,97 +832,232 @@ class _AnalyticsV3ScreenState extends State<AnalyticsV3Screen> with TickerProvid
               );
             },
           ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================================
-  // DATA REQUIREMENT BADGE HELPER
-  // ============================================================================
-  Widget _buildDataBadge(int requiredEntries, String type, {Color? color}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-        color: (color ?? ModernColors.info).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: (color ?? ModernColors.info).withOpacity(0.3),
-          width: 1,
         ),
-      ),
-      child: Text(
-        '$requiredEntries+ $type',
-        style: TextStyle(
-          color: color ?? ModernColors.info,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  // ============================================================================
-  // COMPACT PERIOD SELECTOR WITH GLASS EFFECT
-  // ============================================================================
-  // DATA SOURCE: _selectedPeriod state variable
-  // REQUIRED DATA: _periodOptions list [7, 30, 90]
-  // PURPOSE: Glassmorphic period selection interface
-  // ============================================================================
-  Widget _buildCompactPeriodSelector(ThemeProvider themeProvider) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-      padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-        color: MinimalColors.backgroundCard(context).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(ModernSpacing.radiusMedium),
-        border: Border.all(
-          color: MinimalColors.textMuted(context).withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: MinimalColors.shadow(context),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+        if (allCards.length > 1) ...[
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(allCards.length, (i) {
+              final active = i == _insightPage;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: active ? 16 : 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: active
+                      ? MinimalColors.primaryGradient(context).first
+                      : MinimalColors.backgroundSecondary(context),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              );
+            }),
           ),
         ],
+      ],
+    );
+  }
+
+  // ============================================================================
+  // HELPERS
+  // ============================================================================
+
+  String _getWellnessLabel(double score) {
+    if (score >= 8.5) return 'Excelente bienestar';
+    if (score >= 7.0) return 'Buen nivel de bienestar';
+    if (score >= 5.5) return 'Bienestar moderado';
+    if (score >= 4.0) return 'Área de mejora';
+    return 'Necesita atención';
+  }
+
+  String _getSleepLabel(double? quality) {
+    if (quality == null) return 'sin datos';
+    if (quality >= 8) return 'excelente';
+    if (quality >= 6) return 'bueno';
+    if (quality >= 4) return 'regular';
+    return 'mejorable';
+  }
+
+  String _getStressLabel(double? stress) {
+    if (stress == null) return 'sin datos';
+    if (stress <= 3) return 'bajo';
+    if (stress <= 6) return 'moderado';
+    return 'alto';
+  }
+
+  String _moodStabLabel(double? v) {
+    if (v == null) return 'sin datos';
+    if (v >= 8.0) return 'muy estable';
+    if (v >= 6.0) return 'estable';
+    if (v >= 4.0) return 'variable';
+    return 'inestable';
+  }
+
+  String _productivityLabel(double? v) {
+    if (v == null) return 'sin datos';
+    if (v >= 8.0) return 'alta';
+    if (v >= 6.0) return 'media-alta';
+    if (v >= 4.0) return 'media';
+    return 'baja';
+  }
+
+  String _chronotypeEmoji(String? c) {
+    if (c == 'morning') return '🌅';
+    if (c == 'evening') return '🌙';
+    return '☀️';
+  }
+
+  String _chronotypeLabel(String? c) {
+    if (c == 'morning') return 'madrugador';
+    if (c == 'evening') return 'noctámbulo';
+    return 'intermedio';
+  }
+
+  List<Color> _barGradient(BuildContext ctx, String key, double val) {
+    if (key == 'stress' || key == 'anxiety') {
+      return val < 5
+          ? MinimalColors.positiveGradient(ctx)
+          : MinimalColors.negativeGradient(ctx);
+    }
+    if (val >= 7) return MinimalColors.positiveGradient(ctx);
+    if (val >= 5) return MinimalColors.primaryGradient(ctx);
+    return MinimalColors.neutralGradient(ctx);
+  }
+}
+
+// ============================================================================
+// PAINTERS
+// ============================================================================
+
+class _WellnessArcPainter extends CustomPainter {
+  final double score;
+  final double maxScore;
+  final Color trackColor;
+  final Color fillColor;
+
+  const _WellnessArcPainter({
+    required this.score,
+    required this.maxScore,
+    required this.trackColor,
+    required this.fillColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2 - 8;
+    const startAngle = math.pi * 0.75;
+    const totalSweep = math.pi * 1.5;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      totalSweep,
+      false,
+      Paint()
+        ..color = trackColor
+        ..strokeWidth = 10
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round,
+    );
+
+    final progress = maxScore > 0 ? (score / maxScore).clamp(0.0, 1.0) : 0.0;
+    if (progress <= 0) return;
+
+    final sweep = totalSweep * progress;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      sweep,
+      false,
+      Paint()
+        ..color = fillColor
+        ..strokeWidth = 10
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round,
+    );
+
+    final endAngle = startAngle + sweep;
+    canvas.drawCircle(
+      Offset(
+        center.dx + radius * math.cos(endAngle),
+        center.dy + radius * math.sin(endAngle),
+      ),
+      6,
+      Paint()..color = fillColor,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_WellnessArcPainter old) => old.score != score;
+}
+
+class _GridPatternPainter extends CustomPainter {
+  final Color color;
+  const _GridPatternPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 0.5;
+    const step = 24.0;
+    for (double x = 0; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_GridPatternPainter old) => old.color != color;
+}
+
+// ============================================================================
+// HELPER WIDGETS
+// ============================================================================
+
+class _PeriodSelector extends StatelessWidget {
+  final int selected;
+  final ValueChanged<int> onChanged;
+  const _PeriodSelector({required this.selected, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: MinimalColors.backgroundSecondary(context),
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
-        children: _periodOptions.map((period) {
-          final isSelected = period == _selectedPeriod;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => _updatePeriod(period),
-              child: AnimatedContainer(
-                duration: ModernAnimations.medium,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                  gradient: isSelected ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: MinimalColors.primaryGradient(context),
-                  ) : null,
-                  color: isSelected ? null : Colors.transparent,
-                  borderRadius: BorderRadius.circular(ModernSpacing.radiusSmall),
-                  boxShadow: isSelected ? [
-                    BoxShadow(
-                      color: MinimalColors.gradientShadow(context, alpha: 0.4),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ] : null,
-                ),
-                child: Text(
-                  _getPeriodLabel(period),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isSelected 
-                      ? Colors.white 
-                      : MinimalColors.textSecondary(context),
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    fontSize: 14,
-                  ),
+        mainAxisSize: MainAxisSize.min,
+        children: [7, 30, 90].map((p) {
+          final isSelected = selected == p;
+          final label = p == 7 ? '7d' : p == 30 ? '30d' : '90d';
+          return GestureDetector(
+            onTap: () => onChanged(p),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: isSelected
+                    ? LinearGradient(
+                        colors: MinimalColors.primaryGradient(context))
+                    : null,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isSelected
+                      ? Colors.white
+                      : MinimalColors.textMuted(context),
+                  fontSize: 12,
+                  fontWeight:
+                      isSelected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
             ),
@@ -435,1574 +1066,413 @@ class _AnalyticsV3ScreenState extends State<AnalyticsV3Screen> with TickerProvid
       ),
     );
   }
+}
 
-  // ============================================================================
-  // MINIMAL LOADING STATE WIDGET
-  // ============================================================================
-  // DATA SOURCE: _isLoading state variable
-  // REQUIRED DATA: None (pure UI component)
-  // PURPOSE: Clean, professional loading indicator
-  // ============================================================================
-  Widget _buildMinimalLoadingState(ThemeProvider themeProvider) {
-    return Center(
-            child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Minimal loading spinner
-          SizedBox(
-            width: 32,
-            height: 32,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                themeProvider.accentPrimary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Loading text
-          Text(
-            'Analizando datos...',
-            style: TextStyle(
-              color: MinimalColors.textSecondary(context),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Esto puede tomar unos momentos',
-            style: TextStyle(
-              color: MinimalColors.textMuted(context),
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+class _QuickStatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final String subtitle;
+  final List<Color> gradientColors;
 
-  // ============================================================================
-  // PROFESSIONAL ANALYTICS CONTENT WIDGET
-  // ============================================================================
-  // DATA SOURCE: AnalyticsV3Provider (all analytics data)
-  // REQUIRED DATA: Minimum data requirements documented per card
-  // PURPOSE: Main analytics dashboard with professional layout
-  // ============================================================================
-  Widget _buildProfessionalAnalyticsContent() {
-    return Consumer<AnalyticsV3Provider>(
-      builder: (context, provider, child) {
-        return Consumer<ThemeProvider>(
-          builder: (context, themeProvider, _) {
-            if (provider.error != null) {
-              return _buildCleanErrorState(provider.error!, themeProvider);
-            }
+  const _QuickStatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.subtitle,
+    required this.gradientColors,
+  });
 
-            if (!provider.hasData) {
-              return _buildCleanEmptyState(themeProvider);
-            }
-
-            return CustomScrollView(
-              slivers: [
-                // Data status banner if insufficient data
-                if (!provider.hasSufficientData)
-                  SliverToBoxAdapter(
-                    child: _buildDataStatusBanner(provider, themeProvider),
-                  ),
-                
-                // Primary metrics section
-                SliverToBoxAdapter(
-                  child: _buildPrimaryMetricsSection(provider, themeProvider),
-                ),
-                
-                // Secondary analytics grid
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 1.1,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    delegate: SliverChildListDelegate([
-                      _buildCleanSleepCard(provider, themeProvider),
-                      _buildCleanStressCard(provider, themeProvider), 
-                      _buildCleanProductivityCard(provider, themeProvider),
-                      _buildCleanMoodCard(provider, themeProvider),
-                      _buildCleanEnergyCard(provider, themeProvider),
-                      _buildCleanSocialCard(provider, themeProvider),
-                    ]),
-                  ),
-                ),
-                
-                // Full width cards section
-                SliverToBoxAdapter(
-                  child: _buildFullWidthCardsSection(provider, themeProvider),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // ============================================================================
-  // DATA STATUS BANNER WIDGET
-  // ============================================================================
-  // DATA SOURCE: provider.hasSufficientData, provider.motivationalMessage
-  // REQUIRED DATA: Boolean flag indicating data sufficiency
-  // PURPOSE: Inform users about data limitations with encouragement
-  // ============================================================================
-  Widget _buildDataStatusBanner(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-      padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.amber.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline,
-            color: Colors.amber.shade700,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-                  child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Datos limitados disponibles',
-                  style: TextStyle(
-                    color: MinimalColors.textPrimary(context),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Continúa registrando para insights más precisos',
-                  style: TextStyle(
-                    color: MinimalColors.textSecondary(context),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================================
-  // PRIMARY METRICS SECTION WIDGET
-  // ============================================================================
-  // DATA SOURCE: provider.wellnessScore + Quick stats from multiple providers
-  // REQUIRED DATA: WellnessScoreModel (5+ entries), Sleep/Stress/Goals data
-  // PURPOSE: Main dashboard showing key wellness metrics at a glance
-  // ============================================================================
-  Widget _buildPrimaryMetricsSection(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-            child: Column(
-        children: [
-          // Wellness score card (hero metric)
-          if (provider.wellnessScore != null)
-            _buildHeroWellnessCard(provider, themeProvider),
-          if (provider.wellnessScore != null)
-            const SizedBox(height: 20),
-          // Quick stats row
-          _buildCleanQuickStatsRow(provider, themeProvider),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================================
-  // HERO WELLNESS CARD WITH MODERN EFFECTS
-  // ============================================================================
-  // DATA SOURCE: provider.wellnessScore (WellnessScoreModel)
-  // REQUIRED DATA: 5+ daily entries for accurate wellness calculation
-  // PURPOSE: Primary wellness score display with modern glass effects
-  // ============================================================================
-  Widget _buildHeroWellnessCard(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    final wellness = provider.wellnessScore;
-    if (wellness == null) return const SizedBox();
-
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _fadeAnimation.value,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
         color: MinimalColors.backgroundCard(context),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(-5, 5),
-          ),
-          BoxShadow(
-            color: MinimalColors.primaryGradient(context)[1].withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(5, 5),
-          ),
-        ],
+            color: MinimalColors.backgroundSecondary(context), width: 1),
       ),
-            child: Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with badge
           Row(
             children: [
-              Expanded(
-                      child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          'Score de Bienestar',
-                          style: ModernTypography.heading4.copyWith(
-                            color: MinimalColors.textPrimary(context),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildDataBadge(5, 'entradas', color: ModernColors.success),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              // Wellness level indicator with enhanced effects
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: MinimalColors.positiveGradient(context),
-                  ),
-                  borderRadius: BorderRadius.circular(ModernSpacing.radiusRound),
-                  boxShadow: [
-                    BoxShadow(
-                      color: MinimalColors.coloredShadow(context, MinimalColors.success, alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: gradientColors),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  _getWellnessLevel(wellness.overallScore),
-                  style: TextStyle(
-                    color: _getWellnessColor(wellness.overallScore),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: Icon(icon, color: Colors.white, size: 14),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Score display
-          Row(
-            children: [
+              const SizedBox(width: 6),
               Expanded(
-                      child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Text(
-                          '${wellness.overallScore.toStringAsFixed(1)}',
-                          style: TextStyle(
-                            color: MinimalColors.textPrimary(context),
-                            fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(
-                          '/10',
-                          style: TextStyle(
-                            color: MinimalColors.textSecondary(context),
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              // Wellness level indicator
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                  color: _getWellnessColor(wellness.overallScore).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _getWellnessColor(wellness.overallScore).withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
                 child: Text(
-                  _getWellnessLevel(wellness.overallScore),
+                  label,
                   style: TextStyle(
-                    color: _getWellnessColor(wellness.overallScore),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Component bars
-          ...wellness.componentScores.entries.map((entry) => 
-            _buildCleanComponentBar(entry.key, entry.value, themeProvider),
-          ).toList(),
-            ],
-          ),
-          ),
-        );
-      },
-    );
-  }
-
-  // ============================================================================
-  // CLEAN COMPONENT BAR WIDGET (Helper)
-  // ============================================================================
-  Widget _buildCleanComponentBar(String key, double value, ThemeProvider themeProvider) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              _translateComponent(key),
-              style: TextStyle(
-                color: MinimalColors.textSecondary(context),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Container(
-              height: 6,
-                    decoration: BoxDecoration(
-                color: MinimalColors.backgroundSecondary(context).withOpacity(0.3),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: (value / 10.0).clamp(0.0, 1.0),
-                child: Container(
-                        decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: MinimalColors.primaryGradient(context),
-                    ),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 30,
-            child: Text(
-              value.toStringAsFixed(1),
-              style: TextStyle(
-                color: MinimalColors.textPrimary(context),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.end,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================================
-  // CLEAN QUICK STATS ROW WIDGET
-  // ============================================================================
-  // DATA SOURCE: provider.sleepPattern, provider.stressManagement, Goals data
-  // REQUIRED DATA: 7+ sleep records, 5+ stress ratings, Goals from EnhancedGoalsProvider
-  // PURPOSE: Quick overview of key metrics in compact format
-  // ============================================================================
-  Widget _buildCleanQuickStatsRow(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildCompactMetricCard(
-            'Sueño',
-            '${provider.sleepPattern?.averageSleepHours.toStringAsFixed(1) ?? '--'}h',
-            Icons.bedtime_outlined,
-            themeProvider,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildCompactMetricCard(
-            'Estrés',
-            '${provider.stressManagement?.averageStressLevel.toStringAsFixed(1) ?? '--'}/10',
-            Icons.psychology_outlined,
-            themeProvider,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Consumer<EnhancedGoalsProvider>(
-            builder: (context, goalsProvider, _) {
-              final stats = goalsProvider.goalStatistics;
-              final completionRate = stats['completionRate'] ?? 0.0;
-              return _buildCompactMetricCard(
-                'Metas',
-                '${(completionRate * 100).toStringAsFixed(0)}%',
-                Icons.flag_outlined,
-                themeProvider,
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================================
-  // COMPACT METRIC CARD WITH MODERN EFFECTS
-  // ============================================================================
-  Widget _buildCompactMetricCard(String title, String value, IconData icon, ThemeProvider themeProvider) {
-    return AnimatedBuilder(
-      animation: _staggerAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: 1.0 + (_staggerAnimation.value * 0.02),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-              color: MinimalColors.backgroundCard(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(-5, 5),
-                ),
-                BoxShadow(
-                  color: MinimalColors.primaryGradient(context)[1].withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(5, 5),
-                ),
-              ],
-            ),
-                  child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  color: themeProvider.accentPrimary,
-                  size: 20,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: MinimalColors.textPrimary(context),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: MinimalColors.textSecondary(context),
-                    fontSize: 12,
+                    color: MinimalColors.textMuted(context),
+                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // ============================================================================
-  // GRID CARD WIDGETS (For 2-column layout)
-  // ============================================================================
-
-  // CLEAN SLEEP CARD - DATA: provider.sleepPattern (7+ sleep records)
-  Widget _buildCleanSleepCard(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    final sleep = provider.sleepPattern;
-    return _buildGridCard(
-      title: 'Sueño',
-      value: sleep != null ? '${sleep.averageSleepHours.toStringAsFixed(1)}h' : '--',
-      subtitle: sleep != null ? 'Promedio' : 'Sin datos',
-      icon: Icons.bedtime,
-      color: ModernColors.accentBlue,
-      themeProvider: themeProvider,
-      requiredData: 7,
-      dataType: 'registros',
-    );
-  }
-
-  // CLEAN STRESS CARD - DATA: provider.stressManagement (5+ stress ratings)
-  Widget _buildCleanStressCard(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    final stress = provider.stressManagement;
-    return _buildGridCard(
-      title: 'Estrés',
-      value: stress != null ? '${stress.averageStressLevel.toStringAsFixed(1)}/10' : '--',
-      subtitle: stress != null ? 'Promedio' : 'Sin datos',
-      icon: Icons.psychology,
-      color: ModernColors.accentOrange,
-      themeProvider: themeProvider,
-      requiredData: 5,
-      dataType: 'ratings',
-    );
-  }
-
-  // CLEAN PRODUCTIVITY CARD - DATA: provider.productivityPatterns (7+ productivity entries)
-  Widget _buildCleanProductivityCard(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    final productivity = provider.productivityPatterns;
-    String value = '--';
-    String subtitle = 'Sin datos';
-    
-    if (productivity != null && productivity['status'] != 'insufficient_data') {
-      if (productivity['productivity_score'] != null) {
-        value = '${productivity['productivity_score']?.toStringAsFixed(1)}/10';
-        subtitle = 'Score';
-      }
-    }
-    
-    return _buildGridCard(
-      title: 'Productividad',
-      value: value,
-      subtitle: subtitle,
-      icon: Icons.trending_up,
-      color: ModernColors.accentGreen,
-      themeProvider: themeProvider,
-      requiredData: 7,
-      dataType: 'entradas',
-    );
-  }
-
-  // CLEAN MOOD CARD - DATA: provider.moodStability (7+ mood entries)
-  Widget _buildCleanMoodCard(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    final mood = provider.moodStability;
-    String value = '--';
-    String subtitle = 'Sin datos';
-    
-    if (mood != null && mood['status'] != 'insufficient_data') {
-      if (mood['stability_score'] != null) {
-        value = '${mood['stability_score']?.toStringAsFixed(1)}/10';
-        subtitle = 'Estabilidad';
-      }
-    }
-    
-    return _buildGridCard(
-      title: 'Ánimo',
-      value: value,
-      subtitle: subtitle,
-      icon: Icons.mood,
-      color: ModernColors.accentPurple,
-      themeProvider: themeProvider,
-      requiredData: 7,
-      dataType: 'entradas',
-    );
-  }
-
-  // CLEAN ENERGY CARD - DATA: provider.energyPatterns (7+ energy entries)
-  Widget _buildCleanEnergyCard(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    final energy = provider.energyPatterns;
-    String value = '--';
-    String subtitle = 'Sin datos';
-    
-    if (energy != null && energy['status'] != 'insufficient_data') {
-      if (energy['chronotype'] != null) {
-        value = energy['chronotype'].toString();
-        subtitle = 'Cronotipo';
-      }
-    }
-    
-    return _buildGridCard(
-      title: 'Energía',
-      value: value,
-      subtitle: subtitle,
-      icon: Icons.battery_charging_full,
-      color: ModernColors.accentYellow,
-      themeProvider: themeProvider,
-      requiredData: 7,
-      dataType: 'niveles',
-    );
-  }
-
-  // CLEAN SOCIAL CARD - DATA: provider.socialWellness (5+ social interactions)
-  Widget _buildCleanSocialCard(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    final social = provider.socialWellness;
-    String value = '--';
-    String subtitle = 'Sin datos';
-    
-    if (social != null && social['status'] != 'insufficient_data') {
-      if (social['social_wellness_score'] != null) {
-        value = '${social['social_wellness_score']?.toStringAsFixed(1)}/10';
-        subtitle = 'Score Social';
-      }
-    }
-    
-    return _buildGridCard(
-      title: 'Social',
-      value: value,
-      subtitle: subtitle,
-      icon: Icons.people,
-      color: Color(0xFFE91E63), // Pink
-      themeProvider: themeProvider,
-      requiredData: 5,
-      dataType: 'interacciones',
-    );
-  }
-
-  // ============================================================================
-  // GRID CARD HELPER WIDGET WITH MODERN EFFECTS AND DATA BADGES
-  // ============================================================================
-  Widget _buildGridCard({
-    required String title,
-    required String value,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required ThemeProvider themeProvider,
-    required int requiredData,
-    required String dataType,
-  }) {
-    return AnimatedBuilder(
-      animation: _staggerAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: 1.0 + (_staggerAnimation.value * 0.01),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-              color: MinimalColors.backgroundCard(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-                width: 1,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(-5, 5),
-                ),
-                BoxShadow(
-                  color: MinimalColors.primaryGradient(context)[1].withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(5, 5),
-                ),
-              ],
-            ),
-            child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(ModernSpacing.sm),
-                      decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: MinimalColors.primaryGradient(context).map((c) => c.withOpacity(0.1)).toList(),
-                  ),
-                  borderRadius: BorderRadius.circular(ModernSpacing.radiusSmall),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 18,
-                ),
-              ),
-              const Spacer(),
-              _buildDataBadge(requiredData, dataType, color: color),
             ],
           ),
-          const SizedBox(height: ModernSpacing.md),
+          const SizedBox(height: 8),
           Text(
             value,
-            style: ModernTypography.heading2.copyWith(
+            style: TextStyle(
               color: MinimalColors.textPrimary(context),
-              fontSize: 24,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 4),
           Text(
             subtitle,
-            style: ModernTypography.bodySmall.copyWith(
-              color: MinimalColors.textSecondary(context),
-            ),
-          ),
-          const SizedBox(height: ModernSpacing.sm),
-          Text(
-            title,
-            style: ModernTypography.bodyMedium.copyWith(
-              color: MinimalColors.textSecondary(context),
-              fontWeight: FontWeight.w600,
+            style: TextStyle(
+              color: MinimalColors.textMuted(context),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
-        ),
-          ),
-        );
-      },
+      ),
     );
   }
+}
 
-  // ============================================================================
-  // FULL WIDTH CARDS SECTION WIDGET
-  // ============================================================================
-  // DATA SOURCE: Various provider methods for lifestyle, habits, correlations
-  // REQUIRED DATA: Variable per card type (documented individually)
-  // PURPOSE: Detailed analytics cards that need full width for charts/lists
-  // ============================================================================
-  Widget _buildFullWidthCardsSection(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
+class _WellnessBar extends StatelessWidget {
+  final String label;
+  final double value;
+  final double maxValue;
+  final List<Color> gradientColors;
+
+  const _WellnessBar({
+    required this.label,
+    required this.value,
+    required this.maxValue,
+    required this.gradientColors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = (value / maxValue).clamp(0.0, 1.0);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-            child: Column(
-        children: [
-          // Correlations card
-          if (provider.activityCorrelations.isNotEmpty)
-            _buildCleanCorrelationsCard(provider, themeProvider),
-          if (provider.activityCorrelations.isNotEmpty)
-            const SizedBox(height: 20),
-          
-          // Lifestyle balance card  
-          if (provider.lifestyleBalance != null && provider.lifestyleBalance!['status'] != 'insufficient_data')
-            _buildCleanLifestyleCard(provider, themeProvider),
-          if (provider.lifestyleBalance != null && provider.lifestyleBalance!['status'] != 'insufficient_data')
-            const SizedBox(height: 20),
-          
-          // Habits consistency card
-          if (provider.habitConsistency != null && provider.habitConsistency!['status'] != 'insufficient_data')
-            _buildCleanHabitsCard(provider, themeProvider),
-          if (provider.habitConsistency != null && provider.habitConsistency!['status'] != 'insufficient_data')
-            const SizedBox(height: 20),
-          
-          // Insights card
-          if (provider.topInsights.isNotEmpty || provider.topRecommendations.isNotEmpty)
-            _buildCleanInsightsCard(provider, themeProvider),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================================
-  // CLEAN FULL-WIDTH CARD IMPLEMENTATIONS
-  // ============================================================================
-
-  // CORRELATIONS CARD - DATA: provider.activityCorrelations (10+ activity entries)
-  Widget _buildCleanCorrelationsCard(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    final correlations = provider.activityCorrelations;
-    
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _fadeAnimation.value,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-              color: MinimalColors.backgroundCard(context),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(-5, 5),
-                ),
-                BoxShadow(
-                  color: MinimalColors.primaryGradient(context)[1].withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(5, 5),
-                ),
-              ],
-            ),
-            child: Column(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(ModernSpacing.sm),
-                      decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      ModernColors.accentGreen.withOpacity(0.2),
-                      ModernColors.accentGreen.withOpacity(0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(ModernSpacing.radiusSmall),
-                  boxShadow: [
-                    BoxShadow(
-                      color: ModernColors.accentGreen.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.trending_up,
-                  color: ModernColors.accentGreen,
-                  size: 20,
+              Text(
+                label,
+                style: TextStyle(
+                  color: MinimalColors.textSecondary(context),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Correlaciones Clave',
-                  style: ModernTypography.heading4.copyWith(
-                    color: themeProvider.textPrimary,
-                  ),
+              Text(
+                value.toStringAsFixed(1),
+                style: TextStyle(
+                  color: MinimalColors.textPrimary(context),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              _buildDataBadge(10, 'actividades', color: ModernColors.accentGreen),
             ],
           ),
-          const SizedBox(height: ModernSpacing.lg),
-          ...correlations.take(3).map((correlation) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: ModernSpacing.sm),
-            child: Row(
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: Stack(
               children: [
-                Expanded(
-                  child: Text(
-                    '${correlation.activityName} → ${correlation.targetMetric}',
-                    style: ModernTypography.bodyMedium.copyWith(
-                      color: themeProvider.textPrimary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        _getCorrelationColorClean(correlation.correlationStrength),
-                        _getCorrelationColorClean(correlation.correlationStrength).withOpacity(0.8),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(ModernSpacing.radiusMedium),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _getCorrelationColorClean(correlation.correlationStrength).withOpacity(0.3),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    '${(correlation.correlationStrength * 100).toStringAsFixed(0)}%',
-                    style: ModernTypography.caption.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+                  height: 6,
+                  color: MinimalColors.backgroundSecondary(context),
+                ),
+                FractionallySizedBox(
+                  widthFactor: ratio,
+                  child: Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: gradientColors),
+                      borderRadius: BorderRadius.circular(4),
                     ),
                   ),
                 ),
               ],
             ),
-          )).toList(),
-        ],
-        ),
-          ),
-        );
-      },
-    );
-  }
-
-  // LIFESTYLE CARD - DATA: provider.lifestyleBalance (10+ entries across life areas)
-  Widget _buildCleanLifestyleCard(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    final lifestyle = provider.lifestyleBalance;
-    if (lifestyle == null) return const SizedBox();
-    
-    return AnimatedBuilder(
-      animation: _slideAnimation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(_slideAnimation.value.dx * 50, 0),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-        color: MinimalColors.backgroundCard(context),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(-5, 5),
-          ),
-          BoxShadow(
-            color: MinimalColors.primaryGradient(context)[1].withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(5, 5),
           ),
         ],
       ),
-            child: Column(
+    );
+  }
+}
+
+class _MetricCardData {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final String? subtitle;
+  final bool isEmoji;
+
+  const _MetricCardData({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+    this.subtitle,
+    this.isEmoji = false,
+  });
+}
+
+class _MetricCard extends StatelessWidget {
+  final _MetricCardData data;
+  const _MetricCard({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: MinimalColors.backgroundCard(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: MinimalColors.backgroundSecondary(context), width: 1),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(ModernSpacing.sm),
-                      decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      ModernColors.accentPurple.withOpacity(0.2),
-                      ModernColors.accentPurple.withOpacity(0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(ModernSpacing.radiusSmall),
-                  boxShadow: [
-                    BoxShadow(
-                      color: ModernColors.accentPurple.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: data.color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  Icons.balance,
-                  color: ModernColors.accentPurple,
-                  size: 20,
+                child: Icon(data.icon, color: data.color, size: 14),
+              ),
+              const Spacer(),
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: data.color,
+                  shape: BoxShape.circle,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Balance de Vida',
-                  style: ModernTypography.heading4.copyWith(
-                    color: themeProvider.textPrimary,
-                  ),
-                ),
-              ),
-              _buildDataBadge(10, 'áreas', color: ModernColors.accentPurple),
-              const SizedBox(width: 12),
-              if (lifestyle['balance_score'] != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: ModernColors.positiveGradient,
-                    ),
-                    borderRadius: BorderRadius.circular(ModernSpacing.radiusRound),
-                    boxShadow: ModernShadows.card,
-                  ),
-                  child: Text(
-                    '${lifestyle['balance_score']?.toStringAsFixed(1)}/10',
-                    style: ModernTypography.bodyMedium.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
             ],
           ),
-          if (lifestyle['life_areas'] != null) ...[
-            const SizedBox(height: ModernSpacing.lg),
-            ...lifestyle['life_areas'].entries.take(4).map<Widget>((entry) =>
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 80,
-                      child: Text(
-                        entry.key.toString().replaceAll('_', ' ').toUpperCase(),
-                        style: ModernTypography.caption.copyWith(
-                          color: themeProvider.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        height: 8,
-                              decoration: BoxDecoration(
-                          color: ModernColors.borderSecondary,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: (entry.value as num).toDouble() / 10,
-                          child: Container(
-                                  decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: ModernColors.positiveGradient,
-                              ),
-                              borderRadius: BorderRadius.circular(4),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: ModernColors.accentGreen.withOpacity(0.3),
-                                  blurRadius: 2,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${(entry.value as num).toStringAsFixed(1)}',
-                      style: ModernTypography.bodySmall.copyWith(
-                        color: themeProvider.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (data.isEmoji)
+                Text(data.value, style: const TextStyle(fontSize: 22))
+              else
+                Text(
+                  data.value,
+                  style: TextStyle(
+                    color: MinimalColors.textPrimary(context),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              if (data.subtitle != null)
+                Text(
+                  data.subtitle!,
+                  style: TextStyle(
+                    color: MinimalColors.textMuted(context),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              Text(
+                data.title,
+                style: TextStyle(
+                  color: MinimalColors.textSecondary(context),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
                 ),
               ),
-            ).toList(),
-          ],
-        ],
-        ),
-          ),
-        );
-      },
-    );
-  }
-
-  // HABITS CARD - DATA: provider.habitConsistency (14+ habit tracking entries)
-  Widget _buildCleanHabitsCard(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    final habits = provider.habitConsistency;
-    if (habits == null) return const SizedBox();
-    
-    return AnimatedBuilder(
-      animation: _staggerAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: 1.0 + (_staggerAnimation.value * 0.01),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-        color: MinimalColors.backgroundCard(context),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(-5, 5),
-          ),
-          BoxShadow(
-            color: MinimalColors.primaryGradient(context)[1].withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(5, 5),
+            ],
           ),
         ],
       ),
-            child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(ModernSpacing.sm),
-                      decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      ModernColors.info.withOpacity(0.2),
-                      ModernColors.info.withOpacity(0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(ModernSpacing.radiusSmall),
-                  boxShadow: [
-                    BoxShadow(
-                      color: ModernColors.info.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.track_changes,
-                  color: ModernColors.info,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Consistencia de Hábitos',
-                  style: ModernTypography.heading4.copyWith(
-                    color: themeProvider.textPrimary,
-                  ),
-                ),
-              ),
-              _buildDataBadge(14, 'seguimientos', color: ModernColors.info),
-            ],
-          ),
-          const SizedBox(height: ModernSpacing.lg),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(ModernSpacing.md),
-                        decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        ModernColors.success.withOpacity(0.1),
-                        ModernColors.success.withOpacity(0.05),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(ModernSpacing.radiusMedium),
-                    border: Border.all(
-                      color: ModernColors.success.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                        child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Score',
-                        style: ModernTypography.caption.copyWith(
-                          color: themeProvider.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        habits['consistency_score'] != null 
-                          ? '${habits['consistency_score']?.toStringAsFixed(1)}/10'
-                          : '--',
-                        style: ModernTypography.heading3.copyWith(
-                          color: themeProvider.textPrimary,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: ModernSpacing.md),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(ModernSpacing.md),
-                        decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        ModernColors.warning.withOpacity(0.1),
-                        ModernColors.warning.withOpacity(0.05),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(ModernSpacing.radiusMedium),
-                    border: Border.all(
-                      color: ModernColors.warning.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                        child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Racha Máxima',
-                        style: ModernTypography.caption.copyWith(
-                          color: themeProvider.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        habits['longest_streak'] != null 
-                          ? '${habits['longest_streak']} días'
-                          : '--',
-                        style: ModernTypography.heading3.copyWith(
-                          color: themeProvider.textPrimary,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-        ),
-          ),
-        );
-      },
+    );
+  }
+}
+
+class _InsightCardData {
+  final String text;
+  final bool isInsight;
+  const _InsightCardData({required this.text, required this.isInsight});
+}
+
+class _LoadingSkeleton extends StatefulWidget {
+  const _LoadingSkeleton();
+
+  @override
+  State<_LoadingSkeleton> createState() => _LoadingSkeletonState();
+}
+
+class _LoadingSkeletonState extends State<_LoadingSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    )..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.3, end: 0.7).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
     );
   }
 
-  // INSIGHTS CARD - DATA: provider.topInsights, provider.topRecommendations
-  Widget _buildCleanInsightsCard(AnalyticsV3Provider provider, ThemeProvider themeProvider) {
-    final insights = provider.topInsights;
-    final recommendations = provider.topRecommendations;
-    
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _fadeAnimation.value,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-        color: MinimalColors.backgroundCard(context),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-          width: 1,
+      animation: _anim,
+      builder: (context, _) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            _Bone(height: 210, opacity: _anim.value),
+            const SizedBox(height: 14),
+            Row(children: [
+              Expanded(child: _Bone(height: 84, opacity: _anim.value)),
+              const SizedBox(width: 10),
+              Expanded(child: _Bone(height: 84, opacity: _anim.value)),
+              const SizedBox(width: 10),
+              Expanded(child: _Bone(height: 84, opacity: _anim.value)),
+            ]),
+            const SizedBox(height: 14),
+            _Bone(height: 180, opacity: _anim.value * 0.9),
+            const SizedBox(height: 14),
+            _Bone(height: 180, opacity: _anim.value * 0.7),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(-5, 5),
-          ),
-          BoxShadow(
-            color: MinimalColors.primaryGradient(context)[1].withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(5, 5),
-          ),
-        ],
       ),
-            child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(ModernSpacing.sm),
-                      decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      ModernColors.accentYellow.withOpacity(0.2),
-                      ModernColors.accentYellow.withOpacity(0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(ModernSpacing.radiusSmall),
-                  boxShadow: [
-                    BoxShadow(
-                      color: ModernColors.accentYellow.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.lightbulb_outline,
-                  color: ModernColors.accentYellow,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Insights y Recomendaciones',
-                  style: ModernTypography.heading4.copyWith(
-                    color: themeProvider.textPrimary,
-                  ),
-                ),
-              ),
-              _buildDataBadge(3, 'análisis', color: ModernColors.accentYellow),
-            ],
-          ),
-          if (insights.isNotEmpty) ...[
-            const SizedBox(height: ModernSpacing.lg),
-            ...insights.take(2).map((insight) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: ModernSpacing.sm),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(top: 6),
-                    width: 6,
-                    height: 6,
-                          decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: ModernColors.primaryGradient,
-                      ),
-                      borderRadius: BorderRadius.circular(3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: ModernColors.accentBlue.withOpacity(0.3),
-                          blurRadius: 2,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      insight,
-                      style: ModernTypography.bodyMedium.copyWith(
-                        color: themeProvider.textSecondary,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            )).toList(),
-          ],
-          if (recommendations.isNotEmpty) ...[
-            const SizedBox(height: ModernSpacing.md),
-            ...recommendations.take(2).map((rec) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: ModernSpacing.sm),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: ModernColors.positiveGradient,
-                      ),
-                      borderRadius: BorderRadius.circular(ModernSpacing.radiusSmall),
-                      boxShadow: [
-                        BoxShadow(
-                          color: ModernColors.accentGreen.withOpacity(0.3),
-                          blurRadius: 2,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.white,
-                      size: 10,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      rec,
-                      style: ModernTypography.bodyMedium.copyWith(
-                        color: themeProvider.textSecondary,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            )).toList(),
-          ],
-        ],
-        ),
-          ),
-        );
-      },
     );
   }
+}
 
-  // ============================================================================
-  // CLEAN ERROR AND EMPTY STATES
-  // ============================================================================
+class _Bone extends StatelessWidget {
+  final double height;
+  final double opacity;
+  const _Bone({required this.height, required this.opacity});
 
-  Widget _buildCleanErrorState(String error, ThemeProvider themeProvider) {
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: MinimalColors.backgroundSecondary(context),
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final VoidCallback onRetry;
+  const _EmptyState({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
-              child: Column(
+        padding: const EdgeInsets.all(32),
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              color: themeProvider.negativeMain,
-              size: 48,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Error al cargar datos',
-              style: TextStyle(
-                color: MinimalColors.textPrimary(context),
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: MinimalColors.backgroundSecondary(context),
+                shape: BoxShape.circle,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              style: TextStyle(
-                color: MinimalColors.textSecondary(context),
-                fontSize: 14,
+              child: Icon(
+                Icons.bar_chart_rounded,
+                size: 48,
+                color: MinimalColors.textMuted(context),
               ),
-              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _loadAnalyticsData,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: themeProvider.accentPrimary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Reintentar'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCleanEmptyState(ThemeProvider themeProvider) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-              child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.insights,
-              color: themeProvider.textHint,
-              size: 64,
-            ),
-            const SizedBox(height: 20),
             Text(
-              'Sin datos disponibles',
+              'Sin datos suficientes',
               style: TextStyle(
                 color: MinimalColors.textPrimary(context),
                 fontSize: 20,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
-              'Comienza a registrar tus actividades diarias para ver análisis detallados de tu bienestar.',
-              style: TextStyle(
-                color: MinimalColors.textSecondary(context),
-                fontSize: 14,
-              ),
+              'Registra tu estado de ánimo, sueño y actividades durante al menos una semana para ver tu análisis.',
               textAlign: TextAlign.center,
+              style: TextStyle(
+                color: MinimalColors.textMuted(context),
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            GestureDetector(
+              onTap: onRetry,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 28, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: MinimalColors.primaryGradient(context),
+                  ),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: MinimalColors.primaryGradient(context)
+                          .first
+                          .withValues(alpha: 0.35),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: const Text(
+                  'Reintentar',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
   }
-
-  // ============================================================================
-  // HELPER FUNCTIONS FOR NEW DESIGN
-  // ============================================================================
-
-  Color _getWellnessColor(double score) {
-    if (score >= 8.0) return Colors.green;
-    if (score >= 6.0) return Colors.lime;
-    if (score >= 4.0) return Colors.orange;
-    return Colors.red;
-  }
-
-  String _getWellnessLevel(double score) {
-    if (score >= 8.0) return 'Excelente';
-    if (score >= 6.0) return 'Bueno';
-    if (score >= 4.0) return 'Regular';
-    return 'Necesita Atención';
-  }
-
-  Color _getCorrelationColorClean(double strength) {
-    final absStrength = strength.abs();
-    if (absStrength >= 0.7) {
-      return strength > 0 ? Colors.green : Colors.red;
-    } else if (absStrength >= 0.3) {
-      return strength > 0 ? Colors.lightGreen : Colors.deepOrange;
-    } else {
-      return Colors.grey;
-    }
-  }
-
-  // ============================================================================
-  // EXISTING HELPER METHODS (Updated to support new design)
-  // ============================================================================
-
-  void _updatePeriod(int newPeriod) {
-    if (_selectedPeriod == newPeriod || _isLoading) return;
-    
-    setState(() => _selectedPeriod = newPeriod);
-    
-    final provider = Provider.of<AnalyticsV3Provider>(context, listen: false);
-    provider.setPeriodDays(newPeriod);
-    
-    // Reset animations before loading new data
-    _fadeController.reset();
-    _slideController.reset();
-    _staggerController.reset();
-    
-    _loadAnalyticsData();
-  }
-
-  String _getPeriodLabel(int days) {
-    switch (days) {
-      case 7: return '7 días';
-      case 30: return '30 días';
-      case 90: return '90 días';
-      default: return '$days días';
-    }
-  }
-
-  String _translateComponent(String component) {
-    final translations = {
-      'mood': 'Estado de Ánimo',
-      'energy': 'Energía',
-      'stress': 'Estrés',
-      'sleep': 'Sueño',
-      'anxiety': 'Ansiedad',
-      'motivation': 'Motivación',
-      'emotional_stability': 'Estabilidad Emocional',
-      'life_satisfaction': 'Satisfacción',
-    };
-    return translations[component] ?? component;
-  }
-
 }

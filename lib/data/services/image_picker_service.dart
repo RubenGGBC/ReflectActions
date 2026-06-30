@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:logger/logger.dart';
+import '../../presentation/screens/v2/components/minimal_colors.dart';
 
 class ImagePickerService {
   static final ImagePickerService _instance = ImagePickerService._internal();
@@ -26,9 +27,9 @@ class ImagePickerService {
       isScrollControlled: true,
       builder: (BuildContext bottomSheetContext) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF1E293B),
-            borderRadius: BorderRadius.only(
+          decoration: BoxDecoration(
+            color: MinimalColors.backgroundSecondary(bottomSheetContext),
+            borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
             ),
@@ -52,7 +53,7 @@ class ImagePickerService {
                 ListTile(
                   leading: const Icon(
                     Icons.camera_alt,
-                    color: Colors.blue,
+                    color: Colors.purple,
                     size: 28,
                   ),
                   title: const Text(

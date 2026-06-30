@@ -585,7 +585,7 @@ class _EditActivityModalState extends State<EditActivityModal>
               });
               HapticFeedback.lightImpact();
             },
-            activeColor: theme.positiveMain,
+            activeThumbColor: theme.positiveMain,
             inactiveThumbColor: theme.textSecondary,
             inactiveTrackColor: theme.borderColor,
           ),

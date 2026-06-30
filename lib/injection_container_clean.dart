@@ -17,7 +17,6 @@ import 'services/voice_recording_service.dart';
 import 'presentation/providers/optimized_providers.dart';
 import 'presentation/providers/extended_daily_entries_provider.dart';
 import 'presentation/providers/image_moments_provider.dart'; // ✅ NUEVO PROVIDER AÑADIDO
-import 'presentation/providers/analytics_provider.dart'; // ✅ PROVIDER AÑADIDO
 import 'presentation/providers/analytics_v3_provider.dart'; // ✅ NUEVO: Analytics V3 Provider
 import 'presentation/providers/advanced_emotion_analysis_provider.dart'; // ✅ NUEVO PROVIDER AVANZADO
 import 'presentation/providers/challenges_provider.dart'; // ✅ HIGH PRIORITY ENHANCEMENT
@@ -110,19 +109,9 @@ Future<void> initCleanDependencies() async {
           () => OptimizedAnalyticsProvider(sl<OptimizedDatabaseService>()),
     );
 
-    sl.registerFactory<AnalyticsProvider>(
-          () => AnalyticsProvider(sl<OptimizedDatabaseService>()),
-    );
-
-
     // ✅ NUEVO: Analytics V3 Provider
     sl.registerFactory<AnalyticsV3Provider>(
           () => AnalyticsV3Provider(sl<OptimizedDatabaseService>()),
-    );
-
-    // ✅ NUEVO: Analytics V4 Provider
-    sl.registerFactory<AnalyticsProviderV4>(
-          () => AnalyticsProviderV4(sl<OptimizedDatabaseService>()),
     );
 
     // AI provider removed
@@ -166,7 +155,7 @@ Future<void> initCleanDependencies() async {
 
     // ✅ NUEVO: DailyActivitiesProvider
     sl.registerFactory<DailyActivitiesProvider>(
-          () => DailyActivitiesProvider(),
+          () => DailyActivitiesProvider(sl<OptimizedDatabaseService>()),
     );
 
     // ✅ NUEVO: DailyRoadmapProvider
@@ -238,9 +227,7 @@ bool areCleanServicesRegistered() {
     sl<ExtendedDailyEntriesProvider>();
     sl<OptimizedMomentsProvider>();
     sl<OptimizedAnalyticsProvider>();
-    sl<AnalyticsProvider>();
     sl<AnalyticsV3Provider>(); // ✅ NUEVO
-    sl<AnalyticsProviderV4>(); // ✅ NUEVO
     // AI provider removed
     sl<GoalsProvider>();
     sl<EnhancedGoalsProvider>(); // ✅ NUEVO

@@ -410,7 +410,7 @@ class _WelcomeOnboardingScreenState extends State<WelcomeOnboardingScreen>
                     offset: Offset(0, math.sin(_shimmerAnimation.value * math.pi * 2) * 1),
                     child: ShaderMask(
                       shaderCallback: (bounds) => LinearGradient(
-                        colors: MinimalColors.accentGradientStatic,
+                        colors: MinimalColors.accentGradient(context),
                       ).createShader(bounds),
                       child: Text(
                         'Bienvenido a Reflect',
@@ -973,7 +973,7 @@ class _WelcomeOnboardingScreenState extends State<WelcomeOnboardingScreen>
                           child: Container(
                             height: 200,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0A0E1A),
+                              color: MinimalColors.background,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: _isDarkTheme 
@@ -1079,7 +1079,7 @@ class _WelcomeOnboardingScreenState extends State<WelcomeOnboardingScreen>
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: MinimalColors.accentGradientStatic,
+                              colors: MinimalColors.accentGradient(context),
                             ),
                             borderRadius: BorderRadius.circular(12),
                           ),

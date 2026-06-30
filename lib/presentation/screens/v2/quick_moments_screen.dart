@@ -402,7 +402,7 @@ class _QuickMomentsScreenState extends State<QuickMomentsScreen>
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: MinimalColors.accentGradient(context)[0].withOpacity(0.3),
+                      color: MinimalColors.accentGradient(context)[0].withValues(alpha: 0.3),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -948,9 +948,9 @@ Text(
 
   Widget _buildEnhancedTypeSelector() {
     final types = [
-      {'label': 'Positivo', 'value': 'positive', 'color': const Color(0xFF10b981)},
-      {'label': 'Neutral', 'value': 'neutral', 'color': const Color(0xFFf59e0b)},
-      {'label': 'Negativo', 'value': 'negative', 'color': const Color(0xFFef4444)},
+      {'label': 'Positivo', 'value': 'positive', 'color': MinimalColors.positiveMain(context)},
+      {'label': 'Neutral', 'value': 'neutral', 'color': MinimalColors.warningMain(context)},
+      {'label': 'Negativo', 'value': 'negative', 'color': MinimalColors.negativeMain(context)},
     ];
 
     return Column(
@@ -1685,7 +1685,7 @@ Text(
             ),
           ],
         ),
-        backgroundColor: const Color(0xFFef4444),
+        backgroundColor: MinimalColors.negativeMain(context),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -1717,7 +1717,7 @@ Text(
             ),
           ],
         ),
-        backgroundColor: const Color(0xFF10b981),
+        backgroundColor: MinimalColors.positiveMain(context),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -2143,7 +2143,7 @@ Text(
             ),
           ],
         ),
-        backgroundColor: const Color(0xFF3b82f6),
+        backgroundColor: MinimalColors.infoMain(context),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),

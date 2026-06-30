@@ -2,12 +2,12 @@
 // daily_review_screen_v2.dart - NUEVA VERSIÓN GUIADA E INTERACTIVA
 // ===========================================================================
 
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 // Providers optimizados
+import '../../../core/themes/app_theme.dart';
 import '../../providers/optimized_providers.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/daily_activities_provider.dart';
@@ -15,7 +15,6 @@ import '../../../data/models/goal_model.dart';
 
 // Pantallas relacionadas
 import 'calendar_screen_v2.dart';
-import 'activities_screen.dart';
 
 // Componentes
 import 'components/minimal_colors.dart';
@@ -46,12 +45,9 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
   late AnimationController _staggerController;
   
   late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _staggerAnimation;
 
   int _currentStep = 0;
-  final int _totalSteps = 8;
+  final int _totalSteps = 5;
 
   // Estados del formulario
   final _reflectionController = TextEditingController();
@@ -91,13 +87,29 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
   List<String> _completedActivitiesToday = [];
   List<String> _goalsSummary = [];
 
+  // Controladores adicionales (nivel de clase para evitar memory leaks)
+  late TextEditingController _goalsSummaryController;
+  late TextEditingController _completedActivitiesController;
+
   // Voice recording state
   bool _isVoiceRecordingExpanded = false;
   String? _voiceRecordingPath;
 
+  // Caché de análisis y sugerencias (evita recalcular en cada rebuild)
+  Map<String, dynamic> _cachedAnalysis = {'emotions': [], 'sentiment': 0.0, 'wordCount': 0};
+  List<String> _cachedSuggestions = [];
+
   @override
   void initState() {
     super.initState();
+    // Hide system navigation buttons for more screen space (restored in dispose)
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.immersiveSticky,
+      overlays: [SystemUiOverlay.top],
+    );
+    _goalsSummaryController = TextEditingController();
+    _completedActivitiesController = TextEditingController();
+    _cachedSuggestions = _getSmartSuggestions();
     _setupAnimations();
     _loadExistingEntry();
   }
@@ -117,9 +129,12 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
     _pageTransitionController.dispose();
     _staggerController.dispose();
     _reflectionController.dispose();
+    _innerReflectionController.dispose();
     _gratitudeController.dispose();
     _positiveTagsController.dispose();
     _negativeTagsController.dispose();
+    _goalsSummaryController.dispose();
+    _completedActivitiesController.dispose();
     super.dispose();
   }
 
@@ -163,29 +178,6 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
       curve: Curves.easeOutQuart
     ));
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.3, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _pageTransitionController,
-      curve: Curves.easeOutCubic
-    ));
-
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _pageTransitionController,
-      curve: Curves.easeOutBack
-    ));
-
-    _staggerAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _staggerController,
-      curve: Curves.easeOutQuart
-    ));
 
     // Start initial animations with enhanced staggering
     _cardController.forward();
@@ -209,7 +201,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
     if (todayEntry != null) {
       setState(() {
         _reflectionController.text = todayEntry.freeReflection;
-        _innerReflectionController.text = ''; // Field may not exist yet
+        _innerReflectionController.text = todayEntry.innerReflection ?? '';
         _gratitudeController.text = todayEntry.gratitudeItems ?? '';
         _positiveTagsController.text = todayEntry.positiveTags.join(', ');
         _negativeTagsController.text = todayEntry.negativeTags.join(', ');
@@ -234,9 +226,10 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
         _focusLevel = todayEntry.focusLevel ?? 5;
         _lifeSatisfaction = todayEntry.lifeSatisfaction ?? 5;
         _weatherMoodImpact = todayEntry.weatherMoodImpact ?? 0;
-        // Load new fields if they exist
-        _completedActivitiesToday = []; // Field may not exist yet
-        _goalsSummary = []; // Field may not exist yet
+        _completedActivitiesToday = List<String>.from(todayEntry.completedActivitiesToday);
+        _goalsSummary = List<String>.from(todayEntry.goalsSummary);
+        _goalsSummaryController.text = todayEntry.goalsSummary.join('\n');
+        _completedActivitiesController.text = todayEntry.completedActivitiesToday.join('\n');
       });
     }
   }
@@ -332,7 +325,8 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
       ]);
     }
 
-    return suggestions..shuffle();
+    suggestions.shuffle();
+    return suggestions;
   }
 
   // Obtener el emoji basado en múltiples métricas
@@ -351,72 +345,42 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
   // NAVEGACIÓN
   // ============================================================================
 
+  // Single source of truth for the current step: the PageController drives
+  // _currentStep via _onPageChanged. Navigation helpers only request the page.
   void _nextStep() {
     if (_currentStep < _totalSteps - 1) {
-      // Reset and trigger page transition animation
-      _pageTransitionController.reset();
-      _staggerController.reset();
-      
-      setState(() {
-        _currentStep++;
-      });
-      
-      // Enhanced page transition with multiple curves
       _pageController.nextPage(
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeOutCubic,
       );
-      
-      // Staggered entrance animations
-      Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted) {
-          _pageTransitionController.forward();
-        }
-      });
-      
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) {
-          _staggerController.forward();
-        }
-      });
-      
-      _updateProgress();
-      HapticFeedback.mediumImpact();
     }
   }
 
   void _previousStep() {
     if (_currentStep > 0) {
-      // Reset and trigger page transition animation
-      _pageTransitionController.reset();
-      _staggerController.reset();
-      
-      setState(() {
-        _currentStep--;
-      });
-      
-      // Enhanced page transition with multiple curves
       _pageController.previousPage(
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeOutCubic,
       );
-      
-      // Staggered entrance animations
-      Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted) {
-          _pageTransitionController.forward();
-        }
-      });
-      
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) {
-          _staggerController.forward();
-        }
-      });
-      
-      _updateProgress();
-      HapticFeedback.mediumImpact();
     }
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentStep = index;
+    });
+    _updateProgress();
+    HapticFeedback.mediumImpact();
+
+    // Staggered entrance animations for the new step
+    _pageTransitionController.reset();
+    _staggerController.reset();
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) _pageTransitionController.forward();
+    });
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) _staggerController.forward();
+    });
   }
 
   void _updateProgress() {
@@ -426,20 +390,14 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
   bool _canContinue() {
     switch (_currentStep) {
       case 0:
-        return _reflectionController.text.trim().isNotEmpty;
+        return true; // Reflexión opcional
       case 1:
         return _moodScore > 0;
       case 2:
-        return _energyLevel > 0 && _stressLevel > 0;
-      case 3:
         return true; // Métricas opcionales
+      case 3:
+        return true; // Metas + actividades opcionales
       case 4:
-        return true; // Metas opcionales
-      case 5:
-        return true; // Actividades opcionales
-      case 6:
-        return true; // Reflexión interior opcional
-      case 7:
         return _worthIt != null;
       default:
         return false;
@@ -452,12 +410,6 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
 
   @override
   Widget build(BuildContext context) {
-    // Hide system navigation buttons for more screen space
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.immersiveSticky,
-      overlays: [SystemUiOverlay.top],
-    );
-    
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return AnimatedTheme(
@@ -481,32 +433,38 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                             colors: [
                               MinimalColors.backgroundPrimary(context),
                               MinimalColors.backgroundSecondary(context).withValues(alpha: 0.8),
-                              MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.1),
+                              // En claro evitamos el "wash" morado del fondo.
+                              Theme.of(context).extension<AppColors>()?.isDark == false
+                                  ? MinimalColors.backgroundPrimary(context)
+                                  : MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.1),
                             ],
                             stops: const [0.0, 0.7, 1.0],
                           ),
                         ),
-                        child: PageView(
+                        child: PageView.builder(
                           controller: _pageController,
-                          onPageChanged: (index) {
-                            setState(() {
-                              _currentStep = index;
-                            });
-                            _updateProgress();
+                          itemCount: _totalSteps,
+                          onPageChanged: _onPageChanged,
+                          itemBuilder: (context, index) {
+                            switch (index) {
+                              case 0:
+                                return _buildReflectionStep();
+                              case 1:
+                                return _buildMoodWellbeingStep();
+                              case 2:
+                                return _buildMetricsStep();
+                              case 3:
+                                return _buildGoalsActivitiesStep();
+                              case 4:
+                                return _buildReflectionFinalStep();
+                              default:
+                                return const SizedBox.shrink();
+                            }
                           },
-                          children: [
-                            _buildReflectionStep(),
-                            _buildMoodStep(),
-                            _buildWellbeingStep(),
-                            _buildMetricsStep(),
-                            _buildGoalsStep(),
-                            _buildActivitiesStep(),
-                            _buildInnerReflectionStep(),
-                            _buildFinalStep(),
-                          ],
                         ),
                       ),
                     ),
+                    _buildBottomNav(),
                   ],
                 ),
               ),
@@ -514,6 +472,73 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
           ),
         );
       },
+    );
+  }
+
+  // Persistent step navigation so the wizard isn't swipe-only.
+  Widget _buildBottomNav() {
+    final isLast = _currentStep == _totalSteps - 1;
+    final canContinue = _canContinue();
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      child: Row(
+        children: [
+          if (_currentStep > 0)
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _previousStep,
+                icon: const Icon(Icons.arrow_back_ios_new, size: 16),
+                label: const Text('Atrás'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: MinimalColors.textPrimary(context),
+                  side: BorderSide(
+                    color: MinimalColors.textMuted(context).withValues(alpha: 0.3),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+          if (_currentStep > 0 && !isLast) const SizedBox(width: 12),
+          // "Continuar" only while there are steps ahead; the final step has
+          // its own save button inside the content.
+          if (!isLast)
+            Expanded(
+              flex: 2,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: canContinue
+                      ? LinearGradient(colors: MinimalColors.primaryGradient(context))
+                      : null,
+                  color: canContinue
+                      ? null
+                      : MinimalColors.textMuted(context).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: ElevatedButton(
+                  onPressed: canContinue ? _nextStep : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    disabledForegroundColor:
+                        MinimalColors.textMuted(context),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'Continuar',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -569,29 +594,31 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Paso ${_currentStep + 1} de $_totalSteps',
+                      'Paso ${_currentStep + 1} de $_totalSteps · ${_stepMeta[_currentStep]['label']}',
                       style: TextStyle(
                         color: MinimalColors.textSecondary(context),
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
-              GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: MinimalColors.primaryGradient(context)),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
+              // Close button so the user can always exit the wizard
+              Container(
+                decoration: BoxDecoration(
+                  color: MinimalColors.textMuted(context).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  icon: Icon(
                     Icons.close,
-                    color: Colors.white,
-                    size: 20,
+                    color: MinimalColors.textPrimary(context),
+                    size: 22,
                   ),
+                  tooltip: 'Cerrar',
+                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                 ),
               ),
             ],
@@ -603,8 +630,8 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
 
   Widget _buildProgressSection() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      child: _buildProgressBar(),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      child: _buildStepProgress(),
     );
   }
 
@@ -640,8 +667,8 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
   }
 
   Widget _buildReflectionField() {
-    final analysis = _analyzeReflectionText(_reflectionController.text);
-    final suggestions = _getSmartSuggestions();
+    final analysis = _cachedAnalysis;
+    final suggestions = _cachedSuggestions;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -679,7 +706,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: MinimalColors.primaryGradientStatic,
+                          colors: MinimalColors.primaryGradient(context),
                         ),
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -738,7 +765,9 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(16),
                 ),
-                onChanged: (_) => setState(() {}),
+                onChanged: (text) => setState(() {
+                  _cachedAnalysis = _analyzeReflectionText(text);
+                }),
               ),
             ],
           ),
@@ -915,7 +944,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
   Color _getEmotionColor(String emotion) {
     switch (emotion) {
       case 'joy': return Colors.amber;
-      case 'calm': return Colors.blue;
+      case 'calm': return Colors.purple;
       case 'excited': return Colors.orange;
       case 'sadness': return Colors.indigo;
       case 'anger': return Colors.red;
@@ -972,7 +1001,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Grabación de voz guardada exitosamente'),
-            backgroundColor: Colors.green.shade700,
+            backgroundColor: MinimalColors.positiveMain(context),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -1013,7 +1042,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: MinimalColors.positiveGradientStatic,
+                      colors: MinimalColors.positiveGradient(context),
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -1039,7 +1068,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: MinimalColors.positiveGradientStatic,
+                        colors: MinimalColors.positiveGradient(context),
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1087,7 +1116,9 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             decoration: BoxDecoration(
               color: MinimalColors.backgroundCard(context),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: MinimalColors.positiveMain(context).withValues(alpha: 0.3),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: MinimalColors.gradientShadow(context, alpha: 0.08),
@@ -1099,13 +1130,13 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             child: TextField(
               controller: _positiveTagsController,
               style: TextStyle(color: MinimalColors.textPrimary(context)),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: '✅ Aspectos positivos',
-                labelStyle: TextStyle(color: Colors.green),
+                labelStyle: TextStyle(color: MinimalColors.positiveMain(context)),
                 hintText: 'ej: productivo, feliz',
-                hintStyle: TextStyle(color: Colors.white54),
+                hintStyle: TextStyle(color: MinimalColors.textMuted(context)),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.all(12),
+                contentPadding: const EdgeInsets.all(12),
               ),
             ),
           ),
@@ -1116,7 +1147,9 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             decoration: BoxDecoration(
               color: MinimalColors.backgroundCard(context),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: MinimalColors.negativeMain(context).withValues(alpha: 0.3),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: MinimalColors.gradientShadow(context, alpha: 0.08),
@@ -1128,13 +1161,13 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             child: TextField(
               controller: _negativeTagsController,
               style: TextStyle(color: MinimalColors.textPrimary(context)),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: '❌ Aspectos a mejorar',
-                labelStyle: TextStyle(color: Colors.red),
+                labelStyle: TextStyle(color: MinimalColors.negativeMain(context)),
                 hintText: 'ej: estresado, cansado',
-                hintStyle: TextStyle(color: Colors.white54),
+                hintStyle: TextStyle(color: MinimalColors.textMuted(context)),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.all(12),
+                contentPadding: const EdgeInsets.all(12),
               ),
             ),
           ),
@@ -1144,10 +1177,10 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
   }
 
   // ============================================================================
-  // PASO 2: ESTADO DE ÁNIMO
+  // PASO 2 (CONSOLIDADO): MOOD + BIENESTAR
   // ============================================================================
 
-  Widget _buildMoodStep() {
+  Widget _buildMoodWellbeingStep() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1164,6 +1197,115 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          _buildStepCard(
+            icon: '⚡',
+            title: 'Energía y Estrés',
+            subtitle: 'Evalúa tu nivel de energía y estrés',
+            child: Column(
+              children: [
+                _buildInteractiveSlider(
+                  title: 'Nivel de Energía',
+                  value: _energyLevel,
+                  emoji: '⚡',
+                  gradientColors: MinimalColors.positiveGradient(context),
+                  onChanged: (value) => setState(() => _energyLevel = value),
+                ),
+                const SizedBox(height: 24),
+                _buildInteractiveSlider(
+                  title: 'Nivel de Estrés',
+                  value: _stressLevel,
+                  emoji: '😰',
+                  gradientColors: MinimalColors.negativeGradient(context),
+                  onChanged: (value) => setState(() => _stressLevel = value),
+                  isReversed: true,
+                ),
+                const SizedBox(height: 24),
+                _buildEnergyStressBalance(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================================
+  // PASO 4 (CONSOLIDADO): METAS + ACTIVIDADES
+  // ============================================================================
+
+  Widget _buildGoalsActivitiesStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStepCard(
+            icon: '🎯',
+            title: 'Progreso de Metas',
+            subtitle: 'Revisa y actualiza el progreso de tus metas personales',
+            child: Column(
+              children: [
+                _buildGoalsProgressSection(),
+                const SizedBox(height: 16),
+                _buildGoalsSummaryField(),
+                const SizedBox(height: 16),
+                _buildDailyPhotosSection(),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildStepCard(
+            icon: '✅',
+            title: 'Actividades del Día',
+            subtitle: 'Selecciona las actividades que completaste hoy',
+            child: Column(
+              children: [
+                _buildActivitiesProgressHeader(),
+                const SizedBox(height: 16),
+                _buildInteractiveActivitiesGrid(),
+                const SizedBox(height: 16),
+                _buildCompletedActivitiesField(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================================
+  // PASO 5 (CONSOLIDADO): REFLEXIÓN PROFUNDA + EVALUACIÓN FINAL
+  // ============================================================================
+
+  Widget _buildReflectionFinalStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildStepCard(
+            icon: '🧘',
+            title: 'Reflexión Profunda',
+            subtitle: 'Conecta con tus sentimientos más profundos',
+            child: _buildInnerReflectionField(),
+          ),
+          const SizedBox(height: 16),
+          _buildStepCard(
+            icon: '🎯',
+            title: 'Reflexión Final',
+            subtitle: 'Evalúa el valor general de tu día',
+            child: Column(
+              children: [
+                _buildWorthItQuestion(),
+                const SizedBox(height: 24),
+                _buildDaySummary(),
+                const SizedBox(height: 32),
+                _buildSaveButton(),
+                const SizedBox(height: 24),
+                _buildNavigationOptions(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -1175,8 +1317,11 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
 
     return Column(
       children: [
-        // Emoji grande actual
-        Container(
+        // Emoji grande actual — el círculo transiciona de color y el emoji
+        // hace un "pop" al cambiar de valor.
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOut,
           width: 120,
           height: 120,
           decoration: BoxDecoration(
@@ -1184,16 +1329,24 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             borderRadius: BorderRadius.circular(60),
             boxShadow: [
               BoxShadow(
-                color: MinimalColors.coloredShadow(context, _getMoodColor(_moodScore), alpha: 0.15),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
+                color: MinimalColors.coloredShadow(context, _getMoodColor(_moodScore), alpha: 0.30),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: Center(
-            child: Text(
-              moodEmojis[(_moodScore - 1).clamp(0, 9)],
-              style: TextStyle(fontSize: 60),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 280),
+              transitionBuilder: (child, anim) => ScaleTransition(
+                scale: CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+                child: FadeTransition(opacity: anim, child: child),
+              ),
+              child: Text(
+                moodEmojis[(_moodScore - 1).clamp(0, 9)],
+                key: ValueKey<int>(_moodScore),
+                style: const TextStyle(fontSize: 60),
+              ),
             ),
           ),
         ),
@@ -1201,78 +1354,26 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
         const SizedBox(height: 16),
 
         // Label del estado
-        Text(
-          moodLabels[(_moodScore - 1).clamp(0, 9)],
-          style: TextStyle(
-            color: MinimalColors.textPrimary(context),
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          child: Text(
+            moodLabels[(_moodScore - 1).clamp(0, 9)],
+            key: ValueKey<int>(_moodScore),
+            style: TextStyle(
+              color: MinimalColors.textPrimary(context),
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
 
         const SizedBox(height: 24),
 
-        // Slider
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            activeTrackColor: _getMoodColor(_moodScore),
-            inactiveTrackColor: Colors.white24,
-            thumbColor: _getMoodColor(_moodScore),
-            overlayColor: _getMoodColor(_moodScore).withValues(alpha: 0.2),
-            trackHeight: 6,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
-          ),
-          child: Slider(
-            value: _moodScore.toDouble(),
-            min: 1,
-            max: 10,
-            divisions: 9,
-            onChanged: (value) {
-              setState(() {
-                _moodScore = value.round();
-              });
-              HapticFeedback.lightImpact();
-            },
-          ),
-        ),
-
-        // Indicadores numéricos
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(10, (index) {
-            final number = index + 1;
-            final isSelected = number == _moodScore;
-
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  _moodScore = number;
-                });
-                HapticFeedback.lightImpact();
-              },
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: isSelected ? _getMoodColor(_moodScore) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isSelected ? _getMoodColor(_moodScore) : Colors.white24,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    number.toString(),
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white60,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
+        // Escala táctil del estado de ánimo (tap o desliza)
+        _buildTapScale(
+          value: _moodScore,
+          gradientColors: _getMoodGradient(_moodScore),
+          onChanged: (v) => setState(() => _moodScore = v),
         ),
       ],
     );
@@ -1280,17 +1381,17 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
 
   Widget _buildMoodInsight() {
     String insight = '';
-    Color insightColor = Colors.white70;
+    Color insightColor = MinimalColors.textSecondary(context);
 
     if (_moodScore <= 3) {
       insight = 'Parece que ha sido un día difícil. Recuerda que los días difíciles también forman parte del crecimiento.';
-      insightColor = Colors.red.shade300;
+      insightColor = MinimalColors.negativeMain(context);
     } else if (_moodScore <= 6) {
       insight = 'Un día promedio. Pequeños cambios pueden hacer una gran diferencia mañana.';
-      insightColor = Colors.orange.shade300;
+      insightColor = MinimalColors.warningMain(context);
     } else {
       insight = '¡Qué buen día! Reflexiona sobre qué lo hizo especial para repetirlo.';
-      insightColor = Colors.green.shade300;
+      insightColor = MinimalColors.positiveMain(context);
     }
 
     return Container(
@@ -1312,51 +1413,6 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                 fontSize: 14,
                 height: 1.4,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================================
-  // PASO 3: BIENESTAR BÁSICO
-  // ============================================================================
-
-  Widget _buildWellbeingStep() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _buildStepCard(
-            icon: '⚡',
-            title: 'Bienestar General',
-            subtitle: 'Evalúa tu energía y estrés del día',
-            child: Column(
-              children: [
-                _buildInteractiveSlider(
-                  title: 'Nivel de Energía',
-                  value: _energyLevel,
-                  emoji: '⚡',
-                  gradientColors: MinimalColors.positiveGradient(context),
-                  onChanged: (value) => setState(() => _energyLevel = value),
-                ),
-
-                const SizedBox(height: 24),
-
-                _buildInteractiveSlider(
-                  title: 'Nivel de Estrés',
-                  value: _stressLevel,
-                  emoji: '😰',
-                  gradientColors: MinimalColors.negativeGradient(context),
-                  onChanged: (value) => setState(() => _stressLevel = value),
-                  isReversed: true, // Mayor valor = peor
-                ),
-
-                const SizedBox(height: 24),
-
-                _buildEnergyStressBalance(),
-              ],
             ),
           ),
         ],
@@ -1421,33 +1477,22 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
 
           const SizedBox(height: 16),
 
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: gradientColors[0],
-              inactiveTrackColor: Colors.white24,
-              thumbColor: gradientColors[1],
-              overlayColor: gradientColors[0].withValues(alpha: 0.2),
-              trackHeight: 8,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14),
-            ),
-            child: Slider(
-              value: value.toDouble(),
-              min: 1,
-              max: 10,
-              divisions: 9,
-              onChanged: (newValue) {
-                onChanged(newValue.round());
-                HapticFeedback.lightImpact();
-              },
-            ),
+          _buildTapScale(
+            value: value,
+            gradientColors: gradientColors,
+            onChanged: onChanged,
           ),
 
-          Text(
-            _getSliderLabel(title, value, isReversed),
-            style: TextStyle(
-              color: gradientColors[0],
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              _getSliderLabel(title, value, isReversed),
+              style: TextStyle(
+                color: gradientColors[0],
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -1471,10 +1516,10 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
   Widget _buildEnergyStressBalance() {
     final balance = _energyLevel - _stressLevel;
     final balanceColor = balance > 2
-        ? Colors.green
+        ? MinimalColors.positiveMain(context)
         : balance < -2
-        ? Colors.red
-        : Colors.orange;
+        ? MinimalColors.negativeMain(context)
+        : MinimalColors.warningMain(context);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1496,7 +1541,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: (balance + 9) / 18, // Normalizar de -9 a 9 => 0 a 1
-            backgroundColor: Colors.white24,
+            backgroundColor: MinimalColors.textMuted(context).withValues(alpha: 0.3),
             valueColor: AlwaysStoppedAnimation<Color>(balanceColor),
             minHeight: 6,
           ),
@@ -1640,28 +1685,10 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             child: _buildGridMetricVisualization(key, value.toDouble()),
           ),
           const SizedBox(height: 12),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: MinimalColors.lightGradient(context)[0],
-              inactiveTrackColor: MinimalColors.lightGradient(context)[0].withValues(alpha: 0.3),
-              thumbColor: MinimalColors.lightGradient(context)[1],
-              overlayColor: MinimalColors.lightGradient(context)[0].withValues(alpha: 0.2),
-              trackHeight: 4,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-            ),
-            child: Slider(
-              value: value.toDouble(),
-              min: 1,
-              max: 10,
-              divisions: 9,
-              onChanged: (newValue) {
-                setState(() {
-                  _updateMetricValue(key, newValue.round());
-                });
-                HapticFeedback.lightImpact();
-              },
-            ),
+          _buildTapScale(
+            value: value,
+            gradientColors: MinimalColors.lightGradient(context),
+            onChanged: (v) => setState(() => _updateMetricValue(key, v)),
           ),
         ],
       ),
@@ -1726,7 +1753,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             child: isActive ? Container(
               margin: EdgeInsets.all(2),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.3),
+                color: MinimalColors.textMuted(context).withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ) : null,
@@ -1819,11 +1846,11 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
               width: 12,
               height: 12,
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: opacity),
+                color: Colors.purple.withValues(alpha: opacity),
                 shape: BoxShape.circle,
                 boxShadow: opacity > 0.5 ? [
                   BoxShadow(
-                    color: Colors.blue.withValues(alpha: 0.3),
+                    color: Colors.purple.withValues(alpha: 0.3),
                     blurRadius: 4,
                   )
                 ] : null,
@@ -1979,7 +2006,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: MinimalColors.lightGradient(context)[0],
-              inactiveTrackColor: Colors.white24,
+              inactiveTrackColor: MinimalColors.textMuted(context).withValues(alpha: 0.3),
               thumbColor: MinimalColors.lightGradient(context)[1],
               overlayColor: MinimalColors.lightGradient(context)[0].withValues(alpha: 0.2),
               trackHeight: 4,
@@ -1994,35 +2021,6 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                 onChanged(newValue);
                 HapticFeedback.lightImpact();
               },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================================
-  // PASO 4A: METAS DEL DÍA (NUEVO)
-  // ============================================================================
-
-  Widget _buildGoalsStep() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildStepCard(
-            icon: '🎯',
-            title: 'Progreso de Metas',
-            subtitle: 'Revisa y actualiza el progreso de tus metas personales',
-            child: Column(
-              children: [
-                _buildGoalsProgressSection(),
-                const SizedBox(height: 16),
-                _buildGoalsSummaryField(),
-                const SizedBox(height: 16),
-                _buildDailyPhotosSection(),
-              ],
             ),
           ),
         ],
@@ -2125,7 +2123,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: MinimalColors.primaryGradientStatic,
+                      colors: MinimalColors.primaryGradient(context),
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -2150,7 +2148,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             ),
           ),
           TextField(
-            controller: TextEditingController(text: _goalsSummary.join('\n')),
+            controller: _goalsSummaryController,
             onChanged: (value) {
               setState(() {
                 _goalsSummary = value.split('\n').where((line) => line.trim().isNotEmpty).toList();
@@ -2177,263 +2175,58 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
   }
 
   Widget _buildDailyPhotosSection() {
-    return Consumer<OptimizedDailyEntriesProvider>(
-      builder: (context, entriesProvider, child) {
-        return Consumer<GoalsProvider>(
-          builder: (context, goalsProvider, child) {
-        // Get photos from today's daily entry
-        // For now, we'll implement this as a future enhancement since the current
-        // OptimizedDailyEntryModel doesn't include image paths
-        final dailyPhotos = <String>[];
-        
-        // In the future, this will get real photos from:
-        // 1. Today's daily entry images (entriesProvider.todayEntry.imagePaths)
-        // 2. Today's interactive moments with photos
-        // 3. Goal progress photos from today
-        
-        // Mock data for demonstration - replace with real data when image system is integrated
-        final mockPhotos = entriesProvider.todayEntry != null ? [
-          // Simulate some photos from today based on whether user has made entries
-          if (entriesProvider.todayEntry!.freeReflection.isNotEmpty)
-            '/path/to/reflection_photo.jpg',
-          if (entriesProvider.todayEntry!.positiveTags.isNotEmpty)
-            '/path/to/positive_moment.jpg',
-        ] : <String>[];
-        
-        // Combine all photos
-        final allPhotos = <String>[];
-        allPhotos.addAll(dailyPhotos);
-        allPhotos.addAll(mockPhotos);
-        
-        // Create photo data with timestamps
-        final photoData = allPhotos.asMap().entries.map((entry) {
-          final index = entry.key;
-          final photoPath = entry.value;
-          return {
-            'path': photoPath,
-            'time': '${8 + (index * 2)}:${30 + (index * 15) % 60}'.padLeft(2, '0'),
-            'title': index < dailyPhotos.length ? 'Momento personal' : 'Progreso de meta',
-          };
-        }).toList();
-
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                MinimalColors.backgroundCard(context),
-                MinimalColors.backgroundSecondary(context),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: MinimalColors.accentGradient(context)[0].withValues(alpha: 0.3),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: MinimalColors.accentGradientStatic,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.photo_camera_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Fotos del Día',
-                        style: TextStyle(
-                          color: MinimalColors.textPrimary(context),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (photoData.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 100,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: photoData.length,
-                    itemBuilder: (context, index) {
-                      final photo = photoData[index];
-                      return _buildPhotoThumbnail(photo);
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ] else ...[
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.add_a_photo_rounded,
-                        size: 32,
-                        color: MinimalColors.textSecondary(context),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No has capturado fotos hoy',
-                        style: TextStyle(
-                          color: MinimalColors.textSecondary(context),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildPhotoThumbnail(Map<String, String> photo) {
-    final photoPath = photo['path'];
-    
     return Container(
-      width: 80,
-      height: 80,
-      margin: const EdgeInsets.only(right: 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: MinimalColors.accentGradient(context)[0].withValues(alpha: 0.3),
-        ),
         gradient: LinearGradient(
-          colors: MinimalColors.accentGradient(context).map((c) => c.withValues(alpha: 0.1)).toList(),
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          children: [
-            // Show actual image if path exists, otherwise show placeholder
-            if (photoPath != null && photoPath.isNotEmpty)
-              Image.file(
-                File(photoPath),
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: MinimalColors.backgroundCard(context),
-                    child: Center(
-                      child: Icon(
-                        Icons.broken_image_rounded,
-                        color: MinimalColors.textSecondary(context),
-                        size: 24,
-                      ),
-                    ),
-                  );
-                },
-              )
-            else
-              Container(
-                color: MinimalColors.backgroundCard(context),
-                child: Center(
-                  child: Icon(
-                    Icons.photo_rounded,
-                    color: MinimalColors.textSecondary(context),
-                    size: 24,
-                  ),
-                ),
-              ),
-            // Time and title overlay
-            Positioned(
-              bottom: 2,
-              right: 2,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: MinimalColors.shadow(context).withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  photo['time'] ?? '00:00',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-            // Photo type indicator (top-left)
-            if (photo['title'] != null)
-              Positioned(
-                top: 2,
-                left: 2,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: photo['title'] == 'Momento personal' 
-                        ? Colors.blue.withValues(alpha: 0.8)
-                        : Colors.green.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(
-                    photo['title'] == 'Momento personal' 
-                        ? Icons.favorite_rounded
-                        : Icons.flag_rounded,
-                    color: Colors.white,
-                    size: 8,
-                  ),
-                ),
-              ),
+          colors: [
+            MinimalColors.backgroundCard(context),
+            MinimalColors.backgroundSecondary(context),
           ],
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: MinimalColors.accentGradient(context)[0].withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
-    );
-  }
-
-  // ============================================================================
-  // PASO 4B: ACTIVIDADES DEL DÍA (NUEVO)
-  // ============================================================================
-
-  Widget _buildActivitiesStep() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildStepCard(
-            icon: '✅',
-            title: 'Actividades del Día',
-            subtitle: 'Selecciona las actividades que completaste hoy',
-            child: Column(
-              children: [
-                _buildActivitiesProgressHeader(),
-                const SizedBox(height: 16),
-                _buildInteractiveActivitiesGrid(),
-                const SizedBox(height: 16),
-                _buildCompletedActivitiesField(),
-              ],
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: MinimalColors.accentGradient(context)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.photo_camera_rounded, color: Colors.white, size: 20),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Fotos del Día',
+                    style: TextStyle(
+                      color: MinimalColors.textPrimary(context),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Próximamente podrás adjuntar fotos a tu reflexión',
+                    style: TextStyle(
+                      color: MinimalColors.textSecondary(context),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2663,7 +2456,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                   Text(
                     activity.durationText,
                     style: TextStyle(
-                      color: isCompleted ? Colors.white70 : MinimalColors.textSecondary(context),
+                      color: isCompleted ? Colors.white.withValues(alpha: 0.85) : MinimalColors.textSecondary(context),
                       fontSize: 12,
                     ),
                   ),
@@ -2697,52 +2490,6 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
     );
   }
 
-  Widget _buildCompletedActivityChip(dynamic activity) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.green.shade400,
-            Colors.green.shade600,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: MinimalColors.coloredShadow(context, Colors.green, alpha: 0.12),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            activity.emoji ?? '✅',
-            style: TextStyle(fontSize: 14),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            activity.title ?? activity.toString(),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Icon(
-            Icons.check_circle,
-            color: Colors.white,
-            size: 16,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCompletedActivitiesField() {
     return Container(
       decoration: BoxDecoration(
@@ -2768,7 +2515,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: MinimalColors.positiveGradientStatic,
+                      colors: MinimalColors.positiveGradient(context),
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -2793,11 +2540,13 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             ),
           ),
           TextField(
-            controller: TextEditingController(text: _completedActivitiesToday.join('\n')),
+            controller: _completedActivitiesController,
             onChanged: (value) {
               setState(() {
-                final activities = value.split('\n').where((line) => line.trim().isNotEmpty).toList();
-                _completedActivitiesToday = activities;
+                _completedActivitiesToday = value
+                    .split('\n')
+                    .where((line) => line.trim().isNotEmpty)
+                    .toList();
               });
             },
             maxLines: 3,
@@ -2813,31 +2562,6 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
               ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(16),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================================
-  // PASO 4C: REFLEXIÓN PROFUNDA (EXISTENTE)
-  // ============================================================================
-
-  Widget _buildInnerReflectionStep() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildStepCard(
-            icon: '🧘',
-            title: 'Reflexión Profunda',
-            subtitle: 'Conecta con tus sentimientos y pensamientos más profundos.',
-            child: Column(
-              children: [
-                _buildInnerReflectionField(),
-              ],
             ),
           ),
         ],
@@ -2920,36 +2644,6 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
               contentPadding: const EdgeInsets.all(16),
             ),
             onChanged: (_) => setState(() {}),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================================
-  // PASO 5: EVALUACIÓN FINAL
-  // ============================================================================
-
-  Widget _buildFinalStep() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _buildStepCard(
-            icon: '🎯',
-            title: 'Reflexión Final',
-            subtitle: 'Evalúa el valor general de tu día',
-            child: Column(
-              children: [
-                _buildWorthItQuestion(),
-                const SizedBox(height: 24),
-                _buildDaySummary(),
-                const SizedBox(height: 32),
-                _buildSaveButton(),
-                const SizedBox(height: 24),
-                _buildNavigationOptions(),
-              ],
-            ),
           ),
         ],
       ),
@@ -3045,7 +2739,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                     border: Border.all(
                       color: _worthIt == true
                           ? Colors.green
-                          : Colors.white.withValues(alpha: 0.3),
+                          : MinimalColors.textMuted(context).withValues(alpha: 0.3),
                       width: _worthIt == true ? 2 : 1,
                     ),
                   ),
@@ -3059,7 +2753,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                       Text(
                         'Sí, ha valido la pena',
                         style: TextStyle(
-                          color: _worthIt == true ? Colors.white : Colors.white70,
+                          color: _worthIt == true ? Colors.white : MinimalColors.textSecondary(context),
                           fontSize: 14,
                           fontWeight: _worthIt == true ? FontWeight.bold : FontWeight.normal,
                         ),
@@ -3089,7 +2783,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                     border: Border.all(
                       color: _worthIt == false
                           ? Colors.red
-                          : Colors.white.withValues(alpha: 0.3),
+                          : MinimalColors.textMuted(context).withValues(alpha: 0.3),
                       width: _worthIt == false ? 2 : 1,
                     ),
                   ),
@@ -3103,7 +2797,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                       Text(
                         'No, podría mejorar',
                         style: TextStyle(
-                          color: _worthIt == false ? Colors.white : Colors.white70,
+                          color: _worthIt == false ? Colors.white : MinimalColors.textSecondary(context),
                           fontSize: 14,
                           fontWeight: _worthIt == false ? FontWeight.bold : FontWeight.normal,
                         ),
@@ -3179,10 +2873,10 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
   Widget _buildNavigationOptions() {
     return Column(
       children: [
-        const Text(
+        Text(
           'Después de guardar puedes:',
           style: TextStyle(
-            color: Colors.white70,
+            color: MinimalColors.textSecondary(context),
             fontSize: 14,
           ),
         ),
@@ -3233,7 +2927,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
         decoration: BoxDecoration(
           color: MinimalColors.backgroundCard(context),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          border: Border.all(color: MinimalColors.textMuted(context).withValues(alpha: 0.15)),
         ),
         child: Row(
           children: [
@@ -3289,6 +2983,9 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
     required String subtitle,
     required Widget child,
   }) {
+    final isLight = Theme.of(context).extension<AppColors>()?.isDark == false;
+    final accent = MinimalColors.primaryGradient(context);
+
     return SlideTransition(
       position: Tween<Offset>(
         begin: const Offset(0, 0.1),
@@ -3298,42 +2995,58 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
         width: double.infinity,
         margin: const EdgeInsets.only(bottom: 4),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              MinimalColors.backgroundCard(context),
-              MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.08),
-              MinimalColors.primaryGradient(context)[1].withValues(alpha: 0.05),
-            ],
-          ),
+          // Claro: superficie blanca limpia. Oscuro: gradiente translúcido.
+          color: isLight ? MinimalColors.backgroundCard(context) : null,
+          gradient: isLight
+              ? null
+              : LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    MinimalColors.backgroundCard(context),
+                    accent[0].withValues(alpha: 0.08),
+                    accent[1].withValues(alpha: 0.05),
+                  ],
+                ),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-            width: 1.5,
+            color: isLight
+                ? MinimalColors.textMuted(context).withValues(alpha: 0.15)
+                : accent[0].withValues(alpha: 0.3),
+            width: isLight ? 1 : 1.5,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: MinimalColors.gradientShadow(context, alpha: 0.4),
-              blurRadius: 30,
-              offset: const Offset(0, 15),
-              spreadRadius: 2,
-            ),
-            BoxShadow(
-              color: MinimalColors.gradientShadow(context, alpha: 0.12),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          boxShadow: isLight
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: MinimalColors.gradientShadow(context, alpha: 0.4),
+                    blurRadius: 30,
+                    offset: const Offset(0, 15),
+                    spreadRadius: 2,
+                  ),
+                  BoxShadow(
+                    color: MinimalColors.gradientShadow(context, alpha: 0.12),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
         ),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
-              width: 1,
-            ),
+            border: isLight
+                ? null
+                : Border.all(
+                    color: MinimalColors.textMuted(context).withValues(alpha: 0.12),
+                    width: 1,
+                  ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -3341,14 +3054,18 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: MinimalColors.primaryGradient(context).map(
-                      (c) => c.withValues(alpha: 0.15)
-                    ).toList(),
-                  ),
+                  // Claro: tinte muy tenue del acento. Oscuro: gradiente actual.
+                  color: isLight ? accent[0].withValues(alpha: 0.06) : null,
+                  gradient: isLight
+                      ? null
+                      : LinearGradient(
+                          colors: accent
+                              .map((c) => c.withValues(alpha: 0.15))
+                              .toList(),
+                        ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
+                    color: accent[0].withValues(alpha: isLight ? 0.12 : 0.3),
                     width: 1,
                   ),
                 ),
@@ -3437,10 +3154,11 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
       final success = await entriesProvider.saveDailyEntry(
         userId: authProvider.currentUser!.id,
         freeReflection: _reflectionController.text.trim(),
-        // Note: These fields don't exist in the current model yet
-        // innerReflection: _innerReflectionController.text.trim(),
-        // completedActivitiesToday: _completedActivitiesToday,
-        // goalsSummary: _goalsSummary,
+        innerReflection: _innerReflectionController.text.trim().isEmpty
+            ? null
+            : _innerReflectionController.text.trim(),
+        completedActivitiesToday: _completedActivitiesToday,
+        goalsSummary: _goalsSummary,
         positiveTags: _positiveTagsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
         negativeTags: _negativeTagsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
         worthIt: _worthIt,
@@ -3485,8 +3203,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
   }
 
   void _navigateToCalendar() {
-    Navigator.push(
-      context,
+    Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => const CalendarScreenV2(),
       ),
@@ -3499,9 +3216,9 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
   // ============================================================================
 
   Color _getMoodColor(int score) {
-    if (score <= 3) return Colors.red;
-    if (score <= 6) return Colors.orange;
-    return Colors.green;
+    if (score <= 3) return MinimalColors.negativeMain(context);
+    if (score <= 6) return MinimalColors.warningMain(context);
+    return MinimalColors.positiveMain(context);
   }
 
   List<Color> _getMoodGradient(int score) {
@@ -3529,7 +3246,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: MinimalColors.negativeMain(context),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -3539,7 +3256,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: MinimalColors.positiveMain(context),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -3568,111 +3285,6 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
     }
   }
 
-  Widget _buildGoalProgressNotes(GoalModel goal) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.blue.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.note_outlined,
-                color: Colors.blue,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Notas de progreso',
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            goal.progressNotes ?? '',
-            style: TextStyle(
-              color: MinimalColors.textSecondary(context),
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGoalUpdateButtons(GoalModel goal) {
-    return Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () => _showProgressUpdateDialog(goal),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(int.parse('FF${goal.categoryColorHex}', radix: 16)).withValues(alpha: 0.8),
-                    Color(int.parse('FF${goal.categoryColorHex}', radix: 16)),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.trending_up,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Actualizar Progreso',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: () => _showAddNoteDialog(goal),
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Color(int.parse('FF${goal.categoryColorHex}', radix: 16)).withValues(alpha: 0.5),
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.note_add,
-              color: Color(int.parse('FF${goal.categoryColorHex}', radix: 16)),
-              size: 16,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   void _showProgressUpdateDialog(GoalModel goal) {
     showDialog(
       context: context,
@@ -3686,7 +3298,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Progreso actualizado exitosamente'),
-                backgroundColor: Colors.green,
+                backgroundColor: MinimalColors.positiveMain(context),
               ),
             );
             // Refresh the goals data
@@ -3697,7 +3309,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Error actualizando progreso: $e'),
-                backgroundColor: Colors.red,
+                backgroundColor: MinimalColors.negativeMain(context),
               ),
             );
           }
@@ -3706,131 +3318,168 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
     );
   }
 
-  void _showAddNoteDialog(GoalModel goal) {
-    final notesController = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: MinimalColors.backgroundCard(context),
-        title: Text(
-          'Agregar Nota',
-          style: TextStyle(
-            color: MinimalColors.textPrimary(context),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Agregar una nota sobre tu progreso en: ${goal.title}',
-              style: TextStyle(
-                color: MinimalColors.textSecondary(context),
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: notesController,
-              maxLines: 3,
-              style: TextStyle(
-                color: MinimalColors.textPrimary(context),
-              ),
-              decoration: InputDecoration(
-                hintText: 'Escribe tus pensamientos sobre el progreso...',
-                hintStyle: TextStyle(
-                  color: MinimalColors.textSecondary(context),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: MinimalColors.primaryGradient(context)[0],
-                  ),
+  // Metadata de cada paso (emoji + nombre corto) para el stepper y la cabecera.
+  static const List<Map<String, String>> _stepMeta = [
+    {'emoji': '✍️', 'label': 'Reflexión'},
+    {'emoji': '😊', 'label': 'Ánimo'},
+    {'emoji': '📊', 'label': 'Métricas'},
+    {'emoji': '🎯', 'label': 'Metas'},
+    {'emoji': '🧘', 'label': 'Final'},
+  ];
+
+  // Stepper segmentado: nodos navegables con estado hecho/activo/pendiente.
+  Widget _buildStepProgress() {
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: List.generate(_totalSteps * 2 - 1, (i) {
+          if (i.isOdd) {
+            final leftIndex = i ~/ 2;
+            final done = leftIndex < _currentStep;
+            return Expanded(
+              child: Container(
+                height: 3,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(2),
+                  gradient: done
+                      ? LinearGradient(colors: MinimalColors.primaryGradient(context))
+                      : null,
+                  color: done
+                      ? null
+                      : MinimalColors.textMuted(context).withValues(alpha: 0.18),
                 ),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancelar',
-              style: TextStyle(
-                color: MinimalColors.textSecondary(context),
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (notesController.text.trim().isNotEmpty) {
-                // Here you would typically save the note
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Nota agregada exitosamente'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-                Navigator.pop(context);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: MinimalColors.primaryGradient(context)[0],
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Guardar'),
-          ),
-        ],
+            );
+          }
+          return _buildStepNode(i ~/ 2);
+        }),
       ),
     );
   }
 
-  Widget _buildProgressBar() {
-    return Container(
-      height: 6,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(3),
-        color: Colors.white.withValues(alpha: 0.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+  Widget _buildStepNode(int index) {
+    final isActive = index == _currentStep;
+    final isDone = index < _currentStep;
+    final filled = isActive || isDone;
+    final size = isActive ? 40.0 : 32.0;
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        _pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutCubic,
+        );
+      },
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutBack,
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: filled
+              ? LinearGradient(colors: MinimalColors.primaryGradient(context))
+              : null,
+          color: filled ? null : MinimalColors.backgroundCard(context),
+          border: Border.all(
+            color: filled
+                ? Colors.transparent
+                : MinimalColors.textMuted(context).withValues(alpha: 0.3),
+            width: 1.5,
           ),
-        ],
-      ),
-      child: AnimatedBuilder(
-        animation: _progressController,
-        builder: (context, child) {
-          return FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: _progressController.value,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(3),
-                gradient: LinearGradient(
-                  colors: MinimalColors.primaryGradient(context),
-                ),
-                boxShadow: [
+          boxShadow: isActive
+              ? [
                   BoxShadow(
-                    color: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.4),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
+                    color: MinimalColors.primaryGradient(context)[0]
+                        .withValues(alpha: 0.45),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                ],
+                ]
+              : null,
+        ),
+        child: isDone
+            ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
+            : Text(
+                _stepMeta[index]['emoji']!,
+                style: TextStyle(fontSize: isActive ? 18 : 13),
               ),
-            ),
-          );
-        },
       ),
+    );
+  }
+
+  // Escala táctil 1–N: tap o desliza para fijar el valor (reemplaza sliders).
+  Widget _buildTapScale({
+    required int value,
+    required ValueChanged<int> onChanged,
+    required List<Color> gradientColors,
+    int max = 10,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 4.0;
+        final segWidth = (constraints.maxWidth - gap * (max - 1)) / max;
+
+        void handleAt(double dx) {
+          final idx = (dx / (segWidth + gap)).floor().clamp(0, max - 1);
+          final v = idx + 1;
+          if (v != value) {
+            onChanged(v);
+            HapticFeedback.selectionClick();
+          }
+        }
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (d) => handleAt(d.localPosition.dx),
+          onHorizontalDragUpdate: (d) => handleAt(d.localPosition.dx),
+          child: Row(
+            children: List.generate(max, (i) {
+              final isFilled = i < value;
+              final isCurrent = i == value - 1;
+              return Container(
+                width: segWidth,
+                height: 34,
+                margin: EdgeInsets.only(right: i == max - 1 ? 0 : gap),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  gradient: isFilled
+                      ? LinearGradient(colors: gradientColors)
+                      : null,
+                  color: isFilled
+                      ? null
+                      : MinimalColors.textMuted(context).withValues(alpha: 0.12),
+                  boxShadow: isCurrent
+                      ? [
+                          BoxShadow(
+                            color: gradientColors[0].withValues(alpha: 0.45),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '${i + 1}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+                    color: isFilled
+                        ? Colors.white
+                        : MinimalColors.textMuted(context),
+                  ),
+                ),
+              );
+            }),
+          ),
+        );
+      },
     );
   }
 
@@ -3869,7 +3518,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                 width: 12,
                 height: 18,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.8),
+                  color: color.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(3),
                   border: Border.all(
                     color: color,
@@ -3882,7 +3531,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                       flex: 1,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.3),
+                          color: color.withValues(alpha: 0.3),
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(2),
                             topRight: Radius.circular(2),
@@ -3894,7 +3543,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                       flex: 3,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.7),
+                          color: color.withValues(alpha: 0.7),
                           borderRadius: const BorderRadius.only(
                             bottomLeft: Radius.circular(2),
                             bottomRight: Radius.circular(2),
@@ -3944,7 +3593,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: color.withOpacity(0.2),
+                      color: color.withValues(alpha: 0.2),
                       width: 3,
                     ),
                   ),
@@ -3982,7 +3631,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                     height: 12,
                     margin: const EdgeInsets.symmetric(horizontal: 1),
                     decoration: BoxDecoration(
-                      color: isActive ? color : color.withOpacity(0.2),
+                      color: isActive ? color : color.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -4009,10 +3658,10 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
             width: 18,
             height: 28,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
-                color: color.withOpacity(0.3),
+                color: color.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -4029,7 +3678,7 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
                     flex: (intensity * 100).toInt().clamp(1, 100),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.7),
+                        color: color.withValues(alpha: 0.7),
                         borderRadius: const BorderRadius.only(
                           bottomLeft: Radius.circular(3),
                           bottomRight: Radius.circular(3),
@@ -4043,14 +3692,14 @@ class _DailyReviewScreenV2State extends State<DailyReviewScreenV2>
           const SizedBox(width: 8),
           // Ondas de radiación
           ...List.generate(3, (index) {
-            final opacity = intensity * (1 - (index * 0.3));
+            final waveOpacity = (intensity * (1 - (index * 0.3))).clamp(0.0, 1.0);
             return Padding(
               padding: const EdgeInsets.only(right: 2),
               child: Container(
                 width: 3,
                 height: (8 + index * 3).toDouble(),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(opacity.clamp(0.0, 1.0)),
+                  color: color.withValues(alpha: waveOpacity),
                   borderRadius: BorderRadius.circular(1.5),
                 ),
               ),

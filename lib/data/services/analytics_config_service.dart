@@ -414,8 +414,7 @@ class AnalyticsConfigService {
   /// Auto-adjust configuration based on user data patterns
   Future<AnalyticsConfig> adaptConfigToUserData(int userId) async {
     final config = await getConfigForUser(userId);
-    final db = await _databaseService.database;
-    
+
     // Analyze user's data patterns
     final dataAnalysis = await _analyzeUserDataPatterns(userId);
     
@@ -456,8 +455,6 @@ class AnalyticsConfigService {
 
   /// Get configuration optimized for user's experience level
   Future<AnalyticsConfig> getOptimizedConfigForUser(int userId) async {
-    final db = await _databaseService.database;
-    
     // Calculate user's experience level based on usage patterns
     final experienceLevel = await _calculateUserExperienceLevel(userId);
     
@@ -546,8 +543,8 @@ class AnalyticsConfigService {
 
   Future<void> _initializeDefaultConfigurations() async {
     // Initialize global configuration
-    final globalConfig = await getGlobalConfig();
-    
+    await getGlobalConfig();
+
     // Initialize default presets
     final presets = AnalyticsConfigPreset.getDefaultPresets();
     for (final preset in presets) {

@@ -4,11 +4,14 @@
 // ============================================================================
 
 import 'package:flutter/foundation.dart';
+import 'package:logger/logger.dart';
 import '../../data/models/analytics_v3_models.dart';
 import '../../data/models/analytics_config_model.dart';
 import '../../data/services/analytics_v3_extension.dart';
 import '../../data/services/analytics_config_service.dart';
 import '../../data/services/optimized_database_service.dart';
+
+final _logger = Logger();
 
 class AnalyticsV3Provider extends ChangeNotifier {
   final AnalyticsV3Extension _analyticsExtension;
@@ -54,18 +57,18 @@ class AnalyticsV3Provider extends ChangeNotifier {
   /// Initialize the analytics provider and configuration system
   Future<void> initialize() async {
     if (_isInitialized) {
-      if (kDebugMode) print('🔄 Analytics V3: Already initialized');
+      if (kDebugMode) _logger.d('🔄 Analytics V3: Already initialized');
       return;
     }
     
     try {
-      if (kDebugMode) print('🚀 Analytics V3: Starting initialization');
+      if (kDebugMode) _logger.d('🚀 Analytics V3: Starting initialization');
       await _analyticsExtension.initialize();
       _isInitialized = true;
-      if (kDebugMode) print('✅ Analytics V3: Initialization completed successfully');
+      if (kDebugMode) _logger.d('✅ Analytics V3: Initialization completed successfully');
     } catch (e) {
       _setError('Error initializing analytics: $e');
-      if (kDebugMode) print('❌ Analytics V3 Initialization Error: $e');
+      if (kDebugMode) _logger.e('❌ Analytics V3 Initialization Error: $e');
       rethrow;
     }
   }
@@ -104,7 +107,7 @@ class AnalyticsV3Provider extends ChangeNotifier {
   
   bool get hasData {
     final result = _analyticsData != null;
-    if (kDebugMode) print('🔍 Provider hasData: $result (analyticsData is ${_analyticsData != null ? "not null" : "null"})');
+    if (kDebugMode) _logger.d('🔍 Provider hasData: $result (analyticsData is ${_analyticsData != null ? "not null" : "null"})');
     return result;
   }
   
@@ -121,10 +124,10 @@ class AnalyticsV3Provider extends ChangeNotifier {
   
   /// Load comprehensive analytics for the specified user and period
   Future<void> loadAnalytics(int userId, {int? periodDays}) async {
-    if (kDebugMode) print('🔍 Analytics V3: Starting loadAnalytics for user $userId');
+    if (kDebugMode) _logger.d('🔍 Analytics V3: Starting loadAnalytics for user $userId');
     
     await _ensureInitialized();
-    if (kDebugMode) print('✅ Analytics V3: Initialization completed');
+    if (kDebugMode) _logger.d('✅ Analytics V3: Initialization completed');
     
     final period = periodDays ?? _selectedPeriodDays;
     
@@ -132,9 +135,9 @@ class AnalyticsV3Provider extends ChangeNotifier {
     _clearError();
     
     try {
-      if (kDebugMode) print('📊 Analytics V3: Generating comprehensive analytics for $period days');
+      if (kDebugMode) _logger.d('📊 Analytics V3: Generating comprehensive analytics for $period days');
       final analytics = await _analyticsExtension.generateComprehensiveAnalytics(userId, period);
-      if (kDebugMode) print('✅ Analytics V3: Generated analytics successfully');
+      if (kDebugMode) _logger.d('✅ Analytics V3: Generated analytics successfully');
       
       _analyticsData = analytics;
       _wellnessScore = analytics.wellnessScore;
@@ -148,13 +151,13 @@ class AnalyticsV3Provider extends ChangeNotifier {
       _invalidateChartCache();
       
       if (kDebugMode) {
-        print('📈 Analytics V3: Data loaded successfully');
-        print('   - Wellness Score: ${_wellnessScore?.overallScore}');
-        print('   - Activity Correlations: ${_activityCorrelations.length}');
-        print('   - Sleep Pattern: ${_sleepPattern?.averageSleepHours}h');
-        print('   - Stress Management: ${_stressManagement?.averageStressLevel}');
-        print('   - Goal Analytics: ${_goalAnalytics?.completionRate}');
-        print('   - Has Data: $hasData');
+        _logger.d('📈 Analytics V3: Data loaded successfully');
+        _logger.d('   - Wellness Score: ${_wellnessScore?.overallScore}');
+        _logger.d('   - Activity Correlations: ${_activityCorrelations.length}');
+        _logger.d('   - Sleep Pattern: ${_sleepPattern?.averageSleepHours}h');
+        _logger.d('   - Stress Management: ${_stressManagement?.averageStressLevel}');
+        _logger.d('   - Goal Analytics: ${_goalAnalytics?.completionRate}');
+        _logger.d('   - Has Data: $hasData');
       }
       
     } catch (e, stackTrace) {
@@ -182,9 +185,9 @@ class AnalyticsV3Provider extends ChangeNotifier {
       _setError(userMessage);
       
       if (kDebugMode) {
-        print('❌ $debugMessage');
-        print('📍 Stack trace: $stackTrace');
-        print('🔧 Error type: ${e.runtimeType}');
+        _logger.e('❌ $debugMessage');
+        _logger.d('📍 Stack trace: $stackTrace');
+        _logger.e('🔧 Error type: ${e.runtimeType}');
       }
       
       // Clear partial data on error to prevent inconsistent state
@@ -514,7 +517,7 @@ class AnalyticsV3Provider extends ChangeNotifier {
   Future<void> loadProductivityPatterns(int userId, {int? periodDays}) async {
     final period = periodDays ?? _selectedPeriodDays;
     
-    if (kDebugMode) print('🔄 Loading productivity patterns for user $userId, period $period days');
+    if (kDebugMode) _logger.d('🔄 Loading productivity patterns for user $userId, period $period days');
     
     _setLoadingProductivity(true);
     _clearError();
@@ -522,14 +525,14 @@ class AnalyticsV3Provider extends ChangeNotifier {
     try {
       _productivityPatterns = await _analyticsExtension.analyzeProductivityPatterns(userId, period);
       if (kDebugMode) {
-        print('✅ Productivity patterns loaded: ${_productivityPatterns != null ? "success" : "null"}');
+        _logger.d('✅ Productivity patterns loaded: ${_productivityPatterns != null ? "success" : "null"}');
         if (_productivityPatterns != null) {
-          print('📊 Productivity data keys: ${_productivityPatterns!.keys}');
+          _logger.d('📊 Productivity data keys: ${_productivityPatterns!.keys}');
         }
       }
       _invalidateChartCache();
     } catch (e) {
-      if (kDebugMode) print('❌ Error loading productivity patterns: $e');
+      if (kDebugMode) _logger.e('❌ Error loading productivity patterns: $e');
       _setError('Error al cargar patrones de productividad: $e');
     } finally {
       _setLoadingProductivity(false);
@@ -623,48 +626,48 @@ class AnalyticsV3Provider extends ChangeNotifier {
 
   /// Load all new analytics methods with enhanced error handling
   Future<void> loadAllNewAnalytics(int userId, {int? periodDays}) async {
-    if (kDebugMode) print('🔄 Provider: Starting loadAllNewAnalytics for user $userId');
+    if (kDebugMode) _logger.d('🔄 Provider: Starting loadAllNewAnalytics for user $userId');
     
     try {
       // Load analytics with individual error handling instead of failing all on one error
-      final results = await Future.wait([
+      await Future.wait([
         loadProductivityPatterns(userId, periodDays: periodDays).catchError((e) {
-          if (kDebugMode) print('❌ Provider: Productivity patterns failed: $e');
+          if (kDebugMode) _logger.e('❌ Provider: Productivity patterns failed: $e');
           return Future<void>.value(); // Continue with other analytics
         }),
         loadMoodStability(userId, periodDays: periodDays).catchError((e) {
-          if (kDebugMode) print('❌ Provider: Mood stability failed: $e');
+          if (kDebugMode) _logger.e('❌ Provider: Mood stability failed: $e');
           return Future<void>.value();
         }),
         loadLifestyleBalance(userId, periodDays: periodDays).catchError((e) {
-          if (kDebugMode) print('❌ Provider: Lifestyle balance failed: $e');
+          if (kDebugMode) _logger.e('❌ Provider: Lifestyle balance failed: $e');
           return Future<void>.value();
         }),
         loadEnergyPatterns(userId, periodDays: periodDays).catchError((e) {
-          if (kDebugMode) print('❌ Provider: Energy patterns failed: $e');
+          if (kDebugMode) _logger.e('❌ Provider: Energy patterns failed: $e');
           return Future<void>.value();
         }),
         loadSocialWellness(userId, periodDays: periodDays).catchError((e) {
-          if (kDebugMode) print('❌ Provider: Social wellness failed: $e');
+          if (kDebugMode) _logger.e('❌ Provider: Social wellness failed: $e');
           return Future<void>.value();
         }),
         loadHabitConsistency(userId, periodDays: periodDays).catchError((e) {
-          if (kDebugMode) print('❌ Provider: Habit consistency failed: $e');
+          if (kDebugMode) _logger.e('❌ Provider: Habit consistency failed: $e');
           return Future<void>.value();
         }),
       ]);
       
       if (kDebugMode) {
-        print('✅ Provider: New analytics loading completed (some may have failed individually)');
-        print('   - productivityPatterns: ${_productivityPatterns != null ? "loaded" : "null"}');
-        print('   - moodStability: ${_moodStability != null ? "loaded" : "null"}');
-        print('   - lifestyleBalance: ${_lifestyleBalance != null ? "loaded" : "null"}');
-        print('   - energyPatterns: ${_energyPatterns != null ? "loaded" : "null"}');
-        print('   - socialWellness: ${_socialWellness != null ? "loaded" : "null"}');
-        print('   - habitConsistency: ${_habitConsistency != null ? "loaded" : "null"}');
+        _logger.e('✅ Provider: New analytics loading completed (some may have failed individually)');
+        _logger.d('   - productivityPatterns: ${_productivityPatterns != null ? "loaded" : "null"}');
+        _logger.d('   - moodStability: ${_moodStability != null ? "loaded" : "null"}');
+        _logger.d('   - lifestyleBalance: ${_lifestyleBalance != null ? "loaded" : "null"}');
+        _logger.d('   - energyPatterns: ${_energyPatterns != null ? "loaded" : "null"}');
+        _logger.d('   - socialWellness: ${_socialWellness != null ? "loaded" : "null"}');
+        _logger.d('   - habitConsistency: ${_habitConsistency != null ? "loaded" : "null"}');
       }
     } catch (e) {
-      if (kDebugMode) print('❌ Provider: Critical error in loadAllNewAnalytics: $e');
+      if (kDebugMode) _logger.e('❌ Provider: Critical error in loadAllNewAnalytics: $e');
       // Don't rethrow - allow app to continue with partial data
     }
   }
@@ -794,7 +797,7 @@ class AnalyticsV3Provider extends ChangeNotifier {
   
   /// Clear partial data to prevent inconsistent state after errors
   void _clearPartialData() {
-    if (kDebugMode) print('🧹 Analytics V3: Clearing partial data due to error');
+    if (kDebugMode) _logger.e('🧹 Analytics V3: Clearing partial data due to error');
     // Only clear data that might be in an inconsistent state, preserve what's valid
     // Don't clear everything as some parts might have loaded successfully
   }
@@ -955,12 +958,12 @@ class AnalyticsV3Provider extends ChangeNotifier {
   /// Check if there's sufficient data for overall analytics
   bool get hasSufficientData {
     if (kDebugMode) {
-      print('🔍 Provider hasSufficientData check:');
-      print('   - Wellness level: ${_wellnessScore?.wellnessLevel}');
-      print('   - Sleep pattern: ${_sleepPattern?.sleepPattern}');
-      print('   - Stress trend: ${_stressManagement?.stressTrend}');
-      print('   - Goal performance: ${_goalAnalytics?.performanceTrend}');
-      print('   - Has data: $hasData');
+      _logger.d('🔍 Provider hasSufficientData check:');
+      _logger.d('   - Wellness level: ${_wellnessScore?.wellnessLevel}');
+      _logger.d('   - Sleep pattern: ${_sleepPattern?.sleepPattern}');
+      _logger.d('   - Stress trend: ${_stressManagement?.stressTrend}');
+      _logger.d('   - Goal performance: ${_goalAnalytics?.performanceTrend}');
+      _logger.d('   - Has data: $hasData');
     }
     
     if (_wellnessScore?.wellnessLevel == 'insufficient_data') return false;

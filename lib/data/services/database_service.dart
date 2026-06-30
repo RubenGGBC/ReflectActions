@@ -905,7 +905,6 @@ class DatabaseService {
 
       final basicStats = await getUserComprehensiveStatistics(userId);
       final streakDays = basicStats['streak_days'] ?? 0;
-      final totalEntries = basicStats['total_entries'] ?? 0;
       final totalMoments = basicStats['total_moments'] ?? 0;
 
       final moodImprovementResult = await db.rawQuery('''

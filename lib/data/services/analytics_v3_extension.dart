@@ -5,10 +5,13 @@
 // ============================================================================
 
 import 'dart:math' as math;
+import 'package:logger/logger.dart';
 import '../models/analytics_v3_models.dart';
 import '../models/analytics_config_model.dart';
 import 'optimized_database_service.dart';
 import 'analytics_config_service.dart';
+
+final _logger = Logger();
 
 class AnalyticsV3Extension {
   final OptimizedDatabaseService _databaseService;
@@ -48,13 +51,13 @@ class AnalyticsV3Extension {
         _userConfigCache[userId] = config;
         return config;
       } else {
-        print('❌ Invalid configuration for user $userId, using defaults');
+        _logger.e('❌ Invalid configuration for user $userId, using defaults');
         final defaultConfig = AnalyticsConfig.getDefault();
         _userConfigCache[userId] = defaultConfig;
         return defaultConfig;
       }
     } catch (e) {
-      print('❌ Failed to load configuration for user $userId: $e');
+      _logger.e('❌ Failed to load configuration for user $userId: $e');
       final defaultConfig = AnalyticsConfig.getDefault();
       _userConfigCache[userId] = defaultConfig;
       return defaultConfig;
@@ -67,24 +70,24 @@ class AnalyticsV3Extension {
       // Validate wellness configuration
       final wellnessConfig = config.wellnessConfig;
       if (wellnessConfig.minimumDataPoints <= 0 || wellnessConfig.minimumDataPoints > 100) {
-        print('❌ Config validation: Invalid wellness minimumDataPoints: ${wellnessConfig.minimumDataPoints}');
+        _logger.e('❌ Config validation: Invalid wellness minimumDataPoints: ${wellnessConfig.minimumDataPoints}');
         return false;
       }
       
       if (wellnessConfig.componentWeights.isEmpty) {
-        print('❌ Config validation: Empty component weights');
+        _logger.e('❌ Config validation: Empty component weights');
         return false;
       }
       
       // Validate correlation configuration
       final corrConfig = config.correlationConfig;
       if (corrConfig.minimumDataPoints <= 0 || corrConfig.minimumDataPoints > 1000) {
-        print('❌ Config validation: Invalid correlation minimumDataPoints: ${corrConfig.minimumDataPoints}');
+        _logger.e('❌ Config validation: Invalid correlation minimumDataPoints: ${corrConfig.minimumDataPoints}');
         return false;
       }
       
       if (corrConfig.strengthThresholds.isEmpty) {
-        print('❌ Config validation: Empty strength thresholds');
+        _logger.e('❌ Config validation: Empty strength thresholds');
         return false;
       }
       
@@ -93,13 +96,13 @@ class AnalyticsV3Extension {
       if ((thresholds['weak'] ?? 0.0) < 0.0 || (thresholds['weak'] ?? 0.0) > 1.0 ||
           (thresholds['moderate'] ?? 0.0) < 0.0 || (thresholds['moderate'] ?? 0.0) > 1.0 ||
           (thresholds['strong'] ?? 0.0) < 0.0 || (thresholds['strong'] ?? 0.0) > 1.0) {
-        print('❌ Config validation: Invalid threshold values');
+        _logger.e('❌ Config validation: Invalid threshold values');
         return false;
       }
       
       return true;
     } catch (e) {
-      print('❌ Config validation error: $e');
+      _logger.e('❌ Config validation error: $e');
       return false;
     }
   }
@@ -115,40 +118,40 @@ class AnalyticsV3Extension {
   // ============================================================================
   
   Future<AnalyticsV3Model> generateComprehensiveAnalytics(int userId, int periodDays) async {
-    print('🚀 Analytics Extension: Starting comprehensive analytics for user $userId, period $periodDays days');
+    _logger.d('🚀 Analytics Extension: Starting comprehensive analytics for user $userId, period $periodDays days');
     
     // Generate all analytics components
-    print('📊 Calculating wellness score...');
+    _logger.d('📊 Calculating wellness score...');
     final wellnessScore = await calculateWellnessScore(userId, periodDays);
-    print('✅ Wellness score: ${wellnessScore.overallScore}');
+    _logger.d('✅ Wellness score: ${wellnessScore.overallScore}');
     
-    print('🔗 Analyzing activity correlations...');
+    _logger.d('🔗 Analyzing activity correlations...');
     final activityCorrelations = await analyzeActivityCorrelations(userId, periodDays);
-    print('✅ Found ${activityCorrelations.length} correlations');
+    _logger.d('✅ Found ${activityCorrelations.length} correlations');
     
-    print('😴 Analyzing sleep patterns...');
+    _logger.d('😴 Analyzing sleep patterns...');
     final sleepPattern = await analyzeSleepPatterns(userId, periodDays);
-    print('✅ Sleep pattern: ${sleepPattern.sleepPattern}');
+    _logger.d('✅ Sleep pattern: ${sleepPattern.sleepPattern}');
     
-    print('😰 Analyzing stress management...');
+    _logger.d('😰 Analyzing stress management...');
     final stressManagement = await analyzeStressManagement(userId, periodDays);
-    print('✅ Stress trend: ${stressManagement.stressTrend}');
+    _logger.d('✅ Stress trend: ${stressManagement.stressTrend}');
     
-    print('🎯 Analyzing goal performance...');
+    _logger.d('🎯 Analyzing goal performance...');
     final goalAnalytics = await analyzeGoalPerformance(userId, periodDays);
-    print('✅ Goal performance: ${goalAnalytics.performanceTrend}');
+    _logger.d('✅ Goal performance: ${goalAnalytics.performanceTrend}');
     
-    print('⏰ Analyzing temporal patterns...');
+    _logger.d('⏰ Analyzing temporal patterns...');
     final temporalPatterns = await analyzeTemporalPatterns(userId, periodDays);
-    print('✅ Temporal patterns analyzed');
+    _logger.d('✅ Temporal patterns analyzed');
     
     // Generate summary metrics
-    print('📈 Generating summary metrics...');
+    _logger.d('📈 Generating summary metrics...');
     final summaryMetrics = await _generateSummaryMetrics(userId, periodDays);
-    print('✅ Summary metrics generated');
+    _logger.d('✅ Summary metrics generated');
     
     // Generate key insights
-    print('💡 Generating key insights...');
+    _logger.d('💡 Generating key insights...');
     final keyInsights = _generateKeyInsights(
       wellnessScore, 
       activityCorrelations, 
@@ -156,7 +159,7 @@ class AnalyticsV3Extension {
       stressManagement,
       goalAnalytics
     );
-    print('✅ Generated ${keyInsights.length} key insights');
+    _logger.d('✅ Generated ${keyInsights.length} key insights');
 
     final analyticsModel = AnalyticsV3Model(
       generatedAt: DateTime.now(),
@@ -172,7 +175,7 @@ class AnalyticsV3Extension {
       keyInsights: keyInsights,
     );
     
-    print('🎉 Analytics Extension: Comprehensive analytics completed successfully');
+    _logger.d('🎉 Analytics Extension: Comprehensive analytics completed successfully');
     return analyticsModel;
   }
 
@@ -181,7 +184,7 @@ class AnalyticsV3Extension {
   // ============================================================================
   
   Future<WellnessScoreModel> calculateWellnessScore(int userId, int periodDays) async {
-    print('📊 Wellness Score: Calculating for user $userId, period $periodDays days');
+    _logger.d('📊 Wellness Score: Calculating for user $userId, period $periodDays days');
     
     try {
       // Validate input parameters
@@ -196,9 +199,9 @@ class AnalyticsV3Extension {
       try {
         config = await _getUserConfig(userId);
         wellnessConfig = config.wellnessConfig;
-        print('✅ Wellness Score: Configuration loaded successfully');
+        _logger.d('✅ Wellness Score: Configuration loaded successfully');
       } catch (configError) {
-        print('❌ Wellness Score: Configuration error - $configError');
+        _logger.e('❌ Wellness Score: Configuration error - $configError');
         // Return insufficient data model instead of throwing
         return _createDefaultWellnessScore(WellnessScoreConfig.getDefault());
       }
@@ -210,7 +213,7 @@ class AnalyticsV3Extension {
         final endDate = DateTime.now();
         final startDate = endDate.subtract(Duration(days: periodDays));
         
-        print('📅 Wellness Score: Querying data from ${startDate.toIso8601String()} to ${endDate.toIso8601String()}');
+        _logger.d('📅 Wellness Score: Querying data from ${startDate.toIso8601String()} to ${endDate.toIso8601String()}');
         
         result = await db.rawQuery('''
           SELECT 
@@ -231,27 +234,27 @@ class AnalyticsV3Extension {
             AND (mood_score IS NOT NULL OR energy_level IS NOT NULL)
         ''', [userId, startDate.toIso8601String(), endDate.toIso8601String()]);
         
-        print('✅ Wellness Score: Database query executed successfully');
+        _logger.d('✅ Wellness Score: Database query executed successfully');
         
       } catch (dbError) {
-        print('❌ Wellness Score: Database query failed - $dbError');
+        _logger.e('❌ Wellness Score: Database query failed - $dbError');
         return _createDefaultWellnessScore(wellnessConfig);
       }
 
-    print('🔍 Wellness Score: Query returned ${result.length} rows');
+    _logger.d('🔍 Wellness Score: Query returned ${result.length} rows');
     if (result.isNotEmpty) {
       final data = result.first;
-      print('📈 Wellness Score Data:');
-      print('   - Total entries: ${data['total_entries']}');
-      print('   - Mood entries: ${data['mood_entries']}');
-      print('   - Avg mood: ${data['avg_mood']}');
-      print('   - Avg energy: ${data['avg_energy']}');
-      print('   - Avg stress: ${data['avg_stress']}');
-      print('   - Minimum required: ${wellnessConfig.minimumDataPoints}');
+      _logger.d('📈 Wellness Score Data:');
+      _logger.d('   - Total entries: ${data['total_entries']}');
+      _logger.d('   - Mood entries: ${data['mood_entries']}');
+      _logger.d('   - Avg mood: ${data['avg_mood']}');
+      _logger.d('   - Avg energy: ${data['avg_energy']}');
+      _logger.d('   - Avg stress: ${data['avg_stress']}');
+      _logger.d('   - Minimum required: ${wellnessConfig.minimumDataPoints}');
     }
 
     if (result.isEmpty || result.first['total_entries'] == 0) {
-      print('⚠️ Wellness Score: No data found, returning default score');
+      _logger.d('⚠️ Wellness Score: No data found, returning default score');
       return _createDefaultWellnessScore(wellnessConfig);
     }
 
@@ -260,11 +263,11 @@ class AnalyticsV3Extension {
     
     // Use dynamic minimum data points from configuration
     if (totalEntries < wellnessConfig.minimumDataPoints) {
-      print('⚠️ Wellness Score: Insufficient data - found $totalEntries entries, need ${wellnessConfig.minimumDataPoints}');
+      _logger.d('⚠️ Wellness Score: Insufficient data - found $totalEntries entries, need ${wellnessConfig.minimumDataPoints}');
       return _createDefaultWellnessScore(wellnessConfig);
     }
     
-    print('✅ Wellness Score: Sufficient data found - $totalEntries entries >= ${wellnessConfig.minimumDataPoints} required');
+    _logger.d('✅ Wellness Score: Sufficient data found - $totalEntries entries >= ${wellnessConfig.minimumDataPoints} required');
     
     // Calculate component scores with proper validation and normalization
     final moodScore = _validateAndNormalizeScore(
@@ -372,8 +375,8 @@ class AnalyticsV3Extension {
       );
       
     } catch (error, stackTrace) {
-      print('❌ Wellness Score: Unexpected error - $error');
-      print('📍 Wellness Score Stack Trace: $stackTrace');
+      _logger.e('❌ Wellness Score: Unexpected error - $error');
+      _logger.d('📍 Wellness Score Stack Trace: $stackTrace');
       
       // Return safe default instead of crashing
       return _createDefaultWellnessScore(WellnessScoreConfig.getDefault());
@@ -385,12 +388,12 @@ class AnalyticsV3Extension {
   // ============================================================================
   
   Future<List<ActivityCorrelationModel>> analyzeActivityCorrelations(int userId, int periodDays) async {
-    print('🔗 Activity Correlations: Starting analysis for user $userId, period $periodDays days');
+    _logger.d('🔗 Activity Correlations: Starting analysis for user $userId, period $periodDays days');
     
     try {
       // Validate input parameters
       if (userId <= 0 || periodDays <= 0) {
-        print('❌ Activity Correlations: Invalid parameters - userId: $userId, periodDays: $periodDays');
+        _logger.e('❌ Activity Correlations: Invalid parameters - userId: $userId, periodDays: $periodDays');
         return []; // Return empty list instead of throwing
       }
       
@@ -398,68 +401,68 @@ class AnalyticsV3Extension {
       
       // Try correlations with columns that actually have data
     // Energy vs Stress (both have data according to wellness calculation)
-    print('⚡ Analyzing Energy vs Stress correlation...');
+    _logger.d('⚡ Analyzing Energy vs Stress correlation...');
     final energyStressCorr = await _calculateActivityCorrelation(
       userId, periodDays, 'energy_level', 'stress_level', 'Nivel de Energía', 'Nivel de Estrés', invertTarget: true
     );
     if (energyStressCorr != null) {
-      print('✅ Energy-Stress correlation found: ${energyStressCorr.correlationStrength}');
+      _logger.d('✅ Energy-Stress correlation found: ${energyStressCorr.correlationStrength}');
       correlations.add(energyStressCorr);
     } else {
-      print('❌ Energy-Stress correlation returned null');
+      _logger.e('❌ Energy-Stress correlation returned null');
     }
 
     // Try some backup correlations with columns that might have data
-    print('😴 Analyzing Sleep Hours vs Energy correlation...');
+    _logger.d('😴 Analyzing Sleep Hours vs Energy correlation...');
     final sleepEnergyCorr = await _calculateActivityCorrelation(
       userId, periodDays, 'sleep_hours', 'energy_level', 'Horas de Sueño', 'Nivel de Energía'
     );
     if (sleepEnergyCorr != null) {
-      print('✅ Sleep Hours-Energy correlation found: ${sleepEnergyCorr.correlationStrength}');
+      _logger.d('✅ Sleep Hours-Energy correlation found: ${sleepEnergyCorr.correlationStrength}');
       correlations.add(sleepEnergyCorr);
     } else {
-      print('❌ Sleep Hours-Energy correlation returned null');
+      _logger.e('❌ Sleep Hours-Energy correlation returned null');
     }
 
-    print('🏃 Analyzing Exercise Minutes vs Energy correlation...');
+    _logger.d('🏃 Analyzing Exercise Minutes vs Energy correlation...');
     final exerciseEnergyCorr = await _calculateActivityCorrelation(
       userId, periodDays, 'exercise_minutes', 'energy_level', 'Minutos de Ejercicio', 'Nivel de Energía'
     );
     if (exerciseEnergyCorr != null) {
-      print('✅ Exercise Minutes-Energy correlation found: ${exerciseEnergyCorr.correlationStrength}');
+      _logger.d('✅ Exercise Minutes-Energy correlation found: ${exerciseEnergyCorr.correlationStrength}');
       correlations.add(exerciseEnergyCorr);
     } else {
-      print('❌ Exercise Minutes-Energy correlation returned null');
+      _logger.e('❌ Exercise Minutes-Energy correlation returned null');
     }
 
-    print('🧘 Analyzing Meditation vs Stress correlation...');
+    _logger.d('🧘 Analyzing Meditation vs Stress correlation...');
     final meditationStressCorr = await _calculateActivityCorrelation(
       userId, periodDays, 'meditation_minutes', 'stress_level', 'Minutos de Meditación', 'Nivel de Estrés', invertTarget: true
     );
     if (meditationStressCorr != null) {
-      print('✅ Meditation-Stress correlation found: ${meditationStressCorr.correlationStrength}');
+      _logger.d('✅ Meditation-Stress correlation found: ${meditationStressCorr.correlationStrength}');
       correlations.add(meditationStressCorr);
     } else {
-      print('❌ Meditation-Stress correlation returned null');
+      _logger.e('❌ Meditation-Stress correlation returned null');
     }
 
-    print('💧 Analyzing Water vs Energy correlation...');
+    _logger.d('💧 Analyzing Water vs Energy correlation...');
     final waterEnergyCorr = await _calculateActivityCorrelation(
       userId, periodDays, 'water_intake', 'energy_level', 'Consumo de Agua', 'Nivel de Energía'
     );
     if (waterEnergyCorr != null) {
-      print('✅ Water-Energy correlation found: ${waterEnergyCorr.correlationStrength}');
+      _logger.d('✅ Water-Energy correlation found: ${waterEnergyCorr.correlationStrength}');
       correlations.add(waterEnergyCorr);
     } else {
-      print('❌ Water-Energy correlation returned null');
+      _logger.e('❌ Water-Energy correlation returned null');
     }
 
-      print('🔗 Activity Correlations: Final count = ${correlations.length}');
+      _logger.d('🔗 Activity Correlations: Final count = ${correlations.length}');
       return correlations;
       
     } catch (error, stackTrace) {
-      print('❌ Activity Correlations: Unexpected error - $error');
-      print('📍 Activity Correlations Stack Trace: $stackTrace');
+      _logger.e('❌ Activity Correlations: Unexpected error - $error');
+      _logger.d('📍 Activity Correlations Stack Trace: $stackTrace');
       
       // Return empty list instead of crashing
       return [];
@@ -470,8 +473,8 @@ class AnalyticsV3Extension {
     int userId, int periodDays, String activityColumn, String targetColumn, 
     String activityName, String targetName, {bool invertTarget = false}
   ) async {
-    print('📊 Correlation Analysis: $activityName vs $targetName');
-    print('   Activity column: $activityColumn, Target column: $targetColumn');
+    _logger.d('📊 Correlation Analysis: $activityName vs $targetName');
+    _logger.d('   Activity column: $activityColumn, Target column: $targetColumn');
     
     // Get user configuration for correlation analysis
     final config = await _getUserConfig(userId);
@@ -494,17 +497,17 @@ class AnalyticsV3Extension {
       ORDER BY entry_date
     ''', [userId, startDate.toIso8601String(), endDate.toIso8601String()]);
 
-    print('📈 Correlation Data: Found ${result.length} data points');
-    print('   Required minimum: ${correlationConfig.minimumDataPoints}');
+    _logger.d('📈 Correlation Data: Found ${result.length} data points');
+    _logger.d('   Required minimum: ${correlationConfig.minimumDataPoints}');
     
     if (result.isNotEmpty) {
       final firstRow = result.first;
-      print('   Sample data: activity=${firstRow['activity_value']}, target=${firstRow['target_value']}');
+      _logger.d('   Sample data: activity=${firstRow['activity_value']}, target=${firstRow['target_value']}');
     }
 
     // Use dynamic minimum data points from configuration
     if (result.length < correlationConfig.minimumDataPoints) {
-      print('⚠️ Insufficient data for correlation: ${result.length} < ${correlationConfig.minimumDataPoints}');
+      _logger.d('⚠️ Insufficient data for correlation: ${result.length} < ${correlationConfig.minimumDataPoints}');
       // Return null for insufficient data instead of a 0-strength correlation
       return null;
     }
@@ -523,7 +526,7 @@ class AnalyticsV3Extension {
         // Validate data quality
         if (activityValue == 0.0 || rawTargetValue == 0.0 || dateString == null) {
           invalidDataPoints++;
-          print('⚠️ Correlation: Skipping invalid data point - activity: $activityValue, target: $rawTargetValue, date: $dateString');
+          _logger.d('⚠️ Correlation: Skipping invalid data point - activity: $activityValue, target: $rawTargetValue, date: $dateString');
           continue;
         }
         
@@ -535,7 +538,7 @@ class AnalyticsV3Extension {
         // Validate ranges
         if (activityValue < 0 || activityValue > 20 || targetValue < 0 || targetValue > 10) {
           invalidDataPoints++;
-          print('⚠️ Correlation: Skipping out-of-range data - activity: $activityValue, target: $targetValue');
+          _logger.d('⚠️ Correlation: Skipping out-of-range data - activity: $activityValue, target: $targetValue');
           continue;
         }
         
@@ -546,19 +549,19 @@ class AnalyticsV3Extension {
         ));
       } catch (e) {
         invalidDataPoints++;
-        print('❌ Correlation: Error processing data point - $e');
+        _logger.e('❌ Correlation: Error processing data point - $e');
         continue;
       }
     }
     
     // Check data quality after filtering
     if (invalidDataPoints > result.length * 0.3) {
-      print('⚠️ Correlation: High invalid data ratio - ${invalidDataPoints}/${result.length} invalid points');
+      _logger.d('⚠️ Correlation: High invalid data ratio - ${invalidDataPoints}/${result.length} invalid points');
     }
     
     // Re-check minimum data after filtering
     if (dataPoints.length < correlationConfig.minimumDataPoints) {
-      print('⚠️ Correlation: Insufficient valid data points after filtering: ${dataPoints.length} < ${correlationConfig.minimumDataPoints}');
+      _logger.d('⚠️ Correlation: Insufficient valid data points after filtering: ${dataPoints.length} < ${correlationConfig.minimumDataPoints}');
       return null;
     }
 
@@ -1013,7 +1016,7 @@ class AnalyticsV3Extension {
   /// Safely cast a value to int with validation and error handling
   int _safeIntCast(dynamic value, String fieldName) {
     if (value == null) {
-      print('⚠️ SafeCast: $fieldName is null, defaulting to 0');
+      _logger.d('⚠️ SafeCast: $fieldName is null, defaulting to 0');
       return 0;
     }
     
@@ -1023,7 +1026,7 @@ class AnalyticsV3Extension {
     
     if (value is double) {
       if (!value.isFinite) {
-        print('❌ SafeCast: $fieldName is not finite ($value), defaulting to 0');
+        _logger.e('❌ SafeCast: $fieldName is not finite ($value), defaulting to 0');
         return 0;
       }
       return value.round();
@@ -1032,26 +1035,26 @@ class AnalyticsV3Extension {
     if (value is String) {
       final parsed = int.tryParse(value);
       if (parsed == null) {
-        print('❌ SafeCast: Could not parse $fieldName string "$value" to int, defaulting to 0');
+        _logger.e('❌ SafeCast: Could not parse $fieldName string "$value" to int, defaulting to 0');
         return 0;
       }
       return parsed;
     }
     
-    print('❌ SafeCast: $fieldName has unsupported type ${value.runtimeType}, defaulting to 0');
+    _logger.e('❌ SafeCast: $fieldName has unsupported type ${value.runtimeType}, defaulting to 0');
     return 0;
   }
   
   /// Safely cast a value to double with validation and error handling
   double _safeDoubleCast(dynamic value, String fieldName) {
     if (value == null) {
-      print('⚠️ SafeCast: $fieldName is null, defaulting to 0.0');
+      _logger.d('⚠️ SafeCast: $fieldName is null, defaulting to 0.0');
       return 0.0;
     }
     
     if (value is double) {
       if (!value.isFinite) {
-        print('❌ SafeCast: $fieldName is not finite ($value), defaulting to 0.0');
+        _logger.e('❌ SafeCast: $fieldName is not finite ($value), defaulting to 0.0');
         return 0.0;
       }
       return value;
@@ -1064,13 +1067,13 @@ class AnalyticsV3Extension {
     if (value is String) {
       final parsed = double.tryParse(value);
       if (parsed == null || !parsed.isFinite) {
-        print('❌ SafeCast: Could not parse $fieldName string "$value" to double, defaulting to 0.0');
+        _logger.e('❌ SafeCast: Could not parse $fieldName string "$value" to double, defaulting to 0.0');
         return 0.0;
       }
       return parsed;
     }
     
-    print('❌ SafeCast: $fieldName has unsupported type ${value.runtimeType}, defaulting to 0.0');
+    _logger.e('❌ SafeCast: $fieldName has unsupported type ${value.runtimeType}, defaulting to 0.0');
     return 0.0;
   }
 
@@ -1079,12 +1082,12 @@ class AnalyticsV3Extension {
   double _validateAndNormalizeScore(double? value, String scoreType, double defaultValue) {
     // Enhanced validation with detailed logging
     if (value == null) {
-      print('⚠️ Validation: $scoreType value is null, using default: $defaultValue');
+      _logger.d('⚠️ Validation: $scoreType value is null, using default: $defaultValue');
       return 0.0; // Use 0.0 to indicate missing data instead of fake defaults
     }
     
     if (!value.isFinite || value.isNaN) {
-      print('❌ Validation: $scoreType value is not finite ($value), marking as invalid');
+      _logger.e('❌ Validation: $scoreType value is not finite ($value), marking as invalid');
       return 0.0; // Use 0.0 to indicate invalid data instead of fake defaults
     }
     
@@ -1121,7 +1124,7 @@ class AnalyticsV3Extension {
     
     // Check if value is within reasonable bounds
     if (value < minValue || value > maxValue) {
-      print('⚠️ Validation: $scoreType value $value is outside valid range [$minValue-$maxValue], clamping');
+      _logger.d('⚠️ Validation: $scoreType value $value is outside valid range [$minValue-$maxValue], clamping');
     }
     
     // Clamp to valid range 
@@ -1129,7 +1132,7 @@ class AnalyticsV3Extension {
     
     // For 1-10 scales, ensure we don't have exactly 0 unless it's truly missing
     if (maxValue == 10.0 && clampedValue == 0.0 && value != 0.0) {
-      print('⚠️ Validation: $scoreType clamped to 0, but original was $value - this may indicate data quality issues');
+      _logger.d('⚠️ Validation: $scoreType clamped to 0, but original was $value - this may indicate data quality issues');
     }
     
     return clampedValue;
@@ -1607,6 +1610,7 @@ class AnalyticsV3Extension {
     }
 
     return {
+      'productivity_score': _getAverageValue(result, 'work_productivity'),
       'peak_hours': peakHours.take(3).toList(),
       'insights': insights,
       'recommendations': recommendations,
@@ -1731,9 +1735,9 @@ class AnalyticsV3Extension {
     final endDate = DateTime.now();
     final startDate = endDate.subtract(Duration(days: periodDays));
     
-    print('🔄 DEBUG LIFESTYLE BALANCE ANALYSIS:');
-    print('   User ID: $userId, Period: $periodDays days');
-    print('   Date range: ${startDate.toIso8601String()} to ${endDate.toIso8601String()}');
+    _logger.d('🔄 DEBUG LIFESTYLE BALANCE ANALYSIS:');
+    _logger.d('   User ID: $userId, Period: $periodDays days');
+    _logger.d('   Date range: ${startDate.toIso8601String()} to ${endDate.toIso8601String()}');
     
     final result = await db.rawQuery('''
       SELECT 
@@ -1753,7 +1757,7 @@ class AnalyticsV3Extension {
       ORDER BY entry_date DESC
     ''', [userId, startDate.toIso8601String(), endDate.toIso8601String()]);
 
-    print('   Found ${result.length} entries');
+    _logger.d('   Found ${result.length} entries');
 
     if (result.isEmpty) {
       return {
@@ -1786,11 +1790,11 @@ class AnalyticsV3Extension {
     final avgWater = _getAverageValue(result, 'water_intake');
     final avgScreen = _getAverageValue(result, 'screen_time_hours');
 
-    print('   Raw averages from database:');
-    print('     Work: $workScore, Social: $socialScore, Physical: $physicalScore');
-    print('     Creativity: $creativityScore, Wellness: $wellnessScore');
-    print('     Sleep: ${avgSleep}h, Exercise: ${avgExercise}min, Meditation: ${avgMeditation}min');
-    print('     Water: ${avgWater} glasses, Screen: ${avgScreen}h');
+    _logger.d('   Raw averages from database:');
+    _logger.d('     Work: $workScore, Social: $socialScore, Physical: $physicalScore');
+    _logger.d('     Creativity: $creativityScore, Wellness: $wellnessScore');
+    _logger.d('     Sleep: ${avgSleep}h, Exercise: ${avgExercise}min, Meditation: ${avgMeditation}min');
+    _logger.d('     Water: ${avgWater} glasses, Screen: ${avgScreen}h');
 
     // Normalize quantitative metrics to 1-10 scale
     final sleepNormalized = _normalizeSleepScore(avgSleep);
@@ -1799,9 +1803,9 @@ class AnalyticsV3Extension {
     final hydrationNormalized = _normalizeHydrationScore(avgWater);
     final screenNormalized = _normalizeScreenScore(avgScreen);
 
-    print('   Normalized scores:');
-    print('     Sleep: $sleepNormalized, Exercise: $exerciseNormalized');
-    print('     Meditation: $meditationNormalized, Hydration: $hydrationNormalized, Screen: $screenNormalized');
+    _logger.d('   Normalized scores:');
+    _logger.d('     Sleep: $sleepNormalized, Exercise: $exerciseNormalized');
+    _logger.d('     Meditation: $meditationNormalized, Hydration: $hydrationNormalized, Screen: $screenNormalized');
 
     final areas = {
       'trabajo': workScore,
@@ -1816,7 +1820,7 @@ class AnalyticsV3Extension {
       'pantallas': screenNormalized,
     };
 
-    print('   Final area scores: $areas');
+    _logger.d('   Final area scores: $areas');
 
     // Calculate overall balance score (penalize extreme imbalances)
     final scores = areas.values.where((s) => s > 0).toList();
@@ -1824,11 +1828,11 @@ class AnalyticsV3Extension {
     final avgScore = scores.reduce((a, b) => a + b) / scores.length;
     final balanceScore = math.max(1.0, avgScore - (balanceVariance * 0.5));
 
-    print('   Balance calculation:');
-    print('     Valid scores: $scores');
-    print('     Average score: $avgScore');
-    print('     Balance variance: $balanceVariance');
-    print('     Final balance score: $balanceScore');
+    _logger.d('   Balance calculation:');
+    _logger.d('     Valid scores: $scores');
+    _logger.d('     Average score: $avgScore');
+    _logger.d('     Balance variance: $balanceVariance');
+    _logger.d('     Final balance score: $balanceScore');
 
     // Identify imbalanced areas
     final recommendations = <String>[];
@@ -2035,8 +2039,22 @@ class AnalyticsV3Extension {
       }
     }
 
+    // Map the detailed energy pattern to a simple chronotype consumed by the UI
+    String chronotype;
+    switch (energyPattern) {
+      case 'morning_person':
+        chronotype = 'morning';
+        break;
+      case 'evening_person':
+        chronotype = 'evening';
+        break;
+      default:
+        chronotype = 'intermediate';
+    }
+
     return {
       'energy_pattern': energyPattern,
+      'chronotype': chronotype,
       'peak_times': peakTimes.take(3).toList(),
       'energy_boosters': energyBoosters,
       'hourly_averages': hourlyAverages,
@@ -2497,47 +2515,6 @@ class AnalyticsV3Extension {
     });
     
     return targets;
-  }
-
-  /// Get habit target using configuration
-  double _getHabitTarget(String habitName, AnalyticsConfig config, {String level = 'recommended'}) {
-    final habitConfig = config.habitConfigs[habitName];
-    if (habitConfig != null) {
-      return habitConfig.targets[level] ?? habitConfig.targets.values.first;
-    }
-    
-    // Fallback defaults
-    final defaults = {
-      'meditation': 10.0,
-      'exercise': 30.0,
-      'hydration': 8.0,
-      'sleep': 7.5,
-      'physical_activity': 6.0,
-    };
-    
-    return defaults[habitName] ?? 5.0;
-  }
-
-  /// Normalize habit score using configuration
-  double _normalizeHabitScore(double value, HabitConfig habitConfig) {
-    final ranges = habitConfig.scoreRanges;
-    
-    if (habitConfig.isInverted) {
-      // For inverted habits (less is better), reverse the logic
-      if (value <= ranges['excellent']!) return 10.0;
-      if (value <= ranges['good']!) return 8.0;
-      if (value <= ranges['average']!) return 6.0;
-      if (value <= ranges['poor']!) return 4.0;
-      return 2.0;
-    } else {
-      // For normal habits (more is better)
-      if (value >= ranges['excellent']!) return 10.0;
-      if (value >= ranges['good']!) return 8.0;
-      if (value >= ranges['average']!) return 6.0;
-      if (value >= ranges['poor']!) return 4.0;
-      if (value > 0) return 2.0;
-      return 1.0;
-    }
   }
 
   Map<String, dynamic> _findBestHabit(Map<String, Map<String, dynamic>> habits) {

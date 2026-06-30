@@ -1,75 +1,106 @@
 // lib/presentation/screens/components/modern_design_system.dart
 
 import 'package:flutter/material.dart';
+import 'package:untitled3/core/themes/app_theme.dart';
 
-// ============================================================================
-// 🎨 COLORES MODERNOS - VERSIÓN COMPLETA Y CORREGIDA
-// ============================================================================
+/// Colores modernos para las pantallas de analytics
+/// DEPRECATED: Usa AppColors via Theme.of(context).extension<AppColors>()
 class ModernColors {
-  // ✅ COLORES PRINCIPALES
-  static const Color accentBlue = Color(0xFF3B82F6);
-  static const Color accentPurple = Color(0xFF764ba2);
-  static const Color accentGreen = Color(0xFF10B981);
-  static const Color accentOrange = Color(0xFFF97316);
-  static const Color accentYellow = Color(0xFFF59E0B); // ✅ AÑADIDO
+  // --------------------------------------------------------------------------
+  // Colores de gráficos (específicos de analytics, se mantienen estáticos)
+  // --------------------------------------------------------------------------
+  static const Color accentPurple = Color(0xFF9333EA);
+  static const Color accentViolet = Color(0xFF6C63FF);
+  static const Color accentOrange = Color(0xFFFF6B35);
+  static const Color accentGreen = Color(0xFF00C853);
+  static const Color accentYellow = Color(0xFFFFD600);
 
-  // ✅ BACKGROUNDS
-  static const Color darkPrimary = Color(0xFF0a0e27);
-  static const Color darkSecondary = Color(0xFF2d1b69);
-  static const Color darkAccent = Color(0xFF11998e);
-  static const Color surfaceDark = Color(0xFF141B2D);
+  static const List<Color> chartColors = [
+    accentPurple,
+    accentViolet,
+    accentOrange,
+    accentGreen,
+    accentYellow,
+  ];
 
-  // ✅ GLASS Y SURFACES
-  static const Color glassPrimary = Color(0x1AFFFFFF);
-  static const Color glassSecondary = Color(0x0DFFFFFF);
-  static const Color glassSurface = Color(0x1AFFFFFF);
-  static const Color surface = surfaceDark; // ✅ AÑADIDO (alias)
-  static const Color onSurface = Colors.white; // ✅ AÑADIDO (alias)
+  // --------------------------------------------------------------------------
+  // Colores semánticos - alineados con AppColors (deepOcean) para unificación
+  // --------------------------------------------------------------------------
+  static const Color success = Color(0xFF34D399);
+  static const Color warning = Color(0xFFFBBF24);
+  static const Color error = Color(0xFFF87171);
+  static const Color info = Color(0xFFA78BFA);
 
-  // ✅ BORDERS
-  static const Color borderPrimary = Color(0x33FFFFFF);
-  static const Color borderSecondary = Color(0x1AFFFFFF);
+  // --------------------------------------------------------------------------
+  // Gradientes principales (mantenidos estáticos para compatibilidad)
+  // --------------------------------------------------------------------------
+  static const List<Color> primaryGradient = [
+    Color(0xFF8B5CF6),
+    Color(0xFF764ba2),
+  ];
+  static const List<Color> positiveGradient = [
+    Color(0xFF11998e),
+    Color(0xFF38ef7d),
+  ];
+  static const List<Color> negativeGradient = [
+    Color(0xFFff6b6b),
+    Color(0xFFfeca57),
+  ];
 
-  // ✅ TEXT COLORS
+  static const Color borderSecondary = Color(0x33FFFFFF);
+  static const Color divider = Color(0x1AFFFFFF);
+  static const Color shimmerBase = Color(0xFF1E293B);
+  static const Color shimmerHighlight = Color(0xFF334155);
+
+  // --------------------------------------------------------------------------
+  // Colores de texto (mantenidos estáticos para compatibilidad con const)
+  // --------------------------------------------------------------------------
   static const Color textPrimary = Colors.white;
   static const Color textSecondary = Color(0xB3FFFFFF);
   static const Color textHint = Color(0x66FFFFFF);
 
-  // ✅ STATUS COLORS
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color error = Color(0xFFEF4444);
-  static const Color info = Color(0xFF3B82F6);
-  static const Color primary = accentBlue; // ✅ AÑADIDO (alias)
+  // --------------------------------------------------------------------------
+  // Backgrounds y surfaces (mantenidos estáticos para compatibilidad)
+  // --------------------------------------------------------------------------
+  static const Color darkPrimary = Color(0xFF0a0e27);
+  static const Color darkSecondary = Color(0xFF2d1b69);
+  static const Color surfaceDark = Color(0xFF141B2D);
 
-  // ✅ GRADIENTES PRINCIPALES
-  static const List<Color> primaryGradient = [Color(0xFF667eea), Color(0xFF764ba2)];
-  static const List<Color> positiveGradient = [Color(0xFF11998e), Color(0xFF38ef7d)];
-  static const List<Color> negativeGradient = [Color(0xFFff6b6b), Color(0xFFfeca57)];
-  static const List<Color> neutralGradient = [Color(0xFF2c3e50), Color(0xFF3498db)];
-  static const List<Color> warningGradient = [Color(0xFFfeca57), Color(0xFFff9f43)];
-  static const List<Color> errorGradient = [Color(0xFFff6b6b), Color(0xFFee5253)];
+  // --------------------------------------------------------------------------
+  // Glass y bordes (mantenidos estáticos para compatibilidad)
+  // --------------------------------------------------------------------------
+  static const Color glassPrimary = Color(0x1AFFFFFF);
+  static const Color glassSecondary = Color(0x0DFFFFFF);
+  static const Color borderPrimary = Color(0x33FFFFFF);
 
-  // ✅ CATEGORÍAS
+  // --------------------------------------------------------------------------
+  // Gradientes adicionales
+  // --------------------------------------------------------------------------
+  static const List<Color> neutralGradient = [
+    Color(0xFF2c3e50),
+    Color(0xFF9B59B6),
+  ];
+  static const List<Color> warningGradient = [
+    Color(0xFFfeca57),
+    Color(0xFFff9f43),
+  ];
+  static const List<Color> errorGradient = [
+    Color(0xFFff6b6b),
+    Color(0xFFee5253),
+  ];
+
+  // --------------------------------------------------------------------------
+  // Categorías
+  // --------------------------------------------------------------------------
   static const Map<String, Color> categories = {
-    'emocional': Color(0xFF667eea),
+    'emocional': Color(0xFF8B5CF6),
     'fisico': Color(0xFF11998e),
     'social': Color(0xFFff6b6b),
     'mental': Color(0xFF4ecdc4),
     'espiritual': Color(0xFF764ba2),
   };
-}
 
-// ============================================================================
-// ♊️ GRADIENTES GEMINI
-// ============================================================================
-class GeminiGradients {
-  static const List<Color> background = [Color(0xFF131314), Color(0xFF000000)];
-  static const List<Color> header = [Color(0xFF4A4E69), Color(0xFF22223B)];
-  static const List<Color> card = [Color(0xFF22223B), Color(0xFF131314)];
-  static const List<Color> accent = [Color(0xFF8E9BFF), Color(0xFF5A67D8)];
 }
-
 
 // ============================================================================
 // 📏 SPACING Y RADIOS
@@ -209,6 +240,7 @@ class ModernCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     final container = Container(
       width: width,
       height: height,
@@ -218,10 +250,10 @@ class ModernCard extends StatelessWidget {
         gradient: gradient != null
             ? LinearGradient(colors: gradient!)
             : null,
-        color: backgroundColor ?? (gradient == null ? ModernColors.glassPrimary : null),
+        color: backgroundColor ?? (gradient == null ? appColors.glassBg : null),
         borderRadius: BorderRadius.circular(ModernSpacing.radiusLarge),
         border: Border.all(
-          color: ModernColors.borderPrimary,
+          color: appColors.borderColor.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: blur ? ModernShadows.glass : null,
@@ -291,6 +323,8 @@ class _ModernButtonState extends State<ModernButton>
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
+    final defaultGradient = appColors.gradientHeader;
     return ScaleTransition(
       scale: _scaleAnimation,
       child: GestureDetector(
@@ -305,24 +339,23 @@ class _ModernButtonState extends State<ModernButton>
             vertical: ModernSpacing.md,
           ),
           decoration: BoxDecoration(
-            // FIX: Arreglo completo - usar LinearGradient en lugar de List<Color>
             gradient: widget.isPrimary
                 ? LinearGradient(
-              colors: widget.gradient ?? ModernColors.primaryGradient,
+              colors: widget.gradient ?? defaultGradient,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             )
                 : null,
-            color: widget.isPrimary ? null : ModernColors.glassPrimary,
+            color: widget.isPrimary ? null : appColors.glassBg,
             borderRadius: BorderRadius.circular(ModernSpacing.radiusLarge),
             border: Border.all(
               color: widget.isPrimary
                   ? Colors.transparent
-                  : ModernColors.borderPrimary,
+                  : appColors.borderColor.withValues(alpha: 0.2),
             ),
             boxShadow: widget.isPrimary ? [
               BoxShadow(
-                color: (widget.gradient ?? ModernColors.primaryGradient).first.withOpacity(0.3),
+                color: (widget.gradient ?? defaultGradient).first.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -402,6 +435,7 @@ class _ModernTextFieldState extends State<ModernTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = Theme.of(context).extension<AppColors>()!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -431,12 +465,12 @@ class _ModernTextFieldState extends State<ModernTextField> {
               counterText: "",
               hintText: widget.hintText,
               hintStyle: ModernTypography.bodyMedium.copyWith(
-                color: ModernColors.textHint,
+                color: appColors.textHint,
               ),
               prefixIcon: widget.prefixIcon != null
                   ? Icon(
                 widget.prefixIcon,
-                color: _isFocused ? ModernColors.primaryGradient.first : ModernColors.textHint,
+                color: _isFocused ? appColors.gradientHeader.first : appColors.textHint,
               )
                   : null,
               suffixIcon: widget.suffixIcon != null
@@ -444,12 +478,12 @@ class _ModernTextFieldState extends State<ModernTextField> {
                 onTap: widget.onSuffixTap,
                 child: Icon(
                   widget.suffixIcon,
-                  color: ModernColors.textHint,
+                  color: appColors.textHint,
                 ),
               )
                   : null,
               filled: true,
-              fillColor: ModernColors.glassPrimary,
+              fillColor: appColors.glassBg,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(ModernSpacing.radiusLarge),
                 borderSide: BorderSide.none,
@@ -457,14 +491,14 @@ class _ModernTextFieldState extends State<ModernTextField> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(ModernSpacing.radiusLarge),
                 borderSide: BorderSide(
-                  color: ModernColors.primaryGradient.first,
+                  color: appColors.gradientHeader.first,
                   width: 2,
                 ),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(ModernSpacing.radiusLarge),
-                borderSide: const BorderSide(
-                  color: ModernColors.error,
+                borderSide: BorderSide(
+                  color: appColors.negativeMain,
                   width: 1,
                 ),
               ),
@@ -476,250 +510,6 @@ class _ModernTextFieldState extends State<ModernTextField> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class ModernMoodSelector extends StatefulWidget {
-  final int selectedMood;
-  final ValueChanged<int> onMoodChanged;
-  final bool animated;
-
-  const ModernMoodSelector({
-    super.key,
-    required this.selectedMood,
-    required this.onMoodChanged,
-    this.animated = true,
-  });
-
-  @override
-  State<ModernMoodSelector> createState() => _ModernMoodSelectorState();
-}
-
-class _ModernMoodSelectorState extends State<ModernMoodSelector>
-    with TickerProviderStateMixin {
-  late AnimationController _controller;
-
-  final List<Map<String, dynamic>> moods = [
-    {'emoji': '😢', 'label': 'Muy mal', 'color': ModernColors.error},
-    {'emoji': '😔', 'label': 'Mal', 'color': ModernColors.warning},
-    {'emoji': '😐', 'label': 'Regular', 'color': ModernColors.info},
-    {'emoji': '🙂', 'label': 'Bien', 'color': ModernColors.success},
-    {'emoji': '😊', 'label': 'Muy bien', 'color': ModernColors.accentGreen},
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: ModernAnimations.medium,
-      vsync: this,
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ModernCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '¿Cómo te sientes hoy?',
-            style: ModernTypography.heading3,
-          ),
-          const SizedBox(height: ModernSpacing.lg),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(5, (index) {
-              final mood = moods[index];
-              final isSelected = widget.selectedMood == index + 1;
-
-              return GestureDetector(
-                onTap: () {
-                  if (widget.animated) {
-                    _controller.forward().then((_) {
-                      _controller.reverse();
-                    });
-                  }
-                  widget.onMoodChanged(index + 1);
-                },
-                child: AnimatedContainer(
-                  duration: ModernAnimations.fast,
-                  padding: const EdgeInsets.all(ModernSpacing.md),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? mood['color'].withOpacity(0.2)
-                        : Colors.transparent,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? mood['color']
-                          : ModernColors.borderPrimary,
-                      width: 2,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      AnimatedDefaultTextStyle(
-                        duration: ModernAnimations.fast,
-                        style: TextStyle(
-                          fontSize: isSelected ? 32 : 24,
-                        ),
-                        child: Text(mood['emoji']),
-                      ),
-                      const SizedBox(height: ModernSpacing.xs),
-                      Text(
-                        mood['label'],
-                        style: ModernTypography.bodySmall.copyWith(
-                          color: isSelected ? mood['color'] : ModernColors.textHint,
-                          fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ModernProgressCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final double progress;
-  final Color color;
-  final IconData icon;
-  final String? trailing;
-
-  const ModernProgressCard({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    required this.progress,
-    required this.color,
-    required this.icon,
-    this.trailing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ModernCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(ModernSpacing.sm),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(ModernSpacing.radiusSmall),
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: ModernSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: ModernTypography.bodyLarge),
-                    Text(subtitle, style: ModernTypography.bodySmall),
-                  ],
-                ),
-              ),
-              if (trailing != null)
-                Text(
-                  trailing!,
-                  style: ModernTypography.bodyMedium.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: ModernSpacing.md),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(ModernSpacing.radiusSmall),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: ModernColors.borderSecondary,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: 6,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// 🌈 TEMA GLOBAL
-// ============================================================================
-
-class ModernTheme {
-  static ThemeData get darkTheme {
-    return ThemeData(
-      brightness: Brightness.dark,
-      fontFamily: 'System',
-      scaffoldBackgroundColor: ModernColors.darkPrimary,
-      colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF667eea),
-        secondary: Color(0xFF11998e),
-        surface: Color(0xFF2d1b69),
-        error: ModernColors.error,
-      ),
-      textTheme: const TextTheme(
-        displayLarge: ModernTypography.heading1,
-        displayMedium: ModernTypography.heading2,
-        displaySmall: ModernTypography.heading3,
-        bodyLarge: ModernTypography.bodyLarge,
-        bodyMedium: ModernTypography.bodyMedium,
-        bodySmall: ModernTypography.bodySmall,
-        labelLarge: ModernTypography.button,
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(
-            horizontal: ModernSpacing.lg,
-            vertical: ModernSpacing.md,
-          ),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: ModernColors.glassPrimary,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ModernSpacing.radiusLarge),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: ModernSpacing.md,
-          vertical: ModernSpacing.md,
-        ),
-      ),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        color: ModernColors.glassPrimary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ModernSpacing.radiusLarge),
-        ),
-      ),
     );
   }
 }

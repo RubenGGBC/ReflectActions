@@ -1022,18 +1022,8 @@ class RecommendedActivitiesProvider with ChangeNotifier {
   }
 
   // Helper methods
-  void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
-  }
-
   void _setError(String error) {
     _errorMessage = error;
-    notifyListeners();
-  }
-
-  void _clearError() {
-    _errorMessage = null;
     notifyListeners();
   }
 

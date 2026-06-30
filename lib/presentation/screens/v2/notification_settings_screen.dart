@@ -311,7 +311,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
               }
               _saveNotificationSettings();
             },
-            activeColor: MinimalColors.primaryGradient(context)[0],
+            activeThumbColor: MinimalColors.primaryGradient(context)[0],
             activeTrackColor: MinimalColors.primaryGradient(context)[0].withValues(alpha: 0.3),
           ),
         ],
@@ -374,7 +374,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
               Switch(
                 value: enabled,
                 onChanged: onToggle,
-                activeColor: MinimalColors.accentGradient(context)[0],
+                activeThumbColor: MinimalColors.accentGradient(context)[0],
                 activeTrackColor: MinimalColors.accentGradient(context)[0].withValues(alpha: 0.3),
               ),
             ],
@@ -475,7 +475,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                   setState(() => _momentRemindersEnabled = value);
                   _updateNotifications();
                 },
-                activeColor: MinimalColors.accentGradient(context)[0],
+                activeThumbColor: MinimalColors.accentGradient(context)[0],
                 activeTrackColor: MinimalColors.accentGradient(context)[0].withValues(alpha: 0.3),
               ),
             ],

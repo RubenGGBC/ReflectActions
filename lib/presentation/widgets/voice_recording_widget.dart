@@ -33,7 +33,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
   
   late AnimationController _pulseController;
   late AnimationController _waveController;
-  late Animation<double> _pulseAnimation;
   late Animation<double> _waveAnimation;
   
   VoiceRecordingService? _voiceService;
@@ -56,14 +55,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.3,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
 
     _waveAnimation = Tween<double>(
       begin: 0.0,
@@ -90,10 +81,10 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
           debugPrint('❌ Microphone permission denied');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Permisos de micrófono necesarios para grabación de voz'),
-                backgroundColor: Colors.red,
-                duration: Duration(seconds: 5),
+              SnackBar(
+                content: const Text('Permisos de micrófono necesarios para grabación de voz'),
+                backgroundColor: MinimalColors.negativeMain(context),
+                duration: const Duration(seconds: 5),
               ),
             );
           }
@@ -111,7 +102,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error inicializando grabación de voz: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: MinimalColors.negativeMain(context),
             duration: const Duration(seconds: 5),
           ),
         );
@@ -633,7 +624,7 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
-          backgroundColor: Colors.red,
+          backgroundColor: MinimalColors.negativeMain(context),
           duration: const Duration(seconds: 7),
           action: Platform.isIOS ? SnackBarAction(
             label: 'Configuración',

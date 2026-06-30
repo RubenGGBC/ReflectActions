@@ -38,7 +38,6 @@ class _HopecoreQuotesCarouselState extends State<HopecoreQuotesCarousel>
   late Animation<double> _glowAnimation;
   
   Map<String, String> _currentQuote = {'quote': '', 'source': ''};
-  int _currentIndex = 0;
   bool _isInitialized = false;
 
   @override

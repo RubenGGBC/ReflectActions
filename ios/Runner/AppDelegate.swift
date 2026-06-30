@@ -4,13 +4,16 @@ import UserNotifications
 import AVFoundation
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    setupAudioSessionChannel(engineBridge)
+  }
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Register Flutter plugins
-    GeneratedPluginRegistrant.register(with: self)
     
     // Configure audio session for recording
     configureAudioSession()
@@ -79,13 +82,18 @@ import AVFoundation
     }
   }
   
-  private func setupAudioSessionChannel() {
-    guard let controller = window?.rootViewController as? FlutterViewController else {
+  private func setupAudioSessionChannel(_ engineBridge: FlutterImplicitEngineBridge? = nil) {
+    let binaryMessenger: FlutterBinaryMessenger
+    if let engineBridge = engineBridge {
+      binaryMessenger = engineBridge.applicationRegistrar.messenger()
+    } else if let controller = window?.rootViewController as? FlutterViewController {
+      binaryMessenger = controller.binaryMessenger
+    } else {
       return
     }
     
     let audioChannel = FlutterMethodChannel(name: "com.reflect.audio_session",
-                                           binaryMessenger: controller.binaryMessenger)
+                                           binaryMessenger: binaryMessenger)
     
     audioChannel.setMethodCallHandler { (call, result) in
       switch call.method {

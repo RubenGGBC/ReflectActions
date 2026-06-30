@@ -32,15 +32,11 @@
 	<string>Esta aplicación necesita acceso al micrófono para grabar notas de voz en tu diario de reflexión diaria.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Esta aplicación necesita acceso a tu galería de fotos para seleccionar imágenes de perfil y agregar fotos a tus momentos.</string>
-	<key>NSUserNotificationCenterPermission</key>
-	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>background-processing</string>
 		<string>remote-notification</string>
-		<string>audio</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

@@ -8,7 +8,8 @@ import 'package:logger/logger.dart';
 import 'optimized_reflect_app.dart';
 import 'injection_container_clean.dart' as clean_di;
 import 'package:timezone/data/latest.dart' as tz;
-void main() async {
+void main(
+    ) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Configurar FFI para sqflit º
@@ -97,7 +98,7 @@ class ErrorApp extends StatelessWidget {
                   main();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Colors.purple,
                 ),
                 child: const Text(
                   'Reintentar',

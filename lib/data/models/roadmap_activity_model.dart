@@ -2,7 +2,6 @@
 // roadmap_activity_model.dart - MODELO PARA ACTIVIDADES DEL ROADMAP DIARIO
 // ============================================================================
 
-import 'dart:convert';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'roadmap_activity_model.g.dart';

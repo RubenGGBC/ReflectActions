@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'components/minimal_colors.dart';
 
 // Providers
 import '../../providers/optimized_providers.dart';
@@ -18,7 +19,6 @@ import '../../../core/themes/app_theme.dart';
 import '../components/modern_design_system.dart';
 
 // ✅ NEW: Test Data Seeder
-import '../../../test_data/simple_test_data.dart';
 import '../../../test_data/test_data_seeder.dart';
 import '../../../data/services/optimized_database_service.dart';
 import '../../../injection_container_clean.dart' as clean_di;
@@ -97,7 +97,7 @@ class _LoginScreenV2State extends State<LoginScreenV2> with TickerProviderStateM
   Widget build(BuildContext context) {
     // ✅ NEW: Use app theme system
     final theme = Theme.of(context);
-    final appColors = theme.extension<AppColors>() ?? ThemeDefinitions.deepOcean;
+    final appColors = theme.extension<AppColors>()!;
     
     return Scaffold(
       backgroundColor: appColors.primaryBg,
@@ -158,10 +158,10 @@ class _LoginScreenV2State extends State<LoginScreenV2> with TickerProviderStateM
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: appColors.accentPrimary.withOpacity(0.2),
+            color: appColors.accentPrimary.withValues(alpha: 0.2),
             shape: BoxShape.circle,
             border: Border.all(
-              color: appColors.accentPrimary.withOpacity(0.3),
+              color: appColors.accentPrimary.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -270,10 +270,10 @@ class _LoginScreenV2State extends State<LoginScreenV2> with TickerProviderStateM
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).extension<AppColors>()?.glassBg ?? Colors.white.withOpacity(0.1),
+                  color: Theme.of(context).extension<AppColors>()?.glassBg ?? Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(ModernSpacing.radiusMedium),
                   border: Border.all(
-                    color: Theme.of(context).extension<AppColors>()?.borderColor ?? Colors.white.withOpacity(0.2),
+                    color: Theme.of(context).extension<AppColors>()?.borderColor ?? Colors.white.withValues(alpha: 0.2),
                   ),
                 ),
                 child: _selectedProfilePicture != null
@@ -301,7 +301,7 @@ class _LoginScreenV2State extends State<LoginScreenV2> with TickerProviderStateM
                         ? 'Foto seleccionada'
                         : 'Toca para agregar una foto',
                     style: ModernTypography.bodyMedium.copyWith(
-                      color: Theme.of(context).extension<AppColors>()?.textSecondary ?? Colors.white.withOpacity(0.9),
+                      color: Theme.of(context).extension<AppColors>()?.textSecondary ?? Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                   if (_selectedProfilePicture != null)
@@ -373,7 +373,7 @@ class _LoginScreenV2State extends State<LoginScreenV2> with TickerProviderStateM
             TextSpan(
               text: _isLogin ? 'Regístrate' : 'Inicia sesión',
               style: ModernTypography.bodyMedium.copyWith(
-                color: Theme.of(context).extension<AppColors>()?.accentPrimary ?? Colors.blue,
+                color: Theme.of(context).extension<AppColors>()?.accentPrimary ?? Colors.purple,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -445,7 +445,7 @@ class _LoginScreenV2State extends State<LoginScreenV2> with TickerProviderStateM
           );
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).extension<AppColors>()?.accentPrimary ?? Colors.blue,
+          backgroundColor: Theme.of(context).extension<AppColors>()?.accentPrimary ?? Colors.purple,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: ModernSpacing.md),
           shape: RoundedRectangleBorder(
@@ -473,7 +473,7 @@ class _LoginScreenV2State extends State<LoginScreenV2> with TickerProviderStateM
 
   Widget _buildErrorMessage() {
     return ModernCard(
-      backgroundColor: (Theme.of(context).extension<AppColors>()?.negativeMain ?? Colors.red).withOpacity(0.15),
+      backgroundColor: (Theme.of(context).extension<AppColors>()?.negativeMain ?? Colors.red).withValues(alpha: 0.15),
       padding: const EdgeInsets.all(ModernSpacing.md),
       child: Row(
         children: [
@@ -500,7 +500,7 @@ class _LoginScreenV2State extends State<LoginScreenV2> with TickerProviderStateM
     return Text(
       'Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad.',
       style: ModernTypography.caption.copyWith(
-        color: Theme.of(context).extension<AppColors>()?.textHint ?? Colors.white.withOpacity(0.6),
+        color: Theme.of(context).extension<AppColors>()?.textHint ?? Colors.white.withValues(alpha: 0.6),
       ),
       textAlign: TextAlign.center,
     );
@@ -632,7 +632,7 @@ class _LoginScreenV2State extends State<LoginScreenV2> with TickerProviderStateM
         style: ElevatedButton.styleFrom(
           backgroundColor: isDestructive
               ? Theme.of(context).extension<AppColors>()?.negativeMain ?? Colors.red
-              : Theme.of(context).extension<AppColors>()?.accentPrimary ?? Colors.blue,
+              : Theme.of(context).extension<AppColors>()?.accentPrimary ?? Colors.purple,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.all(ModernSpacing.md),
           shape: RoundedRectangleBorder(
@@ -775,7 +775,7 @@ class _LoginScreenV2State extends State<LoginScreenV2> with TickerProviderStateM
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ Error: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: MinimalColors.negativeMain(context),
           ),
         );
       }
@@ -1003,7 +1003,7 @@ class _LoginScreenV2State extends State<LoginScreenV2> with TickerProviderStateM
                 await _handleSubmit();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).extension<AppColors>()?.accentPrimary ?? Colors.blue,
+                backgroundColor: Theme.of(context).extension<AppColors>()?.accentPrimary ?? Colors.purple,
               ),
               child: const Text('Iniciar Sesión'),
             ),

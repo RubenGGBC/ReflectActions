@@ -1230,7 +1230,7 @@ class _AddActivityModalState extends State<AddActivityModal>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: MinimalColors.negativeMain(context),
         behavior: SnackBarBehavior.floating,
       ),
     );

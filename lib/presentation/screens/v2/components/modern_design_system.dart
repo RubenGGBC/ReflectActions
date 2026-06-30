@@ -4,7 +4,6 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
-import '../../../../core/themes/app_theme.dart';
 
 /// Modern spacing constants
 class ModernSpacing {
@@ -139,7 +138,7 @@ class ModernStatCard extends StatelessWidget {
             Text(
               subtitle!,
               style: ModernTypography.caption(context).copyWith(
-                color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -186,7 +185,7 @@ class ModernSectionHeader extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: ModernTypography.body2(context).copyWith(
-                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -305,7 +304,7 @@ class ModernTabBar extends StatelessWidget implements PreferredSizeWidget {
         color: theme.scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.1),
+            color: theme.shadowColor.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -316,7 +315,7 @@ class ModernTabBar extends StatelessWidget implements PreferredSizeWidget {
         isScrollable: true,
         indicatorColor: theme.primaryColor,
         labelColor: theme.primaryColor,
-        unselectedLabelColor: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
+        unselectedLabelColor: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
         labelStyle: ModernTypography.body1(context).copyWith(
           fontWeight: FontWeight.w600,
         ),

@@ -100,49 +100,6 @@ class NotificationService {
     }
   }
 
-  // Request all necessary permissions
-  Future<bool> _requestPermissions() async {
-    bool allGranted = true;
-
-    // Android 13+ requires POST_NOTIFICATIONS permission
-    if (await Permission.notification.isDenied) {
-      final status = await Permission.notification.request();
-      if (status != PermissionStatus.granted) {
-        _logger.w('⚠️ Notification permission denied');
-        allGranted = false;
-      }
-    }
-
-    // iOS permissions
-    final result = await _notifications
-        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-
-    if (result == false) {
-      _logger.w('⚠️ iOS notification permissions denied');
-      allGranted = false;
-    }
-
-    // macOS permissions
-    await _notifications
-        .resolvePlatformSpecificImplementation<MacOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-
-    if (allGranted) {
-      _logger.i('✅ All notification permissions granted');
-    }
-
-    return allGranted;
-  }
-
   // Create notification channels for Android
   Future<void> _createNotificationChannels() async {
     final androidPlugin = _notifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();

@@ -3,8 +3,6 @@
 // AUTH PROVIDER ACTUALIZADO CON SOPORTE PARA FOTOS DE PERFIL
 // ============================================================================
 
-export 'analytics_provider_v4.dart';
-
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -426,6 +424,9 @@ class OptimizedDailyEntriesProvider with ChangeNotifier {
   Future<bool> saveDailyEntry({
     required int userId,
     required String freeReflection,
+    String? innerReflection,
+    List<String> completedActivitiesToday = const [],
+    List<String> goalsSummary = const [],
     List<String> positiveTags = const [],
     List<String> negativeTags = const [],
     bool? worthIt,
@@ -462,6 +463,9 @@ class OptimizedDailyEntriesProvider with ChangeNotifier {
       final entry = OptimizedDailyEntryModel.create(
         userId: userId,
         freeReflection: freeReflection,
+        innerReflection: innerReflection,
+        completedActivitiesToday: completedActivitiesToday,
+        goalsSummary: goalsSummary,
         positiveTags: positiveTags,
         negativeTags: negativeTags,
         worthIt: worthIt,
@@ -1278,7 +1282,7 @@ class OptimizedAnalyticsProvider with ChangeNotifier {
         color = Colors.green;
       } else if (avgScore >= 5) {
         emoji = '😐';
-        color = Colors.blue;
+        color = Colors.purple;
       } else {
         emoji = '😔';
         color = Colors.orange;
@@ -1541,7 +1545,7 @@ class OptimizedAnalyticsProvider with ChangeNotifier {
     } else if (avgMood >= 5) {
       trendIcon = '😐';
       trendDescription = 'Estable';
-      trendColor = Colors.blue;
+      trendColor = Colors.purple;
     } else {
       trendIcon = '😔';
       trendDescription = 'Bajo';

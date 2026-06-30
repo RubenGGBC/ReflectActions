@@ -264,13 +264,13 @@ class _PersonalizedChallengesWidgetState extends State<PersonalizedChallengesWid
       case 'streak':
         return [const Color(0xFFf97316), const Color(0xFFea580c)];
       case 'meditation':
-        return [const Color(0xFF8b5cf6), const Color(0xFF7c3aed)];
+        return MinimalColors.accentGradient(context);
       case 'exercise':
-        return [const Color(0xFF10b981), const Color(0xFF059669)];
+        return MinimalColors.positiveGradient(context);
       case 'wellbeing':
-        return [const Color(0xFF3b82f6), const Color(0xFF2563eb)];
+        return MinimalColors.accentGradient(context);
       default:
-        return MinimalColors.accentGradientStatic;
+        return MinimalColors.accentGradient(context);
     }
   }
 

@@ -202,7 +202,7 @@ class _GoalProgressScreenState extends State<GoalProgressScreen>
                       ),
                       child: Icon(
                         _getCategoryIconData(widget.goal!.categoryIcon),
-                        color: MinimalColors.textPrimaryStatic,
+                        color: Colors.white,
                         size: 30,
                       ),
                     ),
@@ -559,7 +559,7 @@ class _GoalProgressScreenState extends State<GoalProgressScreen>
             ),
             child: Icon(
               icon,
-              color: MinimalColors.textPrimaryStatic,
+              color: Colors.white,
               size: 20,
             ),
           ),
@@ -850,8 +850,7 @@ class _GoalProgressScreenState extends State<GoalProgressScreen>
       itemCount: goals.length,
       itemBuilder: (context, index) {
         final goal = goals[index];
-        final streakData = goal.id != null ? goalsProvider.getStreakDataForGoal(goal.id!) : null;
-        
+
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
@@ -900,7 +899,7 @@ class _GoalProgressScreenState extends State<GoalProgressScreen>
                         ),
                         child: Icon(
                           _getCategoryIconData(goal.categoryIcon),
-                          color: MinimalColors.textPrimaryStatic,
+                          color: Colors.white,
                           size: 24,
                         ),
                       ),

@@ -516,7 +516,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen>
               _showSuccessSnackBar('Actividad marcada como pendiente');
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
+              backgroundColor: MinimalColors.warningMain(context),
               foregroundColor: Colors.white,
             ),
             child: Text('Deshacer'),
@@ -530,7 +530,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.green,
+        backgroundColor: MinimalColors.positiveMain(context),
         behavior: SnackBarBehavior.floating,
       ),
     );

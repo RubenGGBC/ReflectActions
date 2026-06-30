@@ -261,7 +261,7 @@ extension ActivityTypeExtension on ActivityType {
   List<Color> get gradientColors {
     switch (this) {
       case ActivityType.mindfulness:
-        return [const Color(0xFF667eea), const Color(0xFF764ba2)];
+        return [const Color(0xFF8B5CF6), const Color(0xFF764ba2)];
       case ActivityType.exercise:
         return [const Color(0xFF11998e), const Color(0xFF38ef7d)];
       case ActivityType.creativity:
@@ -277,7 +277,7 @@ extension ActivityTypeExtension on ActivityType {
       case ActivityType.breathing:
         return [const Color(0xFFd299c2), const Color(0xFFfef9d7)];
       case ActivityType.meditation:
-        return [const Color(0xFF89f7fe), const Color(0xFF66a6ff)];
+        return [const Color(0xFFE9D5FF), const Color(0xFF8B5CF6)];
       case ActivityType.movement:
         return [const Color(0xFFfdbb2d), const Color(0xFF22c1c3)];
       case ActivityType.relaxation:
@@ -287,7 +287,7 @@ extension ActivityTypeExtension on ActivityType {
       case ActivityType.gratitude:
         return [const Color(0xFFf83600), const Color(0xFFf9d423)];
       case ActivityType.reflection:
-        return [const Color(0xFF667eea), const Color(0xFF764ba2)];
+        return [const Color(0xFF8B5CF6), const Color(0xFF764ba2)];
       case ActivityType.challenge:
         return [const Color(0xFFf12711), const Color(0xFFf5af19)];
     }

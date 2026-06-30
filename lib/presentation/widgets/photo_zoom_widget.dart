@@ -121,7 +121,7 @@ class _PhotoZoomWidgetState extends State<PhotoZoomWidget>
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -179,8 +179,8 @@ class _PhotoZoomWidgetState extends State<PhotoZoomWidget>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.7),
-                          Colors.black.withOpacity(0.3),
+                          Colors.black.withValues(alpha: 0.7),
+                          Colors.black.withValues(alpha: 0.3),
                           Colors.transparent,
                         ],
                       ),
@@ -194,7 +194,7 @@ class _PhotoZoomWidgetState extends State<PhotoZoomWidget>
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5),
+                              color: Colors.black.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(22),
                             ),
                             child: const Icon(
@@ -213,7 +213,7 @@ class _PhotoZoomWidgetState extends State<PhotoZoomWidget>
                               Row(
                                 children: [
                                   Text(
-                                    widget.moment.emoji ?? '📷',
+                                    widget.moment.emoji,
                                     style: const TextStyle(fontSize: 24),
                                   ),
                                   const SizedBox(width: 12),
@@ -274,8 +274,8 @@ class _PhotoZoomWidgetState extends State<PhotoZoomWidget>
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          Colors.black.withOpacity(0.8),
-                          Colors.black.withOpacity(0.4),
+                          Colors.black.withValues(alpha: 0.8),
+                          Colors.black.withValues(alpha: 0.4),
                           Colors.transparent,
                         ],
                       ),
@@ -292,7 +292,7 @@ class _PhotoZoomWidgetState extends State<PhotoZoomWidget>
                           ),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: _getMomentTypeGradient(widget.moment.type ?? 'neutral'),
+                              colors: _getMomentTypeGradient(widget.moment.type),
                             ),
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -300,13 +300,13 @@ class _PhotoZoomWidgetState extends State<PhotoZoomWidget>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                _getMomentTypeIcon(widget.moment.type ?? 'neutral'),
+                                _getMomentTypeIcon(widget.moment.type),
                                 color: Colors.white,
                                 size: 16,
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                _getMomentTypeLabel(widget.moment.type ?? 'neutral'),
+                                _getMomentTypeLabel(widget.moment.type),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
@@ -325,10 +325,10 @@ class _PhotoZoomWidgetState extends State<PhotoZoomWidget>
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5),
+                              color: Colors.black.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 width: 1,
                               ),
                             ),
@@ -400,11 +400,11 @@ class _PhotoZoomWidgetState extends State<PhotoZoomWidget>
   List<Color> _getMomentTypeGradient(String type) {
     switch (type) {
       case 'positive':
-        return [const Color(0xFF10B981), const Color(0xFF34D399)];
+        return MinimalColors.positiveGradient(context);
       case 'negative':
-        return [const Color(0xFFb91c1c), const Color(0xFFef4444)];
+        return MinimalColors.negativeGradient(context);
       default:
-        return [const Color(0xFFf59e0b), const Color(0xFFfbbf24)];
+        return MinimalColors.neutralGradient(context);
     }
   }
 

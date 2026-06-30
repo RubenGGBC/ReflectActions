@@ -11,7 +11,7 @@ enum AppThemeType {
   sunsetWarm,
 }
 
-class AppColors {
+class AppColors extends ThemeExtension<AppColors> {
   // Colores base
   final Color primaryBg;
   final Color secondaryBg;
@@ -34,6 +34,8 @@ class AppColors {
   final Color negativeMain;
   final Color negativeLight;
   final Color negativeGlow;
+  final Color warningMain;
+  final Color infoMain;
 
   // Efectos
   final Color shadowColor;
@@ -43,6 +45,9 @@ class AppColors {
   // Gradientes
   final List<Color> gradientHeader;
   final List<Color> gradientButton;
+
+  // Categorías
+  final Map<String, Color> categories;
 
   // Metadatos
   final String name;
@@ -67,17 +72,118 @@ class AppColors {
     required this.negativeMain,
     required this.negativeLight,
     required this.negativeGlow,
+    required this.warningMain,
+    required this.infoMain,
     required this.shadowColor,
     required this.borderColor,
     required this.glassBg,
     required this.gradientHeader,
     required this.gradientButton,
+    required this.categories,
     required this.name,
     required this.displayName,
     required this.icon,
     required this.description,
     required this.isDark,
   });
+
+  @override
+  AppColors copyWith({
+    Color? primaryBg,
+    Color? secondaryBg,
+    Color? surface,
+    Color? surfaceVariant,
+    Color? accentPrimary,
+    Color? accentSecondary,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? textHint,
+    Color? positiveMain,
+    Color? positiveLight,
+    Color? positiveGlow,
+    Color? negativeMain,
+    Color? negativeLight,
+    Color? negativeGlow,
+    Color? warningMain,
+    Color? infoMain,
+    Color? shadowColor,
+    Color? borderColor,
+    Color? glassBg,
+    List<Color>? gradientHeader,
+    List<Color>? gradientButton,
+    Map<String, Color>? categories,
+    String? name,
+    String? displayName,
+    String? icon,
+    String? description,
+    bool? isDark,
+  }) {
+    return AppColors(
+      primaryBg: primaryBg ?? this.primaryBg,
+      secondaryBg: secondaryBg ?? this.secondaryBg,
+      surface: surface ?? this.surface,
+      surfaceVariant: surfaceVariant ?? this.surfaceVariant,
+      accentPrimary: accentPrimary ?? this.accentPrimary,
+      accentSecondary: accentSecondary ?? this.accentSecondary,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textSecondary: textSecondary ?? this.textSecondary,
+      textHint: textHint ?? this.textHint,
+      positiveMain: positiveMain ?? this.positiveMain,
+      positiveLight: positiveLight ?? this.positiveLight,
+      positiveGlow: positiveGlow ?? this.positiveGlow,
+      negativeMain: negativeMain ?? this.negativeMain,
+      negativeLight: negativeLight ?? this.negativeLight,
+      negativeGlow: negativeGlow ?? this.negativeGlow,
+      warningMain: warningMain ?? this.warningMain,
+      infoMain: infoMain ?? this.infoMain,
+      shadowColor: shadowColor ?? this.shadowColor,
+      borderColor: borderColor ?? this.borderColor,
+      glassBg: glassBg ?? this.glassBg,
+      gradientHeader: gradientHeader ?? this.gradientHeader,
+      gradientButton: gradientButton ?? this.gradientButton,
+      categories: categories ?? this.categories,
+      name: name ?? this.name,
+      displayName: displayName ?? this.displayName,
+      icon: icon ?? this.icon,
+      description: description ?? this.description,
+      isDark: isDark ?? this.isDark,
+    );
+  }
+
+  @override
+  AppColors lerp(ThemeExtension<AppColors>? other, double t) {
+    if (other is! AppColors) return this;
+    return AppColors(
+      primaryBg: Color.lerp(primaryBg, other.primaryBg, t)!,
+      secondaryBg: Color.lerp(secondaryBg, other.secondaryBg, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
+      surfaceVariant: Color.lerp(surfaceVariant, other.surfaceVariant, t)!,
+      accentPrimary: Color.lerp(accentPrimary, other.accentPrimary, t)!,
+      accentSecondary: Color.lerp(accentSecondary, other.accentSecondary, t)!,
+      textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
+      textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
+      textHint: Color.lerp(textHint, other.textHint, t)!,
+      positiveMain: Color.lerp(positiveMain, other.positiveMain, t)!,
+      positiveLight: Color.lerp(positiveLight, other.positiveLight, t)!,
+      positiveGlow: Color.lerp(positiveGlow, other.positiveGlow, t)!,
+      negativeMain: Color.lerp(negativeMain, other.negativeMain, t)!,
+      negativeLight: Color.lerp(negativeLight, other.negativeLight, t)!,
+      negativeGlow: Color.lerp(negativeGlow, other.negativeGlow, t)!,
+      warningMain: Color.lerp(warningMain, other.warningMain, t)!,
+      infoMain: Color.lerp(infoMain, other.infoMain, t)!,
+      shadowColor: Color.lerp(shadowColor, other.shadowColor, t)!,
+      borderColor: Color.lerp(borderColor, other.borderColor, t)!,
+      glassBg: Color.lerp(glassBg, other.glassBg, t)!,
+      gradientHeader: gradientHeader,
+      gradientButton: gradientButton,
+      categories: categories,
+      name: name,
+      displayName: displayName,
+      icon: icon,
+      description: description,
+      isDark: isDark,
+    );
+  }
 }
 
 // ============================================================================
@@ -94,13 +200,13 @@ class ThemeDefinitions {
     isDark: true,
 
     // Fondos
-    primaryBg: Color(0xFF0A0E1A),
-    secondaryBg: Color(0xFF141B2D),
-    surface: Color(0xFF141B2D),
-    surfaceVariant: Color(0xFF1E2A3F),
+    primaryBg: Color(0xFF080B18),
+    secondaryBg: Color(0xFF0F1528),
+    surface: Color(0xFF0F1528),
+    surfaceVariant: Color(0xFF1A2240),
 
-    // Acentos azules
-    accentPrimary: Color(0xFF1E3A8A),
+    // Acentos morado-azul
+    accentPrimary: Color(0xFF7C3AED),
     accentSecondary: Color(0xFF3B82F6),
 
     // Textos
@@ -115,15 +221,26 @@ class ThemeDefinitions {
     negativeMain: Color(0xFFEF4444),
     negativeLight: Color(0x33EF4444),
     negativeGlow: Color(0x66EF4444),
+    warningMain: Color(0xFFF59E0B),
+    infoMain: Color(0xFF7C3AED),
 
     // Efectos
-    shadowColor: Color(0x4D1E3A8A),
-    borderColor: Color(0xFF1E3A8A),
-    glassBg: Color(0x331E3A8A),
+    shadowColor: Color(0x4D7C3AED),
+    borderColor: Color(0xFF4F46E5),
+    glassBg: Color(0x337C3AED),
 
-    // Gradientes
-    gradientHeader: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-    gradientButton: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+    // Gradientes morado → azul
+    gradientHeader: [Color(0xFF7C3AED), Color(0xFF2563EB)],
+    gradientButton: [Color(0xFF6D28D9), Color(0xFF1D4ED8)],
+
+    // Categorías
+    categories: {
+      'emocional': Color(0xFF9333EA),
+      'fisico': Color(0xFF3B82F6),
+      'social': Color(0xFF8B5CF6),
+      'mental': Color(0xFF60A5FA),
+      'espiritual': Color(0xFF6D28D9),
+    },
   );
 
   static const AppColors electricDark = AppColors(
@@ -134,37 +251,48 @@ class ThemeDefinitions {
     description: "Futurista y moderno",
     isDark: true,
 
-    // Fondos eléctricos
-    primaryBg: Color(0xFF0C0C0F),
-    secondaryBg: Color(0xFF1A1A23),
-    surface: Color(0xFF1A1A23),
-    surfaceVariant: Color(0xFF24243A),
+    // Fondos oscuros
+    primaryBg: Color(0xFF060810),
+    secondaryBg: Color(0xFF0E1225),
+    surface: Color(0xFF0E1225),
+    surfaceVariant: Color(0xFF182040),
 
-    // Acentos eléctricos
-    accentPrimary: Color(0xFF6366F1),
-    accentSecondary: Color(0xFF8B5CF6),
+    // Acentos morado-azul vibrante
+    accentPrimary: Color(0xFF8B5CF6),
+    accentSecondary: Color(0xFF2563EB),
 
     // Textos brillantes
     textPrimary: Color(0xFFF8FAFC),
     textSecondary: Color(0xFFCBD5E1),
     textHint: Color(0xFF94A3B8),
 
-    // Estados eléctricos
-    positiveMain: Color(0xFF06D6A0),
-    positiveLight: Color(0x3306D6A0),
-    positiveGlow: Color(0x6606D6A0),
-    negativeMain: Color(0xFFF72585),
-    negativeLight: Color(0x33F72585),
-    negativeGlow: Color(0x66F72585),
+    // Estados
+    positiveMain: Color(0xFF10B981),
+    positiveLight: Color(0x3310B981),
+    positiveGlow: Color(0x6610B981),
+    negativeMain: Color(0xFFEF4444),
+    negativeLight: Color(0x33EF4444),
+    negativeGlow: Color(0x66EF4444),
+    warningMain: Color(0xFFF59E0B),
+    infoMain: Color(0xFF8B5CF6),
 
-    // Efectos neón
-    shadowColor: Color(0x4D6366F1),
-    borderColor: Color(0xFF6366F1),
-    glassBg: Color(0x336366F1),
+    // Efectos neón morado-azul
+    shadowColor: Color(0x4D8B5CF6),
+    borderColor: Color(0xFF5B21B6),
+    glassBg: Color(0x338B5CF6),
 
-    // Gradientes vibrantes
-    gradientHeader: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-    gradientButton: [Color(0xFF06D6A0), Color(0xFF00E5C7)],
+    // Gradientes morado → azul eléctrico
+    gradientHeader: [Color(0xFF8B5CF6), Color(0xFF2563EB)],
+    gradientButton: [Color(0xFF7C3AED), Color(0xFF1D4ED8)],
+
+    // Categorías
+    categories: {
+      'emocional': Color(0xFFA78BFA),
+      'fisico': Color(0xFF60A5FA),
+      'social': Color(0xFF8B5CF6),
+      'mental': Color(0xFF93C5FD),
+      'espiritual': Color(0xFF6D28D9),
+    },
   );
 
   static const AppColors springLight = AppColors(
@@ -172,40 +300,51 @@ class ThemeDefinitions {
     name: "spring_light",
     displayName: "🌸 Spring Light",
     icon: "🌸",
-    description: "Fresco y primaveral",
+    description: "Fresco y luminoso",
     isDark: false,
 
-    // Fondos claros
-    primaryBg: Color(0xFFF8FAFC),
+    // Fondos claros con tinte suave
+    primaryBg: Color(0xFFF5F3FF),
     secondaryBg: Color(0xFFFFFFFF),
     surface: Color(0xFFFFFFFF),
-    surfaceVariant: Color(0xFFF1F5F9),
+    surfaceVariant: Color(0xFFEDE9FE),
 
-    // Acentos verdes primaveral
-    accentPrimary: Color(0xFF059669),
-    accentSecondary: Color(0xFF10B981),
+    // Acentos morado-azul
+    accentPrimary: Color(0xFF7C3AED),
+    accentSecondary: Color(0xFF3B82F6),
 
     // Textos oscuros para contraste
-    textPrimary: Color(0xFF1F2937),
-    textSecondary: Color(0xFF4B5563),
+    textPrimary: Color(0xFF1E1B4B),
+    textSecondary: Color(0xFF4338CA),
     textHint: Color(0xFF9CA3AF),
 
-    // Estados vibrantes
+    // Estados
     positiveMain: Color(0xFF059669),
     positiveLight: Color(0xFFECFDF5),
     positiveGlow: Color(0xFFA7F3D0),
     negativeMain: Color(0xFFDC2626),
     negativeLight: Color(0xFFFEF2F2),
     negativeGlow: Color(0xFFFECACA),
+    warningMain: Color(0xFFF59E0B),
+    infoMain: Color(0xFF7C3AED),
 
-    // Efectos suaves
-    shadowColor: Color(0x33059669),
-    borderColor: Color(0xFFD1D5DB),
-    glassBg: Color(0x1A059669),
+    // Efectos suaves morado
+    shadowColor: Color(0x337C3AED),
+    borderColor: Color(0xFFDDD6FE),
+    glassBg: Color(0x1A7C3AED),
 
-    // Gradientes suaves
-    gradientHeader: [Color(0xFF059669), Color(0xFF10B981)],
-    gradientButton: [Color(0xFF059669), Color(0xFF047857)],
+    // Gradientes morado → azul claro
+    gradientHeader: [Color(0xFF7C3AED), Color(0xFF3B82F6)],
+    gradientButton: [Color(0xFF6D28D9), Color(0xFF2563EB)],
+
+    // Categorías
+    categories: {
+      'emocional': Color(0xFF7C3AED),
+      'fisico': Color(0xFF2563EB),
+      'social': Color(0xFF8B5CF6),
+      'mental': Color(0xFF3B82F6),
+      'espiritual': Color(0xFF5B21B6),
+    },
   );
 
   static const AppColors sunsetWarm = AppColors(
@@ -213,40 +352,51 @@ class ThemeDefinitions {
     name: "sunset_warm",
     displayName: "🌅 Sunset Warm",
     icon: "🌅",
-    description: "Cálido y acogedor",
+    description: "Profundo y sereno",
     isDark: false,
 
-    // Fondos cálidos claros
-    primaryBg: Color(0xFFFFF7ED),
+    // Fondos con tinte azulado suave
+    primaryBg: Color(0xFFEFF6FF),
     secondaryBg: Color(0xFFFFFFFF),
     surface: Color(0xFFFFFFFF),
-    surfaceVariant: Color(0xFFF8F9FA),
+    surfaceVariant: Color(0xFFDBEAFE),
 
-    // Acentos naranjas cálidos
-    accentPrimary: Color(0xFFEA580C),
-    accentSecondary: Color(0xFFF97316),
+    // Acentos morado-azul
+    accentPrimary: Color(0xFF4F46E5),
+    accentSecondary: Color(0xFF7C3AED),
 
     // Textos oscuros para contraste
-    textPrimary: Color(0xFF292524),
-    textSecondary: Color(0xFF57534E),
-    textHint: Color(0xFFA8A29E),
+    textPrimary: Color(0xFF1E1B4B),
+    textSecondary: Color(0xFF312E81),
+    textHint: Color(0xFF9CA3AF),
 
-    // Estados cálidos
+    // Estados
     positiveMain: Color(0xFF059669),
     positiveLight: Color(0xFFF0FDF4),
     positiveGlow: Color(0xFFBBF7D0),
     negativeMain: Color(0xFFDC2626),
     negativeLight: Color(0xFFFEF2F2),
     negativeGlow: Color(0xFFFECACA),
+    warningMain: Color(0xFFF59E0B),
+    infoMain: Color(0xFF4F46E5),
 
-    // Efectos cálidos
-    shadowColor: Color(0x33EA580C),
-    borderColor: Color(0xFFE5E7EB),
-    glassBg: Color(0x1AEA580C),
+    // Efectos azul-morado
+    shadowColor: Color(0x334F46E5),
+    borderColor: Color(0xFFBFDBFE),
+    glassBg: Color(0x1A4F46E5),
 
-    // Gradientes cálidos
-    gradientHeader: [Color(0xFFEA580C), Color(0xFFF97316)],
-    gradientButton: [Color(0xFFEA580C), Color(0xFFC2410C)],
+    // Gradientes azul → morado
+    gradientHeader: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+    gradientButton: [Color(0xFF3730A3), Color(0xFF6D28D9)],
+
+    // Categorías
+    categories: {
+      'emocional': Color(0xFF4F46E5),
+      'fisico': Color(0xFF2563EB),
+      'social': Color(0xFF7C3AED),
+      'mental': Color(0xFF60A5FA),
+      'espiritual': Color(0xFF5B21B6),
+    },
   );
 
   static Map<AppThemeType, AppColors> get themes => {
@@ -283,7 +433,7 @@ class AppThemeData {
         surfaceContainerHighest: appColors.surfaceVariant,
         onSurfaceVariant: appColors.textSecondary,
         outline: appColors.borderColor,
-        outlineVariant: appColors.borderColor.withOpacity(0.5),
+        outlineVariant: appColors.borderColor.withValues(alpha: 0.5),
         shadow: appColors.shadowColor,
         scrim: Colors.black54,
         inverseSurface: appColors.textPrimary,
@@ -463,7 +613,7 @@ class AppThemeData {
         activeTrackColor: appColors.accentPrimary,
         inactiveTrackColor: appColors.borderColor,
         thumbColor: appColors.accentPrimary,
-        overlayColor: appColors.accentPrimary.withOpacity(0.2),
+        overlayColor: appColors.accentPrimary.withValues(alpha: 0.2),
         trackHeight: 4,
       ),
 
@@ -489,9 +639,9 @@ class AppThemeData {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return appColors.accentPrimary.withOpacity(0.5);
+            return appColors.accentPrimary.withValues(alpha: 0.5);
           }
-          return appColors.borderColor.withOpacity(0.3);
+          return appColors.borderColor.withValues(alpha: 0.3);
         }),
       ),
 
@@ -502,6 +652,9 @@ class AppThemeData {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         behavior: SnackBarBehavior.floating,
       ),
+
+      // Extensiones de tema personalizadas
+      extensions: <ThemeExtension<dynamic>>[appColors],
     );
   }
 }

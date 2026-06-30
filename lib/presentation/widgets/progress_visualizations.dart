@@ -611,7 +611,7 @@ class MultiMetricProgressWidget extends StatelessWidget {
           progress: value,
           size: 50,
           strokeWidth: 4,
-          colors: _getMetricColors(label),
+          colors: _getMetricColors(context, label),
           centerChild: Text(
             '${(value * 100).round()}',
             style: TextStyle(
@@ -634,18 +634,18 @@ class MultiMetricProgressWidget extends StatelessWidget {
     );
   }
 
-  List<Color> _getMetricColors(String metric) {
+  List<Color> _getMetricColors(BuildContext context, String metric) {
     switch (metric.toLowerCase()) {
       case 'quality':
-        return [const Color(0xFF10B981), const Color(0xFF34D399)];
+        return MinimalColors.positiveGradient(context);
       case 'mood':
-        return [const Color(0xFFF59E0B), const Color(0xFFFBBF24)];
+        return MinimalColors.neutralGradient(context);
       case 'energy':
-        return [const Color(0xFFEF4444), const Color(0xFFF87171)];
+        return MinimalColors.negativeGradient(context);
       case 'stress':
         return [const Color(0xFF8B5CF6), const Color(0xFFA78BFA)];
       default:
-        return [const Color(0xFF3B82F6), const Color(0xFF60A5FA)];
+        return [const Color(0xFF9333EA), const Color(0xFFA78BFA)];
     }
   }
 
